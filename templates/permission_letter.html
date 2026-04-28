@@ -19,7 +19,7 @@
             margin: 15mm;
         }
 
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Dancing+Script:wght@600&display=swap');
 
         body {
             font-family: 'Inter', "Times New Roman", serif;
@@ -29,7 +29,53 @@
             background: #f0f2f5;
             color: #000;
             overflow-x: hidden;
+            padding-bottom: 100px;
         }
+
+        .signature-font {
+            font-family: 'Dancing Script', cursive;
+            font-size: 1.4rem;
+            color: #1e40af;
+            line-height: 1;
+        }
+
+        .verified-badge {
+            font-size: 0.65rem;
+            background: #10b981;
+            color: white;
+            padding: 1px 4px;
+            border-radius: 3px;
+            display: inline-block;
+            margin-top: 2px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .approval-banner {
+            max-width: 210mm;
+            margin: 20px auto 0;
+            background: #fff;
+            border-left: 5px solid #f59e0b;
+            padding: 1.2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-pill {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-approved { background: #dcfce7; color: #166534; }
+        .status-rejected { background: #fee2e2; color: #991b1b; }
 
         .modal-overlay {
             display: none;
@@ -354,23 +400,58 @@
 </head>
 
 <body>
-    <div class="controls no-print">
-        {% if not event.event_finished %}
-        <button class="fab fab-primary" onclick="saveDetails()">
-            <i class="fas fa-{{ 'rocket' if is_trusted else 'save' }}"></i> 
-            {{ 'Save & Post Event' if is_trusted else 'Save & Submit for Approval' }}
-        </button>
-        {% if is_trusted %}
-        <div style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 10px 15px; border-radius: 12px; font-size: 11px; font-weight: bold; border: 1px solid rgba(16, 185, 129, 0.2);">
-            <i class="fas fa-shield-alt"></i> TRUSTED CLUB: AUTO-APPROVAL ACTIVE
+    {% if event.approval_status and event.approval_status != 'approved' %}
+    <div class="approval-banner no-print">
+        <div>
+            <h4 style="margin:0; font-size: 0.9rem; color: #1e293b;">Institutional Approval Workflow</h4>
+            <p style="margin: 4px 0 0; color: #64748b; font-size: 0.8rem;">
+                Current Stage: <span class="status-pill status-pending">{{ event.approval_status | replace('pending_', '') | replace('_', ' ') | upper }}</span>
+            </p>
         </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            {% set current_role = user.role %}
+            {% if event.approval_status == 'pending_' ~ current_role or (user.role == 'chief_coordinator' and event.approval_status.startswith('pending_')) %}
+            <button onclick="processApproval('approve')" class="btn btn-primary" style="background: #10b981; border: none; padding: 0.6rem 1.2rem; border-radius: 8px; color: white; cursor: pointer; font-weight: 700;">
+                <i class="fas fa-check-circle"></i> Approve & Sign
+            </button>
+            <button onclick="processApproval('reject')" class="btn btn-outline" style="color: #ef4444; border-color: #ef4444; padding: 0.6rem 1.2rem; border-radius: 8px; background: transparent; cursor: pointer; font-weight: 700;">
+                <i class="fas fa-times-circle"></i> Reject
+            </button>
+            {% else %}
+            <div style="text-align: right;">
+                <p style="font-size: 0.8rem; color: #94a3b8; font-style: italic; margin: 0;">Waiting for {{ event.approval_status | replace('pending_', '') | replace('_', ' ') | title }}'s signature</p>
+                <div style="display: flex; gap: 5px; margin-top: 5px; justify-content: flex-end;">
+                    {% for stage in ['principal', 'chief_coordinator', 'ao_fm', 'secretary'] %}
+                    <div title="{{ stage | title }}" style="width: 10px; height: 10px; border-radius: 50%; background: {{ '#10b981' if event.approver_signatures and (event.approver_signatures.get(stage) or event.approver_signatures.get('ao') or event.approver_signatures.get('fm')) else '#e2e8f0' }}; border: 1px solid rgba(0,0,0,0.1);"></div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="controls no-print">
+        {% if user.role in ('club_admin') %}
+            {% if not event.event_finished %}
+            <button class="fab fab-primary" onclick="saveDetails()">
+                <i class="fas fa-{{ 'rocket' if is_trusted else 'save' }}"></i> 
+                {{ 'Save & Post Event' if is_trusted else 'Save & Submit for Approval' }}
+            </button>
+            {% if is_trusted %}
+            <div style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 10px 15px; border-radius: 12px; font-size: 11px; font-weight: bold; border: 1px solid rgba(16, 185, 129, 0.2);">
+                <i class="fas fa-shield-alt"></i> TRUSTED CLUB: AUTO-APPROVAL ACTIVE
+            </div>
+            {% endif %}
+            <button class="fab fab-outline" onclick="toggleModal('editCoreModal', true)"><i class="fas fa-edit"></i> Edit Overall Details</button>
+            <button class="fab fab-outline" onclick="deleteEvent()" style="color: #ef4444; border-color: #ef4444;"><i class="fas fa-trash-alt"></i> Delete Letter</button>
+            {% endif %}
+            <button class="fab fab-outline" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> Download PDF</button>
+        {% elif user.role == 'chief_coordinator' %}
+             <button class="fab fab-outline" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> Download PDF</button>
         {% endif %}
-        <button class="fab fab-outline" onclick="toggleModal('editCoreModal', true)"><i class="fas fa-edit"></i> Edit Overall Details</button>
-        <button class="fab fab-outline" onclick="deleteEvent()" style="color: #ef4444; border-color: #ef4444;"><i class="fas fa-trash-alt"></i> Delete Letter</button>
-        {% endif %}
-        <button class="fab fab-outline" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> Download PDF</button>
-        <a href="/admin" class="fab fab-outline" style="text-decoration: none;"><i class="fas fa-arrow-left"></i> Back
-            to Dashboard</a>
+        
+        <a href="/admin" class="fab fab-outline" style="text-decoration: none;"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
     </div>
 
     <div class="document-container" id="permissionLetter">
@@ -401,7 +482,7 @@
                 <td colspan="2" style="border: 1px solid black;"><b>Letter No.:</b> SPHN / <span id="club_name_num">{{
                         club_name }}</span> / 2026-2027</td>
                 <td colspan="2" style="text-align:right; border: 1px solid black;"><b>Letter Date:</b> <span
-                        id="date_str" contenteditable="{{ 'false' if event.event_finished else 'true' }}">{{ date_str }}</span></td>
+                        id="date_str" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}">{{ date_str }}</span></td>
             </tr>
 
             <tr>
@@ -418,55 +499,55 @@
             <tr>
                 <td style="text-align:center; border: 1px solid black;">2</td>
                 <td style="border: 1px solid black;">Title of the PROGRAM</td>
-                <td id="title" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ program_title }}
+                <td id="title" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ program_title }}
                 </td>
             </tr>
             <tr>
                 <td style="text-align:center; border: 1px solid black;">3</td>
                 <td style="border: 1px solid black;">Program Date & Place</td>
-                <td id="program_date_place" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{
+                <td id="program_date_place" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{
                     program_date_place }}</td>
             </tr>
 
             <tr>
                 <td rowspan="7" style="text-align:center; border: 1px solid black;">4</td>
                 <td style="border: 1px solid black;">A. Resource Person Name</td>
-                <td id="resource_person" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{
+                <td id="resource_person" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{
                     resource_person }}</td>
             </tr>
             <tr>
                 <td style="border: 1px solid black;">B. Date of Appointment</td>
-                <td id="appointment_date" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{
+                <td id="appointment_date" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{
                     appointment_date }}</td>
             </tr>
             <tr>
                 <td style="border: 1px solid black;">C. Mode of Transport Receiving</td>
-                <td id="transport_receive" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{
+                <td id="transport_receive" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{
                     transport_receive }}</td>
             </tr>
             <tr>
                 <td style="border: 1px solid black;">D. Mode of Transport Sending</td>
-                <td id="transport_send" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{
+                <td id="transport_send" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{
                     transport_send }}</td>
             </tr>
             <tr>
                 <td style="border: 1px solid black;">E. Honoring</td>
-                <td id="honoring" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ honoring }}
+                <td id="honoring" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ honoring }}
                 </td>
             </tr>
             <tr>
                 <td style="border: 1px solid black;">&nbsp;&nbsp;&nbsp;i. Memento, Bouquet & Shawl</td>
-                <td id="memento" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ memento }}</td>
+                <td id="memento" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ memento }}</td>
             </tr>
             <tr>
                 <td style="border: 1px solid black;">&nbsp;&nbsp;&nbsp;ii. Cash</td>
-                <td id="cash" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ cash }}</td>
+                <td id="cash" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ cash }}</td>
             </tr>
 
             <tr>
                 <td style="text-align:center; border: 1px solid black;">5</td>
                 <td style="border: 1px solid black;">Refreshment: Tiffen/ Lunch for students, parents and Staff</td>
-                <td id="refreshment" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ refreshment
+                <td id="refreshment" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ refreshment
                     }}</td>
             </tr>
 
@@ -477,21 +558,21 @@
             </tr>
             <tr>
                 <td style="border: 1px solid black;">A. Printing Invitation, Posters, Models</td>
-                <td id="printing" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ printing }}
+                <td id="printing" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ printing }}
                 </td>
             </tr>
             <tr>
                 <td style="border: 1px solid black;">B. Invitation Distribution (Post & Person)</td>
-                <td id="distribution" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{
+                <td id="distribution" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{
                     distribution }}</td>
             </tr>
             <tr>
                 <td style="border: 1px solid black;">C. Flex Model & Size (Welcome & Stage)</td>
-                <td id="flex" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ flex }}</td>
+                <td id="flex" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ flex }}</td>
             </tr>
             <tr>
                 <td style="border: 1px solid black;">D. Digital Media (Pre, Event, Post)</td>
-                <td id="digital_media" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ news }}
+                <td id="digital_media" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ news }}
                 </td>
             </tr>
 
@@ -502,15 +583,15 @@
             </tr>
             <tr>
                 <td style="border: 1px solid black;">A. Table & Table Cloth, Tray</td>
-                <td id="reception_tables" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">--</td>
+                <td id="reception_tables" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">--</td>
             </tr>
             <tr>
                 <td style="border: 1px solid black;">B. Sandal, Kungumam, Coconut…..</td>
-                <td id="sandal" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ sandal }}</td>
+                <td id="sandal" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ sandal }}</td>
             </tr>
             <tr>
                 <td style="border: 1px solid black;">C. Sweet boxes, Paneer bottle/spray</td>
-                <td id="sweets" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ sweets }}</td>
+                <td id="sweets" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ sweets }}</td>
             </tr>
 
             <tr>
@@ -520,25 +601,25 @@
             </tr>
             <tr>
                 <td style="border: 1px solid black;">A. No of Students</td>
-                <td id="participants" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ students }}
+                <td id="participants" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ students }}
                 </td>
             </tr>
             <tr>
                 <td style="border: 1px solid black;">B. No of Chairs on the stage</td>
-                <td id="chairs" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ chairs }}</td>
+                <td id="chairs" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ chairs }}</td>
             </tr>
             <tr>
                 <td style="border: 1px solid black;">C. Mic and Speaker Arrangements</td>
-                <td id="mic" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ mic }}</td>
+                <td id="mic" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ mic }}</td>
             </tr>
             <tr>
                 <td style="border: 1px solid black;">D. Internet arrangements (if any)</td>
-                <td id="internet" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ internet }}
+                <td id="internet" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ internet }}
                 </td>
             </tr>
             <tr>
                 <td style="border: 1px solid black;">E. Others (Name plate, Flower, water etc.,)</td>
-                <td id="others" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ others }}</td>
+                <td id="others" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ others }}</td>
             </tr>
 
             <tr>
@@ -548,19 +629,19 @@
             </tr>
             <tr>
                 <td style="border: 1px solid black;">A. Photographer time</td>
-                <td id="photographer" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">--</td>
+                <td id="photographer" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">--</td>
             </tr>
             <tr>
                 <td style="border: 1px solid black;">B. Daily News</td>
-                <td id="news" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ news }}</td>
+                <td id="news" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ news }}</td>
             </tr>
             <tr>
                 <td style="border: 1px solid black;">C. Before and During the PGM</td>
-                <td id="before" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ before }}</td>
+                <td id="before" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ before }}</td>
             </tr>
             <tr>
                 <td style="border: 1px solid black;">D. After the PROGRAM</td>
-                <td id="after" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ after }}</td>
+                <td id="after" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ after }}</td>
             </tr>
 
             <tr>
@@ -570,17 +651,17 @@
             </tr>
             <tr>
                 <td style="border: 1px solid black;">1. Feedback notes for Guest</td>
-                <td id="guest_feedback" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{
+                <td id="guest_feedback" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{
                     guest_feedback }}</td>
             </tr>
             <tr>
                 <td style="border: 1px solid black;">2. Students with Google form</td>
-                <td id="student_feedback" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{
+                <td id="student_feedback" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{
                     student_feedback }}</td>
             </tr>
             <tr>
                 <td style="border: 1px solid black;">3. Organizers</td>
-                <td id="organizer_feedback" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{
+                <td id="organizer_feedback" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{
                     organizer_feedback }}</td>
             </tr>
             <tr>
@@ -606,9 +687,19 @@
                         <tr style="border: none !important;">
                             <td
                                 style="border: none !important; text-align: center; line-height: 1.4; vertical-align: middle;">
+                                {% if event.proposer_signatures and event.proposer_signatures.president %}
+                                <div class="signature-font">{{ event.proposer_signatures.president }}</div>
+                                <div class="verified-badge">E-Signed</div>
+                                {% endif %}
+                                <br>
                                 <b>Club President /</b><br><b>Secretary</b>
                             </td>
                             <td style="border: none !important; text-align: center; vertical-align: middle;">
+                                {% if event.proposer_signatures and event.proposer_signatures.club_mentor %}
+                                <div class="signature-font">{{ event.proposer_signatures.club_mentor }}</div>
+                                <div class="verified-badge">E-Signed</div>
+                                {% endif %}
+                                <br>
                                 <b>Mentor</b>
                             </td>
                         </tr>
@@ -619,11 +710,16 @@
             <tr>
                 <td colspan="2" style="padding: 15px; vertical-align: top; border: 1px solid black;">
                     <b>Description:</b><br>
-                    <div id="description" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="margin-top: 8px; min-height: 80px;">{{
+                    <div id="description" contenteditable="{{ 'true' if user.role == 'club_admin' and not event.event_finished else 'false' }}" style="margin-top: 8px; min-height: 80px;">{{
                         description if description and description != "None" else "" }}</div>
                 </td>
                 <td colspan="2"
                     style="padding: 15px; vertical-align: bottom; height: 120px; text-align: center; border: 1px solid black;">
+                    {% if event.approver_signatures and event.approver_signatures.chief_coordinator %}
+                    <div class="signature-font">{{ event.approver_signatures.chief_coordinator.name }}</div>
+                    <div class="verified-badge">Verified & Approved</div>
+                    {% endif %}
+                    <br>
                     <b>Chief Coordinator</b>
                 </td>
             </tr>
@@ -631,10 +727,34 @@
 
         <table class="bottom" style="border: none !important; margin-top: 20px;">
             <tr style="border: none !important;">
-                <td style="border: none !important;">Secretary</td>
-                <td style="border: none !important;">Principal</td>
-                <td style="border: none !important;">AO</td>
-                <td style="border: none !important;">FM</td>
+                <td style="border: none !important; text-align: center;">
+                    {% if event.approver_signatures and event.approver_signatures.secretary %}
+                    <div class="signature-font">{{ event.approver_signatures.secretary.name }}</div>
+                    <div class="verified-badge">E-Signed</div>
+                    {% endif %}
+                    <br>Secretary
+                </td>
+                <td style="border: none !important; text-align: center;">
+                    {% if event.approver_signatures and event.approver_signatures.principal %}
+                    <div class="signature-font">{{ event.approver_signatures.principal.name }}</div>
+                    <div class="verified-badge">E-Signed</div>
+                    {% endif %}
+                    <br>Principal
+                </td>
+                <td style="border: none !important; text-align: center;">
+                    {% if event.approver_signatures and event.approver_signatures.ao %}
+                    <div class="signature-font">{{ event.approver_signatures.ao.name }}</div>
+                    <div class="verified-badge">E-Signed</div>
+                    {% endif %}
+                    <br>AO
+                </td>
+                <td style="border: none !important; text-align: center;">
+                    {% if event.approver_signatures and event.approver_signatures.fm %}
+                    <div class="signature-font">{{ event.approver_signatures.fm.name }}</div>
+                    <div class="verified-badge">E-Signed</div>
+                    {% endif %}
+                    <br>FM
+                </td>
             </tr>
         </table>
 
@@ -813,6 +933,56 @@
                     pdf.text(`Page ${i} of ${totalPages}`, pageWidth - 40, pageHeight - 8);
                 }
             }).save();
+        }
+    </script>
+    <script>
+        async function processApproval(action) {
+            if (!confirm(`Are you sure you want to ${action} this event?`)) return;
+            
+            const res = await fetch('/api/events/approve', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    club_id: '{{ club_id }}',
+                    event_id: '{{ event_id }}',
+                    action: action
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(`Event successfully ${action === 'approve' ? 'approved' : 'rejected'}.`);
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        }
+    </script>
+    <script>
+        async function processApproval(action) {
+            if (!confirm(`Are you sure you want to ${action} this event?`)) return;
+            
+            const res = await fetch('/api/events/approve', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    club_id: '{{ club_id }}',
+                    event_id: '{{ event_id }}',
+                    action: action
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(`Event successfully ${action === 'approve' ? 'approved' : 'rejected'}.`);
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
         }
     </script>
 </body>

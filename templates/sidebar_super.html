@@ -7,7 +7,15 @@
         </a>
         <a href="/super/approvals" class="nav-item {% if request.path == '/super/approvals' %}active{% endif %}">
             <i class="fas fa-check-circle"></i>
-            <span>Approvals</span>
+            <span>Governance Approvals</span>
+        </a>
+        <a href="/admin/event-approvals" class="nav-item {% if request.path == '/admin/event-approvals' %}active{% endif %}">
+            <i class="fas fa-file-contract"></i>
+            <span>Event Approvals</span>
+        </a>
+        <a href="/admin/report-approvals" class="nav-item {% if request.path == '/admin/report-approvals' %}active{% endif %}">
+            <i class="fas fa-file-medical"></i>
+            <span>Report Approvals</span>
         </a>
         <a href="/super/master" class="nav-item {% if request.path == '/super/master' %}active{% endif %}">
             <i class="fas fa-database"></i>

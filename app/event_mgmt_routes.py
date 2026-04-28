@@ -41,13 +41,13 @@ def is_manager(user):
     """Event Manager role or Super Admin."""
     if not user: return False
     role = user.get('role')
-    if role in ('event_manager', 'super_admin'): return True
+    if role in ('event_manager', 'chief_coordinator'): return True
     # Fallback: check email in admins.json if role is missing
     email = (user.get('email') or '').lower().strip()
     if email:
         for a in DB.get_admins():
             if a.get('email', '').lower().strip() == email:
-                if a.get('role') in ('event_manager', 'super_admin'): return True
+                if a.get('role') in ('event_manager', 'chief_coordinator'): return True
     return False
 
 def is_event_admin(user):
@@ -75,7 +75,7 @@ def admin_events(user):
     all_ev = get_events()
     if not user: return []
     role = user.get('role', '')
-    if role in ('event_manager', 'super_admin'): return all_ev
+    if role in ('event_manager', 'chief_coordinator'): return all_ev
     
     # Club Admins see their own club's events
     if is_club_admin(user):
@@ -114,7 +114,7 @@ def admin_events(user):
 def get_club_id_from_user(user):
     """Extract club_id from a club admin's role. e.g. 'creator_club_admin' -> 'creator_club'"""
     role = user.get('role', '')
-    if role.endswith('_admin') and role not in ('super_admin', 'event_admin'):
+    if role.endswith('_admin') and role not in ('chief_coordinator', 'event_admin'):
         # Specific pattern: creator_club_admin -> creator_club
         slug = role[:-6]
         if slug != 'club':
@@ -128,10 +128,10 @@ def get_club_id_from_user(user):
     return None
 
 def is_club_admin(user):
-    """Check if user is a club admin (any *_admin role except super_admin and event_admin)."""
+    """Check if user is a club admin (any *_admin role except chief_coordinator and event_admin)."""
     if not user: return False
     role = user.get('role', '')
-    return role.endswith('_admin') and role not in ('super_admin', 'event_admin')
+    return role.endswith('_admin') and role not in ('chief_coordinator', 'event_admin')
 
 def get_events_for_club(club_id):
     """Return all EM events organized by a specific club."""
@@ -154,7 +154,7 @@ def has_event_access(user, event_id):
     """Check if the user has administrative access to a specific event."""
     if not user: return False
     role = user.get('role', '')
-    if role in ('event_manager', 'super_admin'): return True
+    if role in ('event_manager', 'chief_coordinator'): return True
     
     # Check if this event is in the list of events this user can admin
     # admin_events(user) already handles club-specific and assigned event checks
@@ -1377,7 +1377,7 @@ def api_analytics(event_id):
 @em.route('/api/settings', methods=['POST'])
 def api_save_settings():
     user = session.get('user')
-    # Allow event_manager, super_admin, and event_admin (gateway + SMTP only)
+    # Allow event_manager, chief_coordinator, and event_admin (gateway + SMTP only)
     if not is_manager(user) and not is_event_admin(user):
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     s    = get_settings()
@@ -1578,7 +1578,7 @@ def _club_event_access(user, event_id):
     if not user: return None, None
     role = user.get('role', '')
     # Full admins always have access
-    if role in ('event_manager', 'super_admin'): return event, event.get('organized_by_id')
+    if role in ('event_manager', 'chief_coordinator'): return event, event.get('organized_by_id')
     # Club admins can only access their own club's events
     if is_club_admin(user):
         club_id = get_club_id_from_user(user)
@@ -1601,7 +1601,7 @@ def api_club_events(club_id):
     if not user: return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     role = user.get('role', '')
     # Verify access
-    if role not in ('event_manager', 'super_admin'):
+    if role not in ('event_manager', 'chief_coordinator'):
         if not is_club_admin(user) or get_club_id_from_user(user) != club_id:
             return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     events = get_events_for_club(club_id)

@@ -262,7 +262,7 @@
 
 <div class="eh-wrap">
   <!-- Back -->
-  {% if user.role in ('event_manager', 'event_admin', 'super_admin') %}
+  {% if user.role in ('event_manager', 'event_admin', 'chief_coordinator') %}
   {% if user.role != 'event_admin' %}
   <a href="/em/dashboard" class="eh-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
   {% endif %}
@@ -518,7 +518,7 @@
       </label>
     </div>
 
-    {% if user.role in ('event_manager', 'event_admin', 'super_admin') %}
+    {% if user.role in ('event_manager', 'event_admin', 'chief_coordinator') %}
     <div class="setting-group">
       <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3);margin-bottom:1.25rem;">Event App Settings (Gateway & Email)</div>
       

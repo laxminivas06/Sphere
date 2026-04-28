@@ -37,7 +37,7 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if not e.approved and user.role == 'super_admin' %}
+                                    {% if not e.approved and user.role == 'chief_coordinator' %}
                                         <button onclick="approveEvent('{{ e.id }}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Approve</button>
                                     {% endif %}
                                     <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Edit</button>

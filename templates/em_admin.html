@@ -145,8 +145,8 @@
       <div style="display:flex;align-items:center;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;">
         <div style="flex:1;">
           <h1 style="margin-bottom:.25rem;">
-            {% if user.role == 'super_admin' %}
-            Event <span style="background:linear-gradient(135deg,var(--em-indigo),var(--em-teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Overview (Super Admin)</span>
+            {% if user.role == 'chief_coordinator' %}
+            Event <span style="background:linear-gradient(135deg,var(--em-indigo),var(--em-teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Overview (Chief Coordinator)</span>
             {% elif user.role == 'event_manager' %}
             Event <span style="background:linear-gradient(135deg,var(--em-indigo),var(--em-purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Manager</span>
             {% else %}
@@ -159,7 +159,7 @@
             {% endif %}
           </h1>
           <p style="color:var(--text-muted);margin:0;">
-            {% if user.role == 'super_admin' %}
+            {% if user.role == 'chief_coordinator' %}
             View all events, registrations, and analytics across the institution.
             {% elif user.role == 'event_manager' %}
             Create events, manage admins, track registrations & analytics.
@@ -169,8 +169,8 @@
           </p>
         </div>
         <div class="role-badge role-badge-manager">
-          <i class="fas {% if user.role == 'super_admin' %}fa-globe{% else %}fa-crown{% endif %}"></i>
-          {{ user.name }} · {% if user.role == 'super_admin' %}Super Admin{% else %}Event Manager{% endif %}
+          <i class="fas {% if user.role == 'chief_coordinator' %}fa-globe{% else %}fa-crown{% endif %}"></i>
+          {{ user.name }} · {% if user.role == 'chief_coordinator' %}Chief Coordinator{% else %}Event Manager{% endif %}
         </div>
       </div>
 
@@ -190,7 +190,7 @@
         <div class="stat-tile" style="border-color:rgba(99,102,241,.2);">
           <div class="stat-tile-label">Total Events</div>
           <div class="stat-tile-val" style="color:var(--em-indigo);">{{ events|length }}</div>
-          <div class="stat-tile-sub">{% if user.role == 'event_manager' or user.role == 'super_admin' %}All events{% else %}Assigned events{% endif %}</div>
+          <div class="stat-tile-sub">{% if user.role == 'event_manager' or user.role == 'chief_coordinator' %}All events{% else %}Assigned events{% endif %}</div>
         </div>
         {% endif %}
         <div class="stat-tile" style="border-color:rgba(139,92,246,.2);">
@@ -213,7 +213,7 @@
       <!-- Per-event analytics -->
       <div class="section-header">
         <h2>Event Analytics</h2>
-        {% if user.role == 'event_manager' or user.role == 'super_admin' %}
+        {% if user.role == 'event_manager' or user.role == 'chief_coordinator' %}
         <select id="analyticsEvent" onchange="loadAnalytics(this.value)" style="background:var(--white);border:1px solid var(--border-light);border-radius:10px;padding:.5rem 1rem;color:var(--navy);outline:none;font-size:.85rem;">
           <option value="">Select an event…</option>
           {% for ev in events %}<option value="{{ ev.id }}">{{ ev.title }}</option>{% endfor %}
@@ -241,7 +241,7 @@
     <div id="tab-events" class="tab-pane">
       <div class="section-header">
         <h2>My Events ({{ events|length }})</h2>
-        {% if user.role == 'event_manager' or user.role == 'super_admin' %}
+        {% if user.role == 'event_manager' or user.role == 'chief_coordinator' %}
         <button class="btn-sm btn-sm-primary" onclick="openModal('createEventModal')" style="padding:.65rem 1.25rem;">
           <i class="fas fa-plus"></i> Create Event
         </button>
@@ -281,7 +281,7 @@
           {% endif %}
 
           <button class="btn-sm btn-sm-primary" onclick='openEditEventModal({{ ev|tojson|safe }})' title="Edit Details"><i class="fas fa-edit"></i></button>
-          {% if user.role == 'event_manager' or user.role == 'super_admin' %}
+          {% if user.role == 'event_manager' or user.role == 'chief_coordinator' %}
           <button class="btn-sm btn-sm-danger" onclick="cancelEvent('{{ ev.id }}','{{ ev.title }}')" title="Cancel Event"><i class="fas fa-ban"></i></button>
           {% endif %}
           <button class="btn-sm btn-sm-teal" onclick="document.getElementById('analyticsEvent').value='{{ ev.id }}';loadAnalytics('{{ ev.id }}');showTab('overview',null)" title="Quick Stats"><i class="fas fa-chart-bar"></i></button>
@@ -291,7 +291,7 @@
       {% else %}
       <div style="text-align:center;padding:4rem;color:var(--text-muted);border:2px dashed rgba(255,255,255,.07);border-radius:20px;">
         <i class="fas fa-calendar-times" style="font-size:3rem;opacity:.2;display:block;margin-bottom:1rem;"></i>
-        {% if user.role == 'event_manager' or user.role == 'super_admin' %}No events created yet. Click "Create Event" to get started.{% else %}No events assigned to you yet. Contact the Event Manager.{% endif %}
+        {% if user.role == 'event_manager' or user.role == 'chief_coordinator' %}No events created yet. Click "Create Event" to get started.{% else %}No events assigned to you yet. Contact the Event Manager.{% endif %}
       </div>
       {% endif %}
     </div>
@@ -376,8 +376,8 @@
       <div id="attendanceDeptList" style="display:none;margin-top:1.5rem;"></div>
     </div>
 
-    <!-- == Bulk Email Tab (event_manager / event_admin / super_admin) == -->
-    {% if user.role in ('event_manager', 'event_admin', 'super_admin') %}
+    <!-- == Bulk Email Tab (event_manager / event_admin / chief_coordinator) == -->
+    {% if user.role in ('event_manager', 'event_admin', 'chief_coordinator') %}
     <div id="tab-bulkemail" class="tab-pane">
       <div class="section-header">
         <h2><i class="fas fa-envelope-open-text" style="color:var(--em-pink);margin-right:.5rem;"></i>Bulk Email to Registrants</h2>
@@ -434,8 +434,8 @@
     </div>
     {% endif %}
 
-    <!-- == Event Admins Tab (Event Manager / Super Admin) == -->
-    {% if user.role == 'event_manager' or user.role == 'super_admin' %}
+    <!-- == Event Admins Tab (Event Manager / Chief Coordinator) == -->
+    {% if user.role == 'event_manager' or user.role == 'chief_coordinator' %}
     <div id="tab-admins" class="tab-pane">
       <div class="section-header">
         <h2>Event Admins ({{ em_admins|length }})</h2>
@@ -470,7 +470,7 @@
     {% endif %}
 
     <!-- -- Settings Tab ---------------------------- -->
-    {% if user.role in ('event_manager', 'super_admin', 'event_admin') %}
+    {% if user.role in ('event_manager', 'chief_coordinator', 'event_admin') %}
     <div id="tab-settings" class="tab-pane">
       <div class="section-header"><h2>Payment Gateway Settings</h2></div>
       <div style="max-width:560px;">
@@ -531,8 +531,8 @@
     </div>
     {% endif %}
 
-    <!-- == Hackathon Teams Tab (event_manager / event_admin / super_admin) == -->
-    {% if user.role in ('event_manager', 'event_admin', 'super_admin') %}
+    <!-- == Hackathon Teams Tab (event_manager / event_admin / chief_coordinator) == -->
+    {% if user.role in ('event_manager', 'event_admin', 'chief_coordinator') %}
     <div id="tab-hackathon" class="tab-pane">
       <div class="section-header">
         <h2><i class="fas fa-rocket" style="color:var(--em-purple);margin-right:.5rem;"></i>Hackathon Events & Teams</h2>
@@ -566,8 +566,8 @@
     </div>
     {% endif %}
 
-    <!-- == Tech Fest Hub Tab (admin & super_admin) == -->
-    {% if user.role == 'event_admin' or user.role == 'super_admin' or user.role == 'event_manager' %}
+    <!-- == Tech Fest Hub Tab (admin & chief_coordinator) == -->
+    {% if user.role == 'event_admin' or user.role == 'chief_coordinator' or user.role == 'event_manager' %}
     <div id="tab-techfest_hub" class="tab-pane">
       <div class="section-header">
         <h2><i class="fas fa-microchip" style="color:var(--em-indigo);margin-right:.5rem;"></i>Tech Fest Events</h2>
@@ -600,8 +600,8 @@
     </div>
     {% endif %}
 
-    <!-- == Evaluators Tab (admin & super_admin) == -->
-    {% if user.role == 'event_admin' or user.role == 'super_admin' %}
+    <!-- == Evaluators Tab (admin & chief_coordinator) == -->
+    {% if user.role == 'event_admin' or user.role == 'chief_coordinator' %}
     <div id="tab-evaluators" class="tab-pane">
       <div class="section-header">
         <h2>Evaluators</h2>
@@ -622,7 +622,7 @@
 
 <!-- -- Modals -------------------------------------------------------------------- -->
 <!-- Create Event Modal -->
-{% if user.role == 'event_manager' or user.role == 'super_admin' %}
+{% if user.role == 'event_manager' or user.role == 'chief_coordinator' %}
 <div id="createEventModal" class="em-modal">
   <div class="em-modal-box">
     <h3>Create New Event</h3>
@@ -834,7 +834,7 @@
   </div>
 </div>
 
-{% if user.role == 'event_manager' or user.role == 'super_admin' %}
+{% if user.role == 'event_manager' or user.role == 'chief_coordinator' %}
 <!-- Create Admin Modal -->
 <div id="createAdminModal" class="em-modal">
   <div class="em-modal-box">
@@ -987,7 +987,7 @@ function updateOrganizedByName() {
 }
 
 // Create Event
-{% if user.role == 'event_manager' or user.role == 'super_admin' %}
+{% if user.role == 'event_manager' or user.role == 'chief_coordinator' %}
 document.getElementById('createEventForm').onsubmit = async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
@@ -1615,7 +1615,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <!-- Create Evaluator Modal -->
-{% if user.role == 'event_manager' or user.role == 'super_admin' %}
+{% if user.role == 'event_manager' or user.role == 'chief_coordinator' %}
 <div id="createEvaluatorModal" class="em-modal">
   <div class="em-modal-box">
     <h3>Add Evaluator</h3>

@@ -10,8 +10,8 @@
         <!-- ── HEADER ─────────────────────────────────────────────── -->
         <header class="reveal active" style="margin-bottom: 3rem;">
             <div class="section-tag">Administrator Portal</div>
-            <h1 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -0.02em;">
-                Super Admin <span class="gradient-text">Command Center</span>
+            <h1 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -0.02em; color: #fff;">
+                Chief Coordinator <span class="gradient-text" style="background: linear-gradient(135deg, var(--primary), #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Command Center</span>
             </h1>
             <p style="color: var(--text-muted); font-size: 1.1rem; max-width: 600px;">
                 Manage global institutional settings, club governance, and system-wide financial monitoring.
@@ -64,7 +64,7 @@
         <section class="reveal" style="margin-bottom: 4rem;">
             <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; gap: 1.5rem;">
                 <div>
-                    <h2 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 0.5rem;">Institutional <span class="gradient-text">Clubs</span></h2>
+                    <h2 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 0.5rem; color: #fff;">Institutional <span class="gradient-text" style="background: linear-gradient(135deg, var(--primary), #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Clubs</span></h2>
                     <p style="color: var(--text-muted); font-size: 0.95rem;">Configure club permissions, features, and administrative access.</p>
                 </div>
                 <button class="btn btn-primary" onclick="toggleModal('clubModal', true)">
@@ -93,7 +93,7 @@
                     </div>
 
                     <div style="padding: 1.5rem 1rem 1rem;">
-                        <h3 style="font-size: 0.95rem; font-weight: 800; margin-bottom: 0.15rem; color: var(--navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.name }}</h3>
+                        <h3 style="font-size: 0.95rem; font-weight: 800; margin-bottom: 0.15rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.name }}</h3>
                         <p style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             <i class="fas fa-shield-alt"></i> {{ c.admin_roll }}
                         </p>
@@ -156,8 +156,8 @@
                             <input type="password" id="g_smtp_pass" placeholder="•••• •••• •••• ••••" style="width: 100%;">
                         </div>
                         <div class="form-group">
-                            <label>Super Admin Notification Email</label>
-                            <input type="email" id="g_super_admin_email" placeholder="admin@college.edu" style="width: 100%;">
+                            <label>Chief Coordinator Notification Email</label>
+                            <input type="email" id="g_chief_coordinator_email" placeholder="admin@college.edu" style="width: 100%;">
                         </div>
                     </div>
 
@@ -502,7 +502,7 @@
             const d = await r.json();
             if (d.success) {
                 document.getElementById('g_smtp_email').value = d.smtp_email || '';
-                document.getElementById('g_super_admin_email').value = d.super_admin_email || '';
+                document.getElementById('g_chief_coordinator_email').value = d.chief_coordinator_email || '';
                 if (d.has_password) document.getElementById('g_smtp_pass').placeholder = '••••••••••••••• (saved)';
             }
         } catch(e) {}
@@ -512,13 +512,13 @@
     async function saveGlobalSmtp() {
         const email    = document.getElementById('g_smtp_email').value.trim();
         const pass     = document.getElementById('g_smtp_pass').value.trim();
-        const saEmail  = document.getElementById('g_super_admin_email').value.trim();
+        const saEmail  = document.getElementById('g_chief_coordinator_email').value.trim();
         const msgEl    = document.getElementById('g_smtp_msg');
         if (!email) { msgEl.textContent = '⚠️ Email is required.'; msgEl.style.color='#f59e0b'; return; }
 
         // Save super admin email as part of settings
         const payload = { smtp_email: email, smtp_server: 'smtp.gmail.com', smtp_port: 587,
-                          super_admin_email: saEmail };
+                          chief_coordinator_email: saEmail };
         if (pass) payload.smtp_password = pass;
 
         msgEl.textContent = 'Saving…'; msgEl.style.color = 'var(--text-muted)';

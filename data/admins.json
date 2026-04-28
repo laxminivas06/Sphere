@@ -1,9 +1,9 @@
 [
     {
-        "name": "Super Admin",
+        "name": "Chief Coordinator",
         "email": "admin@college.edu",
         "phone": "0000000000",
-        "role": "super_admin",
+        "role": "chief_coordinator",
         "password": "Nivas"
     },
     {
@@ -54,5 +54,33 @@
         "password": "1234",
         "phone": "",
         "role": "club_admin"
+    },
+    {
+        "name": "Dr. Principal",
+        "email": "principal@college.edu",
+        "password": "p123",
+        "role": "principal",
+        "phone": ""
+    },
+    {
+        "name": "Secretary",
+        "email": "secretary@college.edu",
+        "password": "s123",
+        "role": "secretary",
+        "phone": ""
+    },
+    {
+        "name": "Admin Officer",
+        "email": "ao@college.edu",
+        "password": "a123",
+        "role": "ao",
+        "phone": ""
+    },
+    {
+        "name": "Finance Manager",
+        "email": "fm@college.edu",
+        "password": "f123",
+        "role": "fm",
+        "phone": ""
     }
 ]

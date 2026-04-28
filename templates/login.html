@@ -97,7 +97,7 @@ document.getElementById('loginForm').onsubmit = async (e) => {
             const role = data.user?.role || '';
             if (role === 'evaluator') {
                 window.location.href = '/em/evaluator/dashboard';
-            } else if (role === 'super_admin' || role === 'event_manager' || role === 'event_admin' || role.endsWith('_admin')) {
+            } else if (role === 'chief_coordinator' || role === 'event_manager' || role === 'event_admin' || role.endsWith('_admin')) {
                 window.location.href = '/admin';
             } else {
                 window.location.href = '/';

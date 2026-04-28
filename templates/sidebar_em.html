@@ -23,7 +23,7 @@
         </a>
     </div>
 
-    {% if user.role in ('event_manager', 'super_admin') %}
+    {% if user.role in ('event_manager', 'chief_coordinator') %}
     <div style="margin-top: 1rem;">
         <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: #6366f1; margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏛️ Admin Only</p>
         <a href="/super/master" class="nav-item">

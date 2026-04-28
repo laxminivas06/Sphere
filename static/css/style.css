@@ -1,12 +1,12 @@
 :root {
-    --primary: #6366f1;
-    --primary-hover: #4f46e5;
-    --bg: #0f172a;
-    --card-bg: rgba(255, 255, 255, 0.03);
+    --primary: #4052d7;
+    --primary-hover: #2d3dba;
+    --bg: #0f1440;
+    --card-bg: #171f5e;
     --glass-border: rgba(255, 255, 255, 0.1);
-    --text-main: #f8fafc;
+    --text-main: #ffffff;
     --text-muted: #94a3b8;
-    --accent: #22d3ee;
+    --accent: #6366f1;
     --danger: #ef4444;
     --success: #10b981;
     --sidebar-width: 280px;
@@ -374,8 +374,8 @@ input:focus {
     text-align: center;
     gap: 1rem;
     padding: 2rem 1.5rem;
-    background: var(--white);
-    border: 1px solid var(--border-light);
+    background: #111827;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 24px;
     cursor: pointer;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -435,7 +435,7 @@ input:focus {
     font-weight: 800;
     font-size: 1.15rem;
     margin-bottom: 0.5rem;
-    color: var(--navy);
+    color: #fff;
 }
 
 .club-list-meta {

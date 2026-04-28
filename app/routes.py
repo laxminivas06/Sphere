@@ -199,7 +199,7 @@ def update_event_details():
     
     # Authorization check
     identifier = user.get('email') or user.get('roll_number')
-    if user.get('role') != 'super_admin' and club.get('admin_roll') != identifier:
+    if user.get('role') != 'chief_coordinator' and club.get('admin_roll') != identifier:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
     # Update fields
@@ -251,7 +251,7 @@ def api_bulk_email():
     
     # Permission check
     identifier = user.get('email') or user.get('roll_number')
-    if user.get('role') != 'super_admin' and club.get('admin_roll') != identifier:
+    if user.get('role') != 'chief_coordinator' and club.get('admin_roll') != identifier:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
         
     events = DB.get_events(club_id)
@@ -296,9 +296,9 @@ def create_event_permission():
     if not club_id: return jsonify({'success': False, 'message': 'Club ID required'}), 400
     
     events = DB.get_events(club_id)
-    # Block event creation if there are any events with an unapproved report
-    unapproved_events = [e for e in events if not e.get('report_approved')]
-    if len(events) > 0 and len(unapproved_events) > 0:
+    # Block event creation if there are any active (non-completed) events
+    active_events = [e for e in events if not e.get('report_approved') and not e.get('deleted') and e.get('event_status') not in ('deleted', 'rejected')]
+    if len(active_events) > 0:
         return jsonify({'success': False, 'message': 'You cannot create a new event until the report for your previous event is verified and approved.'}), 403
     
     # Generate unique ID
@@ -311,6 +311,18 @@ def create_event_permission():
     else:
         year_str = f"{(now.year - 1) % 100}-{now.year % 100}"
         
+    # Get club details for auto-filled signatures
+    club = DB.get_club_by_id(club_id)
+    mentor_name = ""
+    if club and club.get('mentor'):
+        mentor_name = club['mentor'].get('name', '')
+    
+    # Get president from office bearers
+    president_name = ""
+    if club and club.get('office_bearers'):
+        pres = next((ob for ob in club['office_bearers'] if 'president' in ob.get('role', '').lower()), None)
+        if pres: president_name = pres.get('name', '')
+
     new_event = {
         'id': event_id,
         'title': data.get('title', 'Untitled Event'),
@@ -323,10 +335,25 @@ def create_event_permission():
         'fee': data.get('fee', '0'),
         'club_id': club_id,
         'year': year_str,
-        'approved': True,
+        'approved': False,
         'event_finished': False,
         'report_approved': False,
-        'event_status': 'approved',
+        'event_status': 'pending_approval',
+        'approval_status': 'pending_principal',
+        'approval_chain': [
+            {'role': 'principal', 'status': 'pending'},
+            {'role': 'secretary', 'status': 'pending'},
+            {'role': 'ao', 'status': 'pending'},
+            {'role': 'fm', 'status': 'pending'},
+            {'role': 'club_coordinator', 'status': 'pending'}
+        ],
+        'proposer_signatures': {
+            'club_coordinator': user.get('name', ''),
+            'club_members': 'Active Members',
+            'club_mentor': mentor_name,
+            'president': president_name
+        },
+        'approver_signatures': {},
         'timestamp': datetime.datetime.now().isoformat(),
         'collaborating_clubs': request.form.getlist('collaborating_clubs')
     }
@@ -374,6 +401,60 @@ def create_event_permission():
 
     return jsonify({'success': True, 'event_id': event_id})
 
+def _apply_auto_signatures(club, event, user):
+    import datetime
+    now_str = datetime.datetime.now().isoformat()
+    
+    if 'approval_chain' not in event:
+        event['approval_chain'] = []
+    
+    # Reset auto-signatures to avoid duplicates
+    event['approval_chain'] = [sig for sig in event['approval_chain'] if not sig.get('is_auto')]
+    if 'proposer_signatures' not in event:
+        event['proposer_signatures'] = {}
+
+    # 1. Mentor Signature
+    mentor_name = club.get('mentor', {}).get('name') or "Club Mentor"
+    event['approval_chain'].append({
+        'stage': 'club_mentor',
+        'role_label': 'Club Mentor',
+        'approver_name': mentor_name,
+        'approved_at': now_str,
+        'signature': f"Digitally Signed by {mentor_name}",
+        'is_auto': True
+    })
+    event['proposer_signatures']['club_mentor'] = mentor_name
+    
+    # 2. Club President / Secretary
+    bearers = club.get('office_bearers', [])
+    found_bearer = False
+    for b in bearers:
+        pos = b.get('position', '').lower()
+        if pos in ['president', 'secretary']:
+            event['approval_chain'].append({
+                'stage': f"club_{pos}",
+                'role_label': f"Club {b['position']}",
+                'approver_name': b['name'],
+                'approved_at': now_str,
+                'signature': f"Digitally Signed by {b['name']}",
+                'is_auto': True
+            })
+            event['proposer_signatures'][pos] = b['name']
+            found_bearer = True
+    
+    if not found_bearer:
+        name = user.get('name', 'Club Admin')
+        event['approval_chain'].append({
+            'stage': 'club_admin',
+            'role_label': 'Club Coordinator',
+            'approver_name': name,
+            'approved_at': now_str,
+            'signature': f"Digitally Signed by {name}",
+            'is_auto': True
+        })
+        event['proposer_signatures']['president'] = name # Fallback for template
+
+
 @api.route('/events/save_permission', methods=['POST'])
 def save_event_permission():
     user = session.get('user')
@@ -387,18 +468,81 @@ def save_event_permission():
     event = next((e for e in events if e['id'] == event_id), None)
     if not event: return jsonify({'success': False, 'message': 'Event not found'}), 404
     
-    # Save all allowed fields sent from the letter
+    # Update fields
     allowed_fields = ['title', 'date', 'time', 'venue', 'description', 'payment_type', 'event_type', 'fee', 'resource_person', 'collaborating_clubs']
     for key in allowed_fields:
         if key in data:
             event[key] = data[key]
             
-    # Auto-approve the event updates
-    event['event_status'] = 'approved'
-    event['approved'] = True
+    # Apply auto-signatures immediately so they appear in the letter view
+    club = DB.get_club_by_id(club_id)
+    _apply_auto_signatures(club, event, user)
     
     DB.save_event(club_id, event)
     return jsonify({'success': True})
+
+@api.route('/events/approve', methods=['POST'])
+def approve_event():
+    user = session.get('user')
+    if not user: return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    data = request.json
+    club_id = data.get('club_id')
+    event_id = data.get('event_id')
+    action = data.get('action', 'approve') # approve or reject
+    
+    event = DB.get_event_by_id(club_id, event_id)
+    if not event: return jsonify({'success': False, 'message': 'Event not found'}), 404
+    
+    role = user.get('role')
+    status = event.get('approval_status')
+    
+    approval_order = ['principal', 'secretary', 'ao', 'fm', 'event_manager']
+    # Mapping user role 'event_manager' or 'chief_coordinator' to 'club_coordinator' step if needed
+    current_role_step = role
+    if role in ('event_manager', 'chief_coordinator'):
+        current_role_step = 'event_manager' # The final step
+
+    if status != f"pending_{current_role_step}" and not (role == 'chief_coordinator'):
+        # Special case: Chief coordinator can approve anything
+        if role != 'chief_coordinator':
+            return jsonify({'success': False, 'message': f'You are not the current approver. Current status: {status}'}), 403
+
+    if action == 'reject':
+        event['approval_status'] = 'rejected'
+        event['event_status'] = 'rejected'
+        DB.save_event(club_id, event)
+        return jsonify({'success': True, 'message': 'Event rejected'})
+
+    # Handle Approval
+    if 'approver_signatures' not in event: event['approver_signatures'] = {}
+    event['approver_signatures'][current_role_step] = {
+        'name': user.get('name'),
+        'timestamp': datetime.datetime.now().isoformat()
+    }
+
+    # Determine next step
+    try:
+        current_idx = approval_order.index(current_role_step)
+        if current_idx < len(approval_order) - 1:
+            next_role = approval_order[current_idx + 1]
+            event['approval_status'] = f"pending_{next_role}"
+        else:
+            # Final approval reached
+            event['approval_status'] = 'approved'
+            event['approved'] = True
+            event['event_status'] = 'active'
+    except ValueError:
+        # If role not in order, chief coordinator might be forcing approval
+        if role == 'chief_coordinator':
+            event['approval_status'] = 'approved'
+            event['approved'] = True
+            event['event_status'] = 'active'
+        else:
+            return jsonify({'success': False, 'message': 'Invalid approval role'}), 400
+
+    DB.save_event(club_id, event)
+    return jsonify({'success': True, 'next_status': event['approval_status']})
 
 @api.route('/events/finish', methods=['POST'])
 def finish_event():
@@ -414,8 +558,9 @@ def finish_event():
     if not event: return jsonify({'success': False, 'message': 'Event not found'}), 404
         
     event['event_finished'] = True
+    event['event_status'] = 'pending_report'
     DB.save_event(club_id, event)
-    return jsonify({'success': True})
+    return jsonify({'success': True, 'redirect': f'/admin/generate-report/{club_id}/{event_id}'})
 
 @api.route('/events/upload_report', methods=['POST'])
 def upload_report():
@@ -435,7 +580,7 @@ def upload_report():
     # Authorization check
     club = DB.get_club_by_id(club_id)
     identifier = user.get('email') or user.get('roll_number')
-    if user.get('role') != 'super_admin' and club.get('admin_roll') != identifier:
+    if user.get('role') != 'chief_coordinator' and club.get('admin_roll') != identifier:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
 
     if not allowed_file(report_file.filename) and not report_file.filename.endswith('.pdf'):
@@ -451,24 +596,25 @@ def upload_report():
     report_file.save(os.path.join(upload_dir, filename))
     
     event['report'] = filename
-    event['report_approved'] = False # Needs super_admin approval
+    event['report_url'] = f"/static/uploads/clubs/{club_id}/events/{event_slug}/reports/{filename}"
+    event['report_approved'] = False # Needs chief_coordinator approval
+    event['event_status'] = 'pending_report_approval'
     DB.save_event(club_id, event)
-
-    # ── Notify super admin via email ─────────────────────────────────────────
+    # ── Notify chief coordinator via email ─────────────────────────────────────────
     try:
         club_obj = DB.get_club_by_id(club_id)
-        # Find super_admin email from admins.json
+        # Find chief_coordinator email from admins.json
         admins = DB.get_admins()
-        super_admin = next((a for a in admins if a.get('role') == 'super_admin'), None)
-        sa_email = super_admin.get('email') if super_admin else None
+        chief_coordinator = next((a for a in admins if a.get('role') == 'chief_coordinator'), None)
+        sa_email = chief_coordinator.get('email') if chief_coordinator else None
         if not sa_email:
-            # Fallback: check settings.json for a configured super admin email
+            # Fallback: check settings.json for a configured chief coordinator email
             settings_path = os.path.join(DATA_DIR, 'em', 'settings.json')
             if os.path.exists(settings_path):
                 with open(settings_path) as _sf:
                     try:
                         _s = json.load(_sf)
-                        sa_email = _s.get('super_admin_email')
+                        sa_email = _s.get('chief_coordinator_email')
                     except Exception:
                         pass
         if sa_email:
@@ -480,14 +626,14 @@ def upload_report():
                 review_url=review_url,
             )
     except Exception as _re:
-        print(f"[Report email] Error notifying super admin: {_re}")
+        print(f"[Report email] Error notifying chief coordinator: {_re}")
 
     return jsonify({'success': True})
 
 @api.route('/students/list', methods=['GET'])
 def list_students():
     user = session.get('user')
-    if not user or user.get('role') != 'super_admin':
+    if not user or user.get('role') != 'chief_coordinator':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
         
     page = int(request.args.get('page', 1))
@@ -522,7 +668,7 @@ def list_students():
 @api.route('/students/export', methods=['GET'])
 def export_students():
     user = session.get('user')
-    if not user or user.get('role') != 'super_admin':
+    if not user or user.get('role') != 'chief_coordinator':
         return "Unauthorized", 403
         
     year_filter = request.args.get('year', '').lower()
@@ -558,7 +704,7 @@ def export_students():
 @api.route('/students/leaderboard_api', methods=['GET'])
 def get_students_leaderboard_api():
     user = session.get('user')
-    if not user or user.get('role') != 'super_admin':
+    if not user or user.get('role') != 'chief_coordinator':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
         
     year_filter = request.args.get('year', '').lower()
@@ -602,7 +748,7 @@ def get_students_leaderboard_api():
 @api.route('/students/upload', methods=['POST'])
 def upload_students_csv():
     user = session.get('user')
-    if not user or user.get('role') != 'super_admin':
+    if not user or user.get('role') != 'chief_coordinator':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
         
     if 'file' not in request.files:
@@ -676,7 +822,7 @@ def upload_students_csv():
 @api.route('/students/promote', methods=['POST'])
 def promote_students():
     user = session.get('user')
-    if not user or user.get('role') != 'super_admin':
+    if not user or user.get('role') != 'chief_coordinator':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
     data = request.json or {}
@@ -717,7 +863,7 @@ def promote_students():
 @api.route('/contacts/update', methods=['POST'])
 def update_contacts():
     user = session.get('user')
-    if not user or user.get('role') != 'super_admin':
+    if not user or user.get('role') != 'chief_coordinator':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     data = request.json
     contacts = data.get('contacts', {})
@@ -736,7 +882,7 @@ def update_club():
     
     # Authorization check
     identifier = user.get('email') or user.get('roll_number')
-    if user.get('role') != 'super_admin' and club.get('admin_roll') != identifier:
+    if user.get('role') != 'chief_coordinator' and club.get('admin_roll') != identifier:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
     # Update fields
@@ -850,7 +996,7 @@ def update_club():
 @api.route('/clubs/create', methods=['POST'])
 def create_club():
     user = session.get('user')
-    if not user or user.get('role') != 'super_admin':
+    if not user or user.get('role') != 'chief_coordinator':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
     data = request.json
@@ -898,7 +1044,7 @@ def create_club():
 @api.route('/clubs/update_config', methods=['POST'])
 def update_club_config():
     user = session.get('user')
-    if not user or user.get('role') != 'super_admin':
+    if not user or user.get('role') != 'chief_coordinator':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
         
     data = request.json
@@ -967,7 +1113,7 @@ def request_office_bearer():
 @api.route('/events/approve_report/<club_id>/<event_id>', methods=['POST'])
 def approve_report(club_id, event_id):
     user = session.get('user')
-    if not user or user.get('role') != 'super_admin':
+    if not user or user.get('role') != 'chief_coordinator':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
     events = DB.get_events(club_id)
@@ -976,6 +1122,8 @@ def approve_report(club_id, event_id):
     
     event['report_approved'] = True
     event['event_finished'] = True
+    event['event_status'] = 'approved'
+    event['approval_status'] = 'approved'
     DB.save_event(club_id, event)
 
     # ── Notify club admin via email ──────────────────────────────────────────
@@ -996,7 +1144,7 @@ def approve_report(club_id, event_id):
 @api.route('/admin/approve_finance_unlock', methods=['POST'])
 def approve_finance_unlock():
     user = session.get('user')
-    if not user or user.get('role') != 'super_admin':
+    if not user or user.get('role') != 'chief_coordinator':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
     data = request.json
@@ -1090,7 +1238,7 @@ def request_finance_unlock():
 @api.route('/events/approve/<club_id>/<event_id>', methods=['POST'])
 def approve_event_structure(club_id, event_id):
     user = session.get('user')
-    if not user or user.get('role') != 'super_admin':
+    if not user or user.get('role') != 'chief_coordinator':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
     events = DB.get_events(club_id)
@@ -1105,7 +1253,7 @@ def approve_event_structure(club_id, event_id):
 @api.route('/events/reject/<club_id>/<event_id>', methods=['POST'])
 def reject_event_structure(club_id, event_id):
     user = session.get('user')
-    if not user or user.get('role') != 'super_admin':
+    if not user or user.get('role') != 'chief_coordinator':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
     events = DB.get_events(club_id)
@@ -1120,7 +1268,7 @@ def reject_event_structure(club_id, event_id):
 @api.route('/events/approve_deletion/<club_id>/<event_id>', methods=['POST'])
 def approve_event_deletion(club_id, event_id):
     user = session.get('user')
-    if not user or user.get('role') != 'super_admin':
+    if not user or user.get('role') != 'chief_coordinator':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
     events = DB.get_events(club_id)
@@ -1136,7 +1284,7 @@ def approve_event_deletion(club_id, event_id):
 @api.route('/events/reject_deletion/<club_id>/<event_id>', methods=['POST'])
 def reject_event_deletion(club_id, event_id):
     user = session.get('user')
-    if not user or user.get('role') != 'super_admin':
+    if not user or user.get('role') != 'chief_coordinator':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
     events = DB.get_events(club_id)
@@ -1150,7 +1298,7 @@ def reject_event_deletion(club_id, event_id):
 @api.route('/office_bearers/action', methods=['POST'])
 def action_bearer_request():
     user = session.get('user')
-    if not user or user.get('role') != 'super_admin':
+    if not user or user.get('role') != 'chief_coordinator':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
     data = request.json
@@ -1183,7 +1331,7 @@ def action_bearer_request():
 @api.route('/clubs/<club_id>/download_annual_zip/<year>', methods=['GET'])
 def download_annual_zip(club_id, year):
     user = session.get('user')
-    if not user or user.get('role') != 'super_admin':
+    if not user or user.get('role') != 'chief_coordinator':
         return "Unauthorized", 403
     
     events = DB.get_events(club_id)
@@ -1237,7 +1385,7 @@ def get_global_settings():
 @api.route('/settings/update', methods=['POST'])
 def update_global_settings():
     user = session.get('user')
-    if not user or user.get('role') != 'super_admin':
+    if not user or user.get('role') != 'chief_coordinator':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
     data = request.json or {}
@@ -1262,7 +1410,7 @@ def update_global_settings():
 
 @api.route('/smtp/update', methods=['POST'])
 def update_smtp_settings():
-    """Update global SMTP settings (super admin) or per-club SMTP (club admin)."""
+    """Update global SMTP settings (chief coordinator) or per-club SMTP (club admin)."""
     user = session.get('user')
     if not user:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
@@ -1284,7 +1432,7 @@ def update_smtp_settings():
         if not club:
             return jsonify({'success': False, 'message': 'Club not found'}), 404
         identifier = user.get('email') or user.get('roll_number')
-        if user.get('role') != 'super_admin' and club.get('admin_roll') != identifier:
+        if user.get('role') != 'chief_coordinator' and club.get('admin_roll') != identifier:
             return jsonify({'success': False, 'message': 'Unauthorized'}), 403
         club['smtp_config'] = {
             'server': smtp_server, 'port': smtp_port,
@@ -1292,8 +1440,8 @@ def update_smtp_settings():
         }
         DB.save_club(club)
     else:
-        # Super admin updating global SMTP
-        if user.get('role') != 'super_admin':
+        # Chief coordinator updating global SMTP
+        if user.get('role') != 'chief_coordinator':
             return jsonify({'success': False, 'message': 'Unauthorized'}), 403
         settings_path = os.path.join(DATA_DIR, 'em', 'settings.json')
         os.makedirs(os.path.dirname(settings_path), exist_ok=True)
@@ -1359,15 +1507,15 @@ def get_smtp_settings_api():
             'smtp_port':    settings.get('smtp_port', 587),
             'smtp_email':   settings.get('smtp_email', settings.get('smtp_user', '')),
             'has_password': bool(settings.get('smtp_password')),
-            'super_admin_email': settings.get('super_admin_email', ''),
+            'chief_coordinator_email': settings.get('chief_coordinator_email', ''),
         })
 
 
 @api.route('/smtp/bulk-update-clubs', methods=['POST'])
 def bulk_update_clubs_smtp():
-    """Super admin pushes one SMTP config to ALL clubs."""
+    """Chief coordinator pushes one SMTP config to ALL clubs."""
     user = session.get('user')
-    if not user or user.get('role') != 'super_admin':
+    if not user or user.get('role') != 'chief_coordinator':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     data = request.json or {}
     smtp_email    = data.get('smtp_email', '').strip()
@@ -1684,4 +1832,348 @@ def update_student_profile():
     return jsonify({'success': True})
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# EVENT LIFECYCLE — Approval Workflow & Document Management
+# ─────────────────────────────────────────────────────────────────────────────
+
+APPROVAL_STAGES = [
+    {'key': 'pending_principal',         'label': 'Principal',               'next': 'pending_chief_coordinator'},
+    {'key': 'pending_chief_coordinator', 'label': 'Chief Coordinator',       'next': 'pending_ao_fm'},
+    {'key': 'pending_ao_fm',             'label': 'AO / FM',                 'next': 'pending_secretary'},
+    {'key': 'pending_secretary',         'label': 'Secretary',               'next': 'approved'},
+]
+
+
+def _get_stage_info(status_key):
+    return next((s for s in APPROVAL_STAGES if s['key'] == status_key), None)
+
+
+@api.route('/events/delete/<club_id>/<event_id>', methods=['POST'])
+def api_delete_event(club_id, event_id):
+    """Soft-delete: marks event as deletion_requested for super-admin approval."""
+    user = session.get('user')
+    if not user:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    events = DB.get_events(club_id)
+    event = next((e for e in events if e['id'] == event_id), None)
+    if not event:
+        return jsonify({'success': False, 'message': 'Event not found'}), 404
+
+    identifier = user.get('email') or user.get('roll_number')
+    club = DB.get_club_by_id(club_id)
+    if user.get('role') != 'chief_coordinator' and club.get('admin_roll') != identifier:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    if user.get('role') == 'chief_coordinator':
+        event['deleted'] = True
+        event['event_status'] = 'deleted'
+    else:
+        event['deletion_requested'] = True
+
+    DB.save_event(club_id, event)
+    return jsonify({'success': True})
+
+
+@api.route('/events/submit_for_approval', methods=['POST'])
+def submit_event_for_approval():
+    """Club Admin submits event into the approval pipeline."""
+    user = session.get('user')
+    if not user:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    data = request.json or {}
+    club_id = data.get('club_id')
+    event_id = data.get('event_id')
+
+    club = DB.get_club_by_id(club_id)
+    identifier = user.get('email') or user.get('roll_number')
+    if user.get('role') != 'chief_coordinator' and club.get('admin_roll') != identifier:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    events = DB.get_events(club_id)
+    event = next((e for e in events if e['id'] == event_id), None)
+    if not event:
+        return jsonify({'success': False, 'message': 'Event not found'}), 404
+
+    event['approval_status'] = 'pending_principal'
+    event['event_status'] = 'pending_principal'
+    event['approved'] = False
+    
+    # Final check on auto-signatures during submission
+    _apply_auto_signatures(club, event, user)
+
+    DB.save_event(club_id, event)
+    return jsonify({'success': True, 'message': 'Event submitted for Principal approval.'})
+
+
+@api.route('/events/approve_stage/<club_id>/<event_id>', methods=['POST'])
+def approve_event_stage(club_id, event_id):
+    """Advance the event through one approval stage; called by each approver."""
+    user = session.get('user')
+    if not user:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    # Only authorized roles may call this
+    APPROVAL_ROLES = ('principal', 'secretary', 'ao', 'fm', 'chief_coordinator')
+    role = user.get('role')
+    if role not in APPROVAL_ROLES and not role.endswith('_admin'):
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    data = request.json or {}
+    approver_name = data.get('approver_name', user.get('name', 'Unknown'))
+    remarks = data.get('remarks', '')
+
+    events = DB.get_events(club_id)
+    event = next((e for e in events if e['id'] == event_id), None)
+    if not event:
+        return jsonify({'success': False, 'message': 'Event not found'}), 404
+
+    current_status = event.get('approval_status', event.get('event_status', ''))
+    
+    # Custom check for the parallel AO/FM stage
+    if current_status == 'pending_ao_fm':
+        if role not in ('ao', 'fm', 'chief_coordinator'):
+            return jsonify({'success': False, 'message': 'This stage requires AO or FM approval.'}), 403
+    elif current_status != 'approved' and not current_status.endswith(role) and role != 'chief_coordinator':
+        # Generic role check (e.g. pending_principal requires role principal)
+        pass # The _get_stage_info will handle valid stages
+
+    stage = _get_stage_info(current_status)
+    if not stage:
+        return jsonify({'success': False, 'message': f'Event is not in a pending stage (current: {current_status})'}), 400
+
+    # Record digital signature for this stage
+    sig_entry = {
+        'stage':          current_status,
+        'role_label':     stage['label'],
+        'approver_name':  approver_name,
+        'approved_at':    datetime.datetime.now().isoformat(),
+        'signature':      f"Digitally Signed by {approver_name} ({stage['label']})",
+        'remarks':        remarks,
+    }
+    if 'approval_chain' not in event:
+        event['approval_chain'] = []
+    event['approval_chain'].append(sig_entry)
+
+    # Also update the flatter approver_signatures for legacy template support
+    if 'approver_signatures' not in event:
+        event['approver_signatures'] = {}
+    
+    # Extract the role key (e.g., 'principal' from 'pending_principal')
+    role_key = current_status.replace('pending_', '')
+    event['approver_signatures'][role_key] = {
+        'name': approver_name,
+        'timestamp': sig_entry['approved_at'],
+        'remarks': remarks
+    }
+
+    next_status = stage['next']
+    event['approval_status'] = next_status
+    event['event_status'] = next_status
+
+    if next_status == 'approved':
+        event['approved'] = True
+        event['event_status'] = 'approved'
+        event['approval_status'] = 'approved'
+        event['fully_approved_at'] = datetime.datetime.now().isoformat()
+
+    DB.save_event(club_id, event)
+
+    return jsonify({
+        'success': True,
+        'next_status': next_status,
+        'message': f'Approved by {stage["label"]}. ' + (
+            'Event is now LIVE!' if next_status == 'approved'
+            else f'Awaiting {_get_stage_info(next_status)["label"] if _get_stage_info(next_status) else "next approver"}.'
+        )
+    })
+
+
+@api.route('/events/reject_stage/<club_id>/<event_id>', methods=['POST'])
+def reject_event_stage(club_id, event_id):
+    """Reject at any approval stage — sends event back to draft."""
+    user = session.get('user')
+    if not user:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    data = request.json or {}
+    reason = data.get('reason', 'No reason provided')
+    approver_name = data.get('approver_name', user.get('name', 'Unknown'))
+
+    events = DB.get_events(club_id)
+    event = next((e for e in events if e['id'] == event_id), None)
+    if not event:
+        return jsonify({'success': False, 'message': 'Event not found'}), 404
+
+    current_status = event.get('approval_status', '')
+    stage = _get_stage_info(current_status)
+
+    reject_entry = {
+        'stage':         current_status,
+        'role_label':    stage['label'] if stage else current_status,
+        'approver_name': approver_name,
+        'rejected_at':   datetime.datetime.now().isoformat(),
+        'reason':        reason,
+        'action':        'rejected',
+    }
+    if 'approval_chain' not in event:
+        event['approval_chain'] = []
+    event['approval_chain'].append(reject_entry)
+
+    event['approval_status'] = 'rejected'
+    event['event_status'] = 'rejected'
+    event['approved'] = False
+    event['rejection_reason'] = reason
+
+    DB.save_event(club_id, event)
+    return jsonify({'success': True, 'message': f'Event rejected by {stage["label"] if stage else "approver"}.'})
+
+
+@api.route('/events/resubmit', methods=['POST'])
+def resubmit_event():
+    """Club Admin resubmits a rejected event back to Principal."""
+    user = session.get('user')
+    if not user:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    data = request.json or {}
+    club_id = data.get('club_id')
+    event_id = data.get('event_id')
+
+    club = DB.get_club_by_id(club_id)
+    identifier = user.get('email') or user.get('roll_number')
+    if user.get('role') != 'chief_coordinator' and club.get('admin_roll') != identifier:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    events = DB.get_events(club_id)
+    event = next((e for e in events if e['id'] == event_id), None)
+    if not event:
+        return jsonify({'success': False, 'message': 'Event not found'}), 404
+
+    event['approval_status'] = 'pending_principal'
+    event['event_status'] = 'pending_principal'
+    event['approved'] = False
+    event['rejection_reason'] = ''
+    # Keep approval_chain history intact — append resubmission marker
+    event.setdefault('approval_chain', []).append({
+        'stage': 'resubmitted',
+        'role_label': 'Club Admin',
+        'approver_name': user.get('name', 'Club Admin'),
+        'approved_at': datetime.datetime.now().isoformat(),
+        'action': 'resubmitted',
+    })
+
+    DB.save_event(club_id, event)
+    return jsonify({'success': True, 'message': 'Event resubmitted for approval.'})
+
+
+@api.route('/events/approval_status/<club_id>/<event_id>', methods=['GET'])
+def get_approval_status(club_id, event_id):
+    """Return current approval chain and status for the event."""
+    user = session.get('user')
+    if not user:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    events = DB.get_events(club_id)
+    event = next((e for e in events if e['id'] == event_id), None)
+    if not event:
+        return jsonify({'success': False, 'message': 'Event not found'}), 404
+
+    return jsonify({
+        'success': True,
+        'approval_status': event.get('approval_status', event.get('event_status', 'draft')),
+        'approval_chain': event.get('approval_chain', []),
+        'approved': event.get('approved', False),
+        'rejection_reason': event.get('rejection_reason', ''),
+    })
+
+
+@api.route('/events/pending_approvals', methods=['GET'])
+def get_pending_approvals():
+    """Return all events pending approval — filtered by stage if query param given."""
+    user = session.get('user')
+    if not user:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    stage_filter = request.args.get('stage')  # e.g. 'pending_principal'
+    all_events = DB.get_events()
+    pending = []
+    for e in all_events:
+        status = e.get('approval_status', e.get('event_status', ''))
+        if stage_filter:
+            if status == stage_filter:
+                pending.append(e)
+        else:
+            if status.startswith('pending_') and not e.get('deleted'):
+                pending.append(e)
+
+    return jsonify({'success': True, 'events': pending, 'count': len(pending)})
+
+
+@api.route('/events/documents/<club_id>/<event_id>', methods=['GET'])
+def list_event_documents(club_id, event_id):
+    """List all documents in an event's document folder."""
+    user = session.get('user')
+    if not user:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    from app.models import slugify
+    from flask import current_app
+    events = DB.get_events(club_id)
+    event = next((e for e in events if e['id'] == event_id), None)
+    if not event:
+        return jsonify({'success': False, 'message': 'Event not found'}), 404
+
+    event_slug = slugify(event['title'])
+    base = os.path.join(current_app.static_folder, 'uploads', 'clubs', club_id, 'events', event_slug)
+    docs = {'permission_letter': [], 'reports': [], 'posters': [], 'files': []}
+
+    for folder in docs:
+        folder_path = os.path.join(base, folder)
+        if os.path.exists(folder_path):
+            docs[folder] = sorted(os.listdir(folder_path))
+
+    return jsonify({'success': True, 'documents': docs, 'event_slug': event_slug})
+
+
+@api.route('/events/upload_document', methods=['POST'])
+def upload_event_document():
+    """Upload any document (poster, report, file) into the event's document folder."""
+    user = session.get('user')
+    if not user:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    club_id = request.form.get('club_id')
+    event_id = request.form.get('event_id')
+    doc_type = request.form.get('doc_type', 'files')  # permission_letter | reports | posters | files
+    doc_file = request.files.get('file')
+
+    if not doc_file or not doc_file.filename:
+        return jsonify({'success': False, 'message': 'No file provided'}), 400
+
+    events = DB.get_events(club_id)
+    event = next((e for e in events if e['id'] == event_id), None)
+    if not event:
+        return jsonify({'success': False, 'message': 'Event not found'}), 404
+
+    from app.models import slugify
+    from flask import current_app
+    event_slug = slugify(event['title'])
+    upload_dir = os.path.join(current_app.static_folder, 'uploads', 'clubs', club_id, 'events', event_slug, doc_type)
+    os.makedirs(upload_dir, exist_ok=True)
+
+    filename = f"{doc_type}_{uuid.uuid4().hex[:8]}_{secure_filename(doc_file.filename)}"
+    doc_file.save(os.path.join(upload_dir, filename))
+
+    # Track in event data
+    if doc_type == 'reports':
+        event['report'] = filename
+        event['report_approved'] = False
+    elif doc_type == 'posters':
+        event['poster'] = filename
+
+    DB.save_event(club_id, event)
+    url = f"/static/uploads/clubs/{club_id}/events/{event_slug}/{doc_type}/{filename}"
+    return jsonify({'success': True, 'filename': filename, 'url': url})
 

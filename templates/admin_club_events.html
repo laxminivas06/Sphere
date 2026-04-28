@@ -5,8 +5,8 @@
 
 <div class="dashboard-layout">
     <!-- Sidebar Navigation -->
-    <aside class="sidebar">
-                <div style="margin-bottom: 2rem;">
+    <aside class="sidebar" style="background: #0a0a0f !important; border-right: 1px solid rgba(255,255,255,0.05) !important;">
+        <div style="margin-bottom: 2rem;">
             <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏠 Main Menu ⏺️</p>
         </div>
 
@@ -43,7 +43,7 @@
     <main class="main-content">
         <header style="margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: center;">
             <div>
-                <h2 style="font-size: 2rem;">Event <span style="color: var(--primary)">Registry</span></h2>
+                <h2 style="font-size: 2rem; color: #fff;">Event <span style="color: var(--primary)">Registry</span></h2>
                 <p style="color: var(--text-muted)">Manage your event lifecycle from proposal to reporting.</p>
             </div>
             <div style="display: flex; gap: 1rem;">
@@ -62,7 +62,7 @@
             {% if not e.deleted %}
             {% set event_slug = e.title | slugify %}
             <div class="event-grid-card"
-                style="padding: 1.75rem; display: flex; flex-direction: column; gap: 1.5rem; position: relative;">
+                style="padding: 1.75rem; display: flex; flex-direction: column; gap: 1.5rem; position: relative; background: var(--surface-2); border: 1px solid var(--border-light); border-radius: 24px;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                     <div style="display:flex; gap:1.25rem; align-items:center;">
                         {% if e.poster %}
@@ -93,8 +93,8 @@
                             {% if c.id == e.club_id %}{% set org_club.name = c.name %}{% endif %}
                             {% endfor %}
                             {% if org_club.name %}
-                            <p style="margin:0.25rem 0 0 0; font-size:0.75rem; color:var(--text-muted);">Organized
-                                by: <b style="color:#e2e8f0;">{{ org_club.name }}</b></p>
+                                <p style="margin:0.25rem 0 0 0; font-size:0.75rem; color:var(--text-muted);">Organized
+                                by: <b style="color:var(--primary);">{{ org_club.name }}</b></p>
                             {% endif %}
                             {% endif %}
 
@@ -116,10 +116,11 @@
                     <span class="badge"
                         style="background: rgba(139, 92, 246, 0.1); color: var(--primary); font-size: 0.65rem; padding: 0.4rem 0.8rem; border-radius: 8px;">
                         {% if e.report_approved %}Completed
-                        {% elif e.report %}Report Sent
-                        {% elif e.event_finished %}Finished
-                        {% elif e.approved %}Live
-                        {% elif e.event_status == 'pending' %}Under Review
+                        {% elif e.event_status == 'pending_report_approval' %}Report Under Review
+                        {% elif e.event_status == 'pending_report' %}Pending Report
+                        {% elif e.event_status == 'active' or e.approved %}Live
+                        {% elif 'pending' in e.approval_status %}Review: {{ e.approval_status | replace('pending_', '') | upper }}
+                        {% elif e.event_status == 'rejected' %}Rejected
                         {% else %}Draft{% endif %}
                     </span>
                 </div>
@@ -199,7 +200,7 @@
         <i class="fas fa-file-pdf" style="font-size: 3rem; color: #f59e0b; margin-bottom: 1.5rem;"></i>
         <h3>Submit Event Report</h3>
         <p style="color: var(--text-muted); margin-bottom: 2.5rem; font-size:0.9rem;">Upload the finalized PDF report
-            for Super Admin verification.</p>
+            for Chief Coordinator verification.</p>
 
         <form id="reportUploadForm">
             <input type="hidden" id="reportEventId">
@@ -235,14 +236,14 @@
                 style="color: #fff; border-color: rgba(255,255,255,0.3); border-radius: 8px;">✕</button>
         </div>
     </div>
-    <div id="reportPreviewContent" style="flex: 1; background: #fff; border-radius: 16px; overflow: hidden;">
+    <div id="reportPreviewContent" style="flex: 1; background: #1e293b; border-radius: 16px; overflow: hidden;">
     </div>
 </div>
 
 <!-- Create Event Modal -->
 <div id="createEventModal"
     style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; padding:2rem; overflow-y: auto;">
-    <div class="card glass" style="width: 100%; max-width: 700px; padding: 2.5rem; border-radius: 32px; margin: auto;">
+    <div class="card glass" style="width: 100%; max-width: 700px; padding: 2.5rem; border-radius: 32px; margin: auto; background: var(--navy-dark); border: 1px solid var(--navy-border);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
             <h2>Register <span style="color: var(--primary)">New Event</span></h2>
             <button onclick="toggleModal('createEventModal', false)"
@@ -317,7 +318,7 @@
 
             <!-- Paid Fields -->
             <div id="formPaymentFields"
-                style="display: none; background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 15px; margin-bottom: 1.5rem;">
+                style="display: none; background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 15px; margin-bottom: 1.5rem; border: 1px solid rgba(255,255,255,0.05);">
                 <div class="form-group">
                     <label
                         style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--info);">Registration
@@ -441,7 +442,7 @@
 
             <!-- Paid Fields (Edit Modal) -->
             <div id="editPaymentFields"
-                style="display: none; background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 15px; margin-bottom: 1.5rem;">
+                style="display: none; background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 15px; margin-bottom: 1.5rem; border: 1px solid rgba(255,255,255,0.05);">
                 <div class="form-group">
                     <label
                         style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--info);">Registration

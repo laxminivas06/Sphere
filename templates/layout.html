@@ -20,35 +20,34 @@
             --navy-deeper: #0f1440;
             --navy-mid: #2d3aa8;
             --navy-light: #4052d7;
-            --navy-glass: rgba(32, 43, 129, 0.18);
-            --navy-border: rgba(32, 43, 129, 0.35);
+            --navy-glass: rgba(15, 20, 64, 0.25);
+            --navy-border: rgba(255, 255, 255, 0.1);
 
             --white: #ffffff;
-            --surface: #f5f7ff;
-            --surface-2: #eef0fb;
-            --card-bg: #ffffff;
+            --surface: #0f1440; /* Deep Navy Surface */
+            --surface-2: #171f5e;
+            --card-bg: rgba(255, 255, 255, 0.04);
 
-            --text-primary: #0f1440;
-            --text-secondary: #3d4a7a;
-            --text-muted: #7a85b0;
+            --text-primary: #ffffff;
+            --text-secondary: #e2e8f0;
+            --text-muted: #94a3b8;
             --text-on-navy: #ffffff;
-            --text-on-navy-muted: rgba(255, 255, 255, 0.65);
+            --text-on-navy-muted: rgba(255, 255, 255, 0.7);
 
-            --border-light: rgba(32, 43, 129, 0.12);
-            --border-mid: rgba(32, 43, 129, 0.22);
+            --border-light: rgba(255, 255, 255, 0.1);
+            --border-mid: rgba(255, 255, 255, 0.18);
 
-            --shadow-sm: 0 1px 4px rgba(32, 43, 129, 0.08);
-            --shadow-md: 0 4px 16px rgba(32, 43, 129, 0.12);
-            --shadow-lg: 0 12px 40px rgba(32, 43, 129, 0.16);
+            --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 10px 15px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 20px 25px rgba(0, 0, 0, 0.5);
 
-            --radius-sm: 6px;
-            --radius-md: 10px;
-            --radius-lg: 16px;
-            --radius-xl: 24px;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 20px;
+            --radius-xl: 32px;
 
             --font: 'Inter', system-ui, -apple-system, sans-serif;
 
-            /* Legacy compatibility aliases */
             --primary: var(--navy-light);
             --glass-border: var(--border-light);
         }
@@ -82,14 +81,14 @@
             right: 0;
             z-index: 1000;
             height: 68px;
-            background: var(--navy);
+            background: var(--navy-deeper);
             border-bottom: 1px solid var(--navy-border);
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 2.5rem;
             gap: 1.5rem;
-            box-shadow: 0 2px 20px rgba(15, 20, 64, 0.25);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         }
 
         /* Branding */
@@ -213,8 +212,8 @@
         }
 
         .nav-links a.active {
-            background: var(--surface-2);
-            color: var(--navy);
+            background: var(--primary);
+            color: var(--white);
         }
 
         /* Nav avatar pill */
@@ -222,7 +221,7 @@
             display: flex;
             align-items: center;
             gap: 0.625rem;
-            background: var(--surface);
+            background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--border-light);
             padding: 0.3rem 0.875rem 0.3rem 0.3rem;
             border-radius: 30px;
@@ -307,16 +306,16 @@
         .category-badge {
             display: inline-flex;
             align-items: center;
-            background: linear-gradient(135deg, #ffffff, #f1f5f9);
-            color: var(--navy);
+            background: linear-gradient(135deg, var(--surface-2), var(--navy-dark));
+            color: var(--primary);
             padding: 0.45rem 1rem;
             border-radius: 12px;
             font-size: 0.75rem;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-            border: 1px solid rgba(255,255,255,0.8);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
             pointer-events: none;
             z-index: 2;
         }
@@ -508,9 +507,9 @@
             font-weight: 700;
             letter-spacing: 0.15em;
             text-transform: uppercase;
-            color: var(--navy);
-            background: var(--surface-2);
-            border: 1px solid var(--border-light);
+            color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
             padding: 4px 12px;
             border-radius: 20px;
             margin-bottom: 0.75rem;
@@ -566,7 +565,7 @@
 
         /* ─── FORMS ─────────────────────────────────────────────── */
         .form-card {
-            background: var(--white);
+            background: var(--card-bg);
             border: 1px solid var(--border-light);
             border-radius: var(--radius-xl);
             overflow: hidden;
@@ -599,7 +598,7 @@
             font-weight: 700;
             letter-spacing: 0.12em;
             text-transform: uppercase;
-            color: var(--navy);
+            color: var(--primary);
             border-bottom: 1.5px solid var(--border-light);
             padding-bottom: 0.5rem;
             margin: 1.5rem 0 1rem;
@@ -623,12 +622,12 @@
         .form-group textarea {
             width: 100%;
             padding: 0.625rem 0.875rem;
-            border: 1.5px solid var(--border-mid);
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
             border-radius: var(--radius-md);
             font-size: 0.875rem;
             font-family: var(--font);
-            color: var(--text-primary);
-            background: var(--white);
+            color: var(--white);
+            background: rgba(255, 255, 255, 0.03);
             transition: border-color 0.18s, box-shadow 0.18s;
             outline: none;
         }
@@ -636,8 +635,8 @@
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
-            border-color: var(--navy);
-            box-shadow: 0 0 0 3px rgba(32, 43, 129, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         }
 
         .form-grid {
@@ -659,9 +658,9 @@
         }
 
         .badge-navy {
-            background: var(--surface-2);
-            color: var(--navy);
-            border: 1px solid var(--border-light);
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(99, 102, 241, 0.2);
         }
 
         .badge-success {
@@ -687,7 +686,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            background: var(--white);
+            background: var(--card-bg);
         }
 
         thead th {
@@ -731,7 +730,7 @@
         }
 
         .sidebar {
-            background: var(--white) !important;
+            background: var(--navy-deeper) !important;
             border-right: 1px solid var(--border-light) !important;
             padding: 1.5rem 1rem !important;
             display: flex;
@@ -795,7 +794,7 @@
 
         /* ─── STAT CARDS ────────────────────────────────────────── */
         .stat-card {
-            background: var(--white);
+            background: var(--card-bg);
             border: 1px solid var(--border-light);
             border-radius: var(--radius-lg);
             padding: 1.25rem 1.5rem;

@@ -136,7 +136,7 @@
             <a href="/em/techfest/{{ techfest.id }}/register" class="btn btn-primary" style="height: 60px; padding: 0 3rem; font-size: 1.1rem;">
                 Register Now
             </a>
-            {% if user and user.role in ['super_admin', 'event_manager', 'event_admin', 'club_admin'] %}
+            {% if user and user.role in ['chief_coordinator', 'event_manager', 'event_admin', 'club_admin'] %}
             <a href="/em/techfest/{{ techfest.id }}/hub" class="btn btn-outline" style="height: 60px; padding: 0 2rem;">
                 <i class="fas fa-cog"></i> Admin Hub
             </a>

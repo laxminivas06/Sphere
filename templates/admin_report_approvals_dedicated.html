@@ -1,0 +1,163 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="dashboard-layout">
+    <div class="container" style="padding: 2rem;">
+        <header style="margin-bottom: 2.5rem;">
+            <h1 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -0.05rem;">
+                Report <span style="color: var(--primary)">Verification Center</span>
+            </h1>
+            <p style="color: var(--text-muted); font-size: 1.1rem;">Review and approve event reports to finalize club activities.</p>
+        </header>
+
+        <div class="card glass" style="border-radius: 24px; overflow: hidden;">
+            <div style="padding: 1.5rem 2rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="font-size: 1.25rem; margin: 0;">Pending Report Approvals</h2>
+                <div class="badge" style="background: var(--primary); color: white;">{{ pending_reports | length }} Pending</div>
+            </div>
+            <div class="table-responsive">
+                <table class="table" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="text-align: left; background: rgba(255,255,255,0.02);">
+                            <th style="padding: 1.2rem 2rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1rem; color: var(--text-muted);">Event & Club</th>
+                            <th style="padding: 1.2rem 2rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1rem; color: var(--text-muted);">Completion Date</th>
+                            <th style="padding: 1.2rem 2rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1rem; color: var(--text-muted);">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for event in pending_reports %}
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+                            <td style="padding: 1.2rem 2rem;">
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <div style="width: 40px; height: 40px; border-radius: 10px; background: var(--primary)20; color: var(--primary); display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 700; color: #fff;">{{ event.title }}</div>
+                                        <div style="font-size: 0.8rem; color: var(--text-muted);">{{ event._club_name }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="padding: 1.2rem 2rem; color: var(--text-muted);">
+                                {{ event.date }}
+                            </td>
+                            <td style="padding: 1.2rem 2rem;">
+                                <div style="display: flex; gap: 0.5rem;">
+                                    {% set report_path = event.report_url if event.report_url else '/static/uploads/clubs/' ~ event.club_id ~ '/events/' ~ (event.title | slugify) ~ '/reports/' ~ event.report %}
+                                    <button onclick="previewReport('{{ event.club_id }}', '{{ event.id }}', '{{ event.title }}', '{{ report_path }}')" class="btn btn-outline btn-sm" style="border-radius: 8px;">
+                                        <i class="fas fa-eye"></i> View Report
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" style="padding: 4rem; text-align: center; color: var(--text-muted);">
+                                <i class="fas fa-check-double" style="font-size: 3rem; color: #10b981; margin-bottom: 1rem; display: block;"></i>
+                                <p>All reports have been verified. Great job!</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Preview Modal -->
+<div id="reportPreviewModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(8px);">
+    <div class="card glass" style="width: 90%; max-width: 900px; height: 90vh; padding: 0; overflow: hidden; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.1);">
+        <div style="padding: 1.25rem 2rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02);">
+            <div>
+                <h3 id="modalEventTitle" style="margin: 0; font-size: 1.1rem;">Report Preview</h3>
+                <p id="modalClubName" style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">Event Report</p>
+            </div>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <a id="modalDownloadBtn" href="#" download class="btn btn-outline btn-sm" style="border-radius: 8px;">
+                    <i class="fas fa-download"></i> Download
+                </a>
+                <button onclick="closePreview()" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 1.25rem; opacity: 0.6; transition: 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div style="flex: 1; background: #fff; position: relative;">
+            <iframe id="reportFrame" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+        </div>
+
+        <div style="padding: 1.5rem 2rem; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: flex-end; gap: 1rem; background: rgba(255,255,255,0.02);">
+            <button onclick="closePreview()" class="btn btn-outline">Cancel</button>
+            <button id="modalApproveBtn" class="btn btn-primary" style="background: #10b981; border: none;">
+                <i class="fas fa-check-circle"></i> Approve & Close Event
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentClubId = null;
+    let currentEventId = null;
+
+    function previewReport(clubId, eventId, title, url) {
+        currentClubId = clubId;
+        currentEventId = eventId;
+        
+        document.getElementById('modalEventTitle').textContent = title;
+        document.getElementById('reportFrame').src = url;
+        document.getElementById('modalDownloadBtn').href = url;
+        
+        // Update approve button click handler
+        document.getElementById('modalApproveBtn').onclick = () => approveReport(clubId, eventId);
+        
+        document.getElementById('reportPreviewModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closePreview() {
+        document.getElementById('reportPreviewModal').style.display = 'none';
+        document.getElementById('reportFrame').src = '';
+        document.body.style.overflow = 'auto';
+    }
+
+    function approveReport(clubId, eventId) {
+        if (!confirm('Are you sure you want to approve this event report?')) return;
+        
+        fetch(`/api/events/approve_report/${clubId}/${eventId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': '{{ csrf_token() }}'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Error approving report');
+            }
+        });
+    }
+</script>
+
+<style>
+    .badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+    }
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+    }
+    tr:hover {
+        background: rgba(255,255,255,0.02);
+    }
+</style>
+{% endblock %}

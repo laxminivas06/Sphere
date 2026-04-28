@@ -53,6 +53,11 @@ def create_app():
         
         return dict(institution=inst)
 
+    @app.context_processor
+    def user_processor():
+        from flask import session
+        return dict(user=session.get('user'))
+
     @app.route('/select-institution/<inst_id>')
     def select_institution(inst_id):
         session['current_institution_id'] = inst_id
@@ -213,17 +218,23 @@ def create_app():
         if not user:
             return redirect(url_for('login_page'))
         role = user.get('role', '')
-        # Evaluators get their own dedicated dashboard
+        
+        # ── Dashboard Redirection Logic ──
         if role == 'evaluator':
             return redirect('/em/evaluator/dashboard')
-        # Event Manager & Event Admins go to the separate EM dashboard
         if role in ('event_manager', 'event_admin'):
             return redirect('/em/dashboard')
-        # Allow super_admin or any club-specific admin (role ends with '_admin' and not super)
-        if role != 'super_admin' and role != 'club_admin' and not role.endswith('_admin'):
+        
+        # Approval roles go to institutional event approvals
+        APPROVAL_ROLES = ('principal', 'secretary', 'ao', 'fm')
+        if role in APPROVAL_ROLES:
+            return redirect('/admin/event-approvals')
+
+        # Role-based Authorization check
+        if role != 'chief_coordinator' and role != 'club_admin' and not role.endswith('_admin'):
             return "Unauthorized", 403
             
-        if user['role'] == 'super_admin':
+        if user['role'] == 'chief_coordinator':
             stats = DB.get_global_stats()
             clubs = DB.get_clubs()
             # Enrich club data with admin info for the management UI
@@ -280,7 +291,7 @@ def create_app():
     @app.route('/admin/contacts')
     def admin_contacts_page():
         user = session.get('user')
-        if not user or user['role'] != 'super_admin':
+        if not user or user['role'] != 'chief_coordinator':
             return redirect(url_for('login_page'))
         contacts = DB.get_contacts()
         return render_template('admin_contacts.html', user=user, contacts=contacts)
@@ -292,7 +303,7 @@ def create_app():
         identifier = user.get('email') or user.get('roll_number')
         club = DB.get_club_by_id(club_id)
         if not club: return "Not found", 404
-        if user.get('role') != 'super_admin' and club.get('admin_roll') != identifier:
+        if user.get('role') != 'chief_coordinator' and club.get('admin_roll') != identifier:
             return "Unauthorized", 403
         events = DB.get_events(club_id)
         return render_template('admin_bulk_email.html', user=user, club=club, events=events)
@@ -304,7 +315,7 @@ def create_app():
         identifier = user.get('email') or user.get('roll_number')
         club = DB.get_club_by_id(club_id)
         if not club: return "Not found", 404
-        if user.get('role') != 'super_admin' and club.get('admin_roll') != identifier:
+        if user.get('role') != 'chief_coordinator' and club.get('admin_roll') != identifier:
             return "Unauthorized", 403
         events = DB.get_events(club_id)
         all_clubs = DB.get_clubs()
@@ -317,7 +328,7 @@ def create_app():
         identifier = user.get('email') or user.get('roll_number')
         club = DB.get_club_by_id(club_id)
         if not club: return "Not found", 404
-        if user.get('role') != 'super_admin' and club.get('admin_roll') != identifier:
+        if user.get('role') != 'chief_coordinator' and club.get('admin_roll') != identifier:
             return "Unauthorized", 403
         events = DB.get_events(club_id)
         for event in events:
@@ -336,7 +347,7 @@ def create_app():
         identifier = user.get('email') or user.get('roll_number')
         club = DB.get_club_by_id(club_id)
         if not club: return "Not found", 404
-        if user.get('role') != 'super_admin' and club.get('admin_roll') != identifier:
+        if user.get('role') != 'chief_coordinator' and club.get('admin_roll') != identifier:
             return "Unauthorized", 403
         club_reqs = [r for r in DB.get_office_bearer_requests() if r.get('club_id') == club_id]
         return render_template('admin_club_identity.html', user=user, club=club, ob_requests=club_reqs)
@@ -410,7 +421,7 @@ def create_app():
         )
 
     @app.route('/admin/club/<club_id>')
-    def super_admin_club_detail(club_id):
+    def chief_coordinator_club_detail(club_id):
         user = session.get('user')
         if not user:
             return redirect(url_for('login_page'))
@@ -420,14 +431,14 @@ def create_app():
             return "Club not found", 404
 
         # If not super admin, check if this is the club's own admin
-        if user.get('role') != 'super_admin':
+        if user.get('role') != 'chief_coordinator':
             identifier = user.get('email') or user.get('roll_number')
             if club.get('admin_roll') == identifier or club.get('admin_email') == identifier:
                 # Redirect club admin to their dashboard (browser will preserve any #hash)
                 return redirect(url_for('admin_dashboard'))
             return "Unauthorized", 403
         # If authorized club admin, the redirect above already happened.
-        # If we are here, the user is a super_admin.
+        # If we are here, the user is a chief_coordinator.
         
         events = DB.get_events(club_id)
         regs   = DB.get_registrations(club_id)
@@ -464,7 +475,7 @@ def create_app():
     @app.route('/admin/report/<club_id>/<event_id>')
     def admin_report_viewer(club_id, event_id):
         user = session.get('user')
-        if not user or user['role'] != 'super_admin':
+        if not user or user['role'] != 'chief_coordinator':
             return redirect(url_for('login_page'))
 
         club   = DB.get_club_by_id(club_id)
@@ -560,7 +571,7 @@ def create_app():
         club = DB.get_club_by_id(club_id)
         if not club: return "Not found", 404
         # Validate admin access
-        if user.get('role') != 'super_admin' and club.get('admin_roll') != identifier:
+        if user.get('role') != 'chief_coordinator' and club.get('admin_roll') != identifier:
             return "Unauthorized", 403
         
         elections = DB.get_elections(club_id)
@@ -630,7 +641,7 @@ def create_app():
         identifier = user.get('email') or user.get('roll_number')
         club = DB.get_club_by_id(club_id)
         if not club: return "Not found", 404
-        if user.get('role') != 'super_admin' and club.get('admin_roll') != identifier:
+        if user.get('role') != 'chief_coordinator' and club.get('admin_roll') != identifier:
             return "Unauthorized", 403
             
         events = DB.get_events(club_id)
@@ -651,7 +662,7 @@ def create_app():
     @app.route('/super/registry')
     def super_registry_page():
         user = session.get('user')
-        if not user or user.get('role') != 'super_admin':
+        if not user or user.get('role') != 'chief_coordinator':
             return redirect(url_for('login_page'))
 
         import datetime
@@ -688,7 +699,7 @@ def create_app():
     @app.route('/super/registry/<club_id>')
     def super_club_registry_page(club_id):
         user = session.get('user')
-        if not user or user.get('role') != 'super_admin':
+        if not user or user.get('role') != 'chief_coordinator':
             return redirect(url_for('login_page'))
 
         club = DB.get_club_by_id(club_id)
@@ -734,7 +745,8 @@ def create_app():
     @app.route('/super/approvals')
     def super_approvals_page():
         user = session.get('user')
-        if not user or user.get('role') != 'super_admin':
+        APPROVAL_ROLES = ('principal', 'secretary', 'ao', 'fm')
+        if not user or (user.get('role') != 'chief_coordinator' and user.get('role') not in APPROVAL_ROLES):
             return redirect(url_for('login_page'))
         events = DB.get_events()
         ob_requests = DB.get_office_bearer_requests()
@@ -744,7 +756,7 @@ def create_app():
     @app.route('/super/master')
     def super_master_page():
         user = session.get('user')
-        if not user or user.get('role') != 'super_admin':
+        if not user or user.get('role') != 'chief_coordinator':
             return redirect(url_for('login_page'))
         return render_template('super_master_db.html', user=user)
 
@@ -752,7 +764,7 @@ def create_app():
     @app.route('/super/settings')
     def super_settings_page():
         user = session.get('user')
-        if not user or user.get('role') != 'super_admin':
+        if not user or user.get('role') != 'chief_coordinator':
             return redirect(url_for('login_page'))
         return render_template('super_settings.html', user=user)
 
@@ -760,7 +772,7 @@ def create_app():
     @app.route('/super/leaderboard')
     def super_leaderboard_page():
         user = session.get('user')
-        if not user or user.get('role') != 'super_admin':
+        if not user or user.get('role') != 'chief_coordinator':
             return redirect(url_for('login_page'))
             
         # Get all students and calculate their total event attendance
@@ -806,7 +818,7 @@ def create_app():
         identifier = user.get('email') or user.get('roll_number')
         club = DB.get_club_by_id(club_id)
         if not club: return "Not found", 404
-        if user.get('role') != 'super_admin' and club.get('admin_roll') != identifier:
+        if user.get('role') != 'chief_coordinator' and club.get('admin_roll') != identifier:
             return "Unauthorized", 403
             
         regs = DB.get_registrations(club_id)
@@ -963,5 +975,115 @@ def create_app():
             
         return render_template('student_profile_edit.html', user=student)
 
+    # ── EVENT LIFECYCLE: Approval Dashboard ───────────────────────────────────
+    @app.route('/admin/event-approvals')
+    def event_approvals_page():
+        user = session.get('user')
+        if not user:
+            return redirect(url_for('login_page'))
+
+        role = user.get('role')
+        APPROVAL_ROLES = ('principal', 'secretary', 'ao', 'fm')
+        allowed = ('chief_coordinator', 'club_admin')
+        
+        if role not in allowed and not role.endswith('_admin') and role not in APPROVAL_ROLES:
+            return 'Unauthorized', 403
+
+        # Fetch all events with a pending approval status or pending report verification
+        all_events = DB.get_events()
+        # Stages from APPROVAL_STAGES + report approval
+        pending_stages = ['pending_principal', 'pending_chief_coordinator', 'pending_ao_fm', 'pending_secretary', 'pending_report_approval']
+        pending_events = []
+        for e in all_events:
+            app_status = e.get('approval_status')
+            ev_status = e.get('event_status')
+            if (app_status in pending_stages or ev_status == 'pending_report_approval') and not e.get('deleted'):
+                club = DB.get_club_by_id(e.get('club_id', ''))
+                e['_club_name'] = club['name'] if club else e.get('club_id', 'Unknown')
+                e['club_id'] = e.get('club_id', '') # Ensure club_id is available
+                # Use ev_status if it's report approval, otherwise app_status
+                e['_display_status'] = 'pending_report_approval' if ev_status == 'pending_report_approval' else app_status
+                pending_events.append(e)
+
+        # Stage metadata for UI labels
+        stages_meta = [
+            {'key': 'pending_principal',         'label': 'Principal',          'icon': 'fa-user-tie',      'color': '#6366f1'},
+            {'key': 'pending_chief_coordinator', 'label': 'Chief Coordinator',  'icon': 'fa-shield-halved', 'color': '#f59e0b'},
+            {'key': 'pending_ao_fm',             'label': 'Finance/Admin',      'icon': 'fa-file-invoice',  'color': '#8b5cf6'},
+            {'key': 'pending_secretary',         'label': 'Secretary',          'icon': 'fa-signature',     'color': '#10b981'},
+            {'key': 'pending_report_approval',   'label': 'Report Verification','icon': 'fa-file-medical',  'color': '#ec4899'},
+        ]
+
+        return render_template('event_approval_dashboard.html',
+            user=user,
+            pending_events=pending_events,
+            stages_meta=stages_meta,
+        )
+
+    @app.route('/admin/report-approvals')
+    def report_approvals_page():
+        user = session.get('user')
+        if not user or user.get('role') != 'chief_coordinator':
+            return redirect(url_for('login_page'))
+
+        # Fetch all events from all clubs with pending report approval
+        all_events = DB.get_events()
+        pending_reports = []
+        for e in all_events:
+            # An event is pending report approval if explicitly set, OR if it has a report but isn't approved yet
+            status = e.get('event_status')
+            has_report = e.get('report')
+            is_approved = e.get('report_approved')
+            
+            if (status == 'pending_report_approval' or (has_report and not is_approved)) and not e.get('deleted'):
+                club = DB.get_club_by_id(e.get('club_id', ''))
+                e['_club_name'] = club['name'] if club else e.get('club_id', 'Unknown')
+                e['club_id'] = e.get('club_id', '')
+                pending_reports.append(e)
+
+        return render_template('admin_report_approvals_dedicated.html', 
+            user=user, 
+            pending_reports=pending_reports
+        )
+
+    # ── EVENT LIFECYCLE: Document Vault ──────────────────────────────────────
+    @app.route('/admin/event-docs/<club_id>/<event_id>')
+    def event_document_vault(club_id, event_id):
+        user = session.get('user')
+        if not user:
+            return redirect(url_for('login_page'))
+
+        club = DB.get_club_by_id(club_id)
+        events = DB.get_events(club_id)
+        event = next((e for e in events if e['id'] == event_id), None)
+        if not event or not club:
+            return 'Not found', 404
+
+        identifier = user.get('email') or user.get('roll_number')
+        if user.get('role') != 'chief_coordinator' and club.get('admin_roll') != identifier:
+            return 'Unauthorized', 403
+
+        from app.models import slugify as _slug
+        event_slug = _slug(event['title'])
+        base_url = f"/static/uploads/clubs/{club_id}/events/{event_slug}"
+
+        import os as _os
+        base_path = _os.path.join(app.static_folder, 'uploads', 'clubs', club_id, 'events', event_slug)
+        doc_folders = ['permission_letter', 'reports', 'posters', 'files']
+        documents = {}
+        for folder in doc_folders:
+            folder_path = _os.path.join(base_path, folder)
+            if _os.path.exists(folder_path):
+                documents[folder] = sorted(_os.listdir(folder_path))
+            else:
+                documents[folder] = []
+
+        return render_template('event_document_vault.html',
+            user=user, club=club, event=event,
+            documents=documents, base_url=base_url,
+            event_slug=event_slug,
+        )
+
     return app
+
 
