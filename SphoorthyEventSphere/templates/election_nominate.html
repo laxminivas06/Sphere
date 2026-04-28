@@ -1,0 +1,211 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<main class="container" style="max-width: 800px; padding: 2rem 1rem;">
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <h2 style="font-size: 2.5rem; margin-bottom: 0.5rem;"><span style="color: var(--primary)">Nomination Form</span></h2>
+        <p style="color: var(--text-muted); font-size: 1.1rem;">{{ election.title }} — {{ club.name }}</p>
+    </div>
+
+    <!-- Nomination Form Card -->
+    <div class="card glass" style="padding: 3rem; border-radius: 24px;" id="formCard">
+        <form id="nominationForm" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <input type="hidden" name="club_id" value="{{ club.id }}">
+            <input type="hidden" name="election_id" value="{{ election.id }}">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div>
+                    <label class="form-label">Roll Number</label>
+                    <input type="text" class="form-input" value="{{ user.roll_number }}" disabled style="opacity: 0.7;">
+                </div>
+                <div>
+                    <label class="form-label">Name</label>
+                    <input type="text" class="form-input" value="{{ user.name }}" disabled style="opacity: 0.7;">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div>
+                    <label class="form-label">Email Address</label>
+                    <input type="email" name="email" id="nomEmail" class="form-input" required placeholder="To contact you">
+                </div>
+                <div>
+                    <label class="form-label">Contact Number</label>
+                    <input type="text" name="contact" id="nomContact" class="form-input" required placeholder="Mobile number">
+                </div>
+            </div>
+
+            <div>
+                <label class="form-label">Position Opting For</label>
+                <select name="position" id="nomPosition" class="form-input" required style="background: rgba(0,0,0,0.5); color: #fff;">
+                    <option value="" disabled selected>Select a position...</option>
+                    {% for pos in election.positions %}
+                    <option value="{{ pos }}">{{ pos }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="form-label">Upload Your Photo</label>
+                <label class="btn btn-outline" style="width: 100%; border-style: dashed; border-width: 2px; padding: 2rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 16px;">
+                    <i class="fas fa-camera" style="font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--primary);"></i>
+                    <span id="photoName">Click to upload photo (required)</span>
+                    <input type="file" name="photo" id="photoInput" accept="image/*" style="display: none;" onchange="document.getElementById('photoName').innerText = this.files[0].name" required>
+                </label>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn btn-primary" style="margin-top: 1rem; font-size: 1.1rem; padding: 1rem; justify-content: center;">
+                <i class="fas fa-paper-plane"></i> Submit Nomination
+            </button>
+        </form>
+    </div>
+</main>
+
+<!-- ── Success Modal ── -->
+<div id="successModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; padding:1.5rem;">
+    <div class="card glass" style="width:100%; max-width:500px; padding:3rem; border-radius:28px; text-align:center; border:1px solid rgba(16,185,129,0.4); animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;">
+        <div style="width:80px; height:80px; border-radius:50%; background:rgba(16,185,129,0.15); border:2px solid rgba(16,185,129,0.5); display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem;">
+            <i class="fas fa-check-circle" style="font-size:2.5rem; color:#10b981;"></i>
+        </div>
+        <h3 style="font-size:1.6rem; color:#10b981; margin-bottom:0.75rem;">Nomination Submitted!</h3>
+        <p style="color:var(--text-muted); margin-bottom:2rem; line-height:1.6;">
+            Your nomination has been submitted successfully.<br>
+            <span style="color:#fff; font-weight:600;">Good luck, {{ user.name }}!</span>
+        </p>
+
+        <!-- Submitted Details -->
+        <div id="reviewDetails" style="display:none; text-align:left; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:1.5rem; margin-bottom:2rem;">
+            <h4 style="font-size:0.85rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:1rem;">Nomination Details</h4>
+            <table style="width:100%; font-size:0.9rem; border-collapse:collapse;">
+                <tr><td style="color:var(--text-muted); padding:0.4rem 0; width:40%;">Name</td><td style="color:#fff; font-weight:600;">{{ user.name }}</td></tr>
+                <tr><td style="color:var(--text-muted); padding:0.4rem 0;">Roll No.</td><td style="color:#fff; font-weight:600;">{{ user.roll_number }}</td></tr>
+                <tr><td style="color:var(--text-muted); padding:0.4rem 0;">Position</td><td id="reviewPosition" style="color:#6366f1; font-weight:700;"></td></tr>
+                <tr><td style="color:var(--text-muted); padding:0.4rem 0;">Email</td><td id="reviewEmail" style="color:#fff; font-weight:600;"></td></tr>
+                <tr><td style="color:var(--text-muted); padding:0.4rem 0;">Contact</td><td id="reviewContact" style="color:#fff; font-weight:600;"></td></tr>
+                <tr><td style="color:var(--text-muted); padding:0.4rem 0;">Election</td><td style="color:#fff; font-weight:600;">{{ election.title }}</td></tr>
+                <tr><td style="color:var(--text-muted); padding:0.4rem 0;">Club</td><td style="color:#fff; font-weight:600;">{{ club.name }}</td></tr>
+            </table>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:0.75rem;">
+            <button onclick="toggleReview()" id="reviewBtn" class="btn btn-outline" style="justify-content:center; width:100%;">
+                <i class="fas fa-eye"></i> Review Nomination
+            </button>
+            <a href="/" class="btn btn-primary" style="justify-content:center; width:100%; background:#10b981;">
+                <i class="fas fa-home"></i> Back to Home
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes popIn {
+    from { opacity:0; transform: scale(0.85); }
+    to   { opacity:1; transform: scale(1); }
+}
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+.form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    color: white;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.form-input:focus { border-color: var(--primary); }
+</style>
+
+<script>
+let _reviewOpen = false;
+
+function toggleReview() {
+    const box = document.getElementById('reviewDetails');
+    const btn = document.getElementById('reviewBtn');
+    _reviewOpen = !_reviewOpen;
+    box.style.display = _reviewOpen ? 'block' : 'none';
+    btn.innerHTML = _reviewOpen
+        ? '<i class="fas fa-eye-slash"></i> Hide Details'
+        : '<i class="fas fa-eye"></i> Review Nomination';
+}
+
+function showSuccessModal(position, email, contact) {
+    document.getElementById('reviewPosition').textContent = position;
+    document.getElementById('reviewEmail').textContent    = email;
+    document.getElementById('reviewContact').textContent  = contact;
+    document.getElementById('successModal').style.display = 'flex';
+}
+
+document.getElementById('nominationForm').onsubmit = async (ev) => {
+    ev.preventDefault();
+
+    const btn   = document.getElementById('submitBtn');
+    const email   = document.getElementById('nomEmail').value.trim();
+    const contact = document.getElementById('nomContact').value.trim();
+    const position = document.getElementById('nomPosition').value;
+
+    // Basic front-end validation
+    if (!email || !contact || !position) {
+        showToast('Please fill in all required fields.', 'error');
+        return;
+    }
+    const photoFile = document.getElementById('photoInput').files[0];
+    if (!photoFile) {
+        showToast('Please upload your photo.', 'error');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+    const formData = new FormData(ev.target);
+
+    // Compress photo if > 500 KB
+    if (photoFile.size > 500000) {
+        try {
+            const bmp = await createImageBitmap(photoFile);
+            const canvas = document.createElement('canvas');
+            const MAX = 800;
+            let w = bmp.width, h = bmp.height;
+            if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } }
+            else        { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(bmp, 0, 0, w, h);
+            const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.82));
+            formData.set('photo', blob, photoFile.name);
+        } catch (e) {
+            console.warn('Photo compression failed, uploading original.', e);
+        }
+    }
+
+    try {
+        const res  = await fetch('/api/elections/submit_nomination', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (data.success) {
+            showToast('Your nomination has been submitted successfully.', 'success', 6000);
+            showSuccessModal(position, email, contact);
+            // Hide form card so user sees the modal clearly
+            document.getElementById('formCard').style.opacity = '0.3';
+            document.getElementById('formCard').style.pointerEvents = 'none';
+        } else {
+            showToast(data.message || 'Submission failed. Please try again.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Nomination';
+        }
+    } catch (e) {
+        console.error(e);
+        showToast('Network error. Please check your connection and retry.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Nomination';
+    }
+};
+</script>
+{% endblock %}

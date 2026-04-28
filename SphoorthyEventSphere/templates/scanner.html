@@ -1,0 +1,74 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; text-align: center; padding-top: 2rem;">
+    <div style="display: flex; justify-content: flex-start; margin-bottom: 2rem;">
+        <a href="/admin" class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.5rem; border-radius: 12px; padding: 0.6rem 1.2rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); text-decoration: none; transition: 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='var(--text-muted)'">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+    <h2 style="margin-bottom: 2rem;">Attendance <span>Scanner</span></h2>
+    
+    <div class="glass" style="padding: 2rem; margin-bottom: 2rem;">
+        <div id="reader" style="width: 100%; border-radius: 12px; overflow: hidden; background: #000;"></div>
+        <p id="status" style="margin-top: 1rem; color: var(--text-muted);">Initializing Camera...</p>
+    </div>
+
+    <div id="result" class="glass" style="padding: 1.5rem; display: none; text-align: left;">
+        <h3 id="res-name" style="color: var(--success); margin-bottom: 0.5rem;"></h3>
+        <p id="res-msg"></p>
+    </div>
+
+    <div style="margin-top: 2rem;">
+        <h3>Manual Entry</h3>
+        <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+            <input type="text" id="manual_qr" placeholder="Enter QR ID" style="flex: 1; min-width: 200px;">
+            <button onclick="scanCode(document.getElementById('manual_qr').value)" class="btn btn-primary" style="flex: 1;">Mark Present</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+async function scanCode(decodedText) {
+    document.getElementById('status').innerText = "Processing: " + decodedText;
+    
+    const res = await fetch('/api/scan-qr', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({qr_code: decodedText})
+    });
+    
+    const data = await res.json();
+    const resultDiv = document.getElementById('result');
+    const resName = document.getElementById('res-name');
+    const resMsg = document.getElementById('res-msg');
+    
+    resultDiv.style.display = 'block';
+    if (data.success) {
+        resName.innerText = "Success!";
+        resName.style.color = 'var(--success)';
+        resMsg.innerText = data.message;
+    } else {
+        resName.innerText = "Error";
+        resName.style.color = 'var(--danger)';
+        resMsg.innerText = data.message;
+    }
+}
+
+function onScanSuccess(decodedText, decodedResult) {
+    html5QrcodeScanner.clear();
+    scanCode(decodedText).then(() => {
+        setTimeout(() => {
+            html5QrcodeScanner.render(onScanSuccess);
+            document.getElementById('result').style.display = 'none';
+        }, 3000);
+    });
+}
+
+const html5QrcodeScanner = new Html5QrcodeScanner(
+    "reader", { fps: 10, qrbox: 250 }
+);
+html5QrcodeScanner.render(onScanSuccess);
+</script>
+{% endblock %}

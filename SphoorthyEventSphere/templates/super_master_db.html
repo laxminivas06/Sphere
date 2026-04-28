@@ -1,0 +1,355 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+<div class="dashboard-layout">
+    {% include 'sidebar_super.html' %}
+
+    <main class="dashboard-content">
+        <!-- ── HEADER ─────────────────────────────────────────────── -->
+        <header class="reveal active" style="margin-bottom: 3rem;">
+            <div class="section-tag">Academic Records</div>
+            <h1 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -0.02em;">
+                Institutional <span class="gradient-text">Master DB</span>
+            </h1>
+            <p style="color: var(--text-muted); font-size: 1.1rem; max-width: 600px;">
+                Centralized student repository for academic year tracking, event participation analytics, and global imports.
+            </p>
+        </header>
+
+        <!-- ── ACTION BAR ──────────────────────────────────────────── -->
+        <div class="card reveal" style="margin-bottom: 2.5rem; padding: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+                <div style="display: flex; gap: 0.75rem; flex: 1; min-width: 300px;">
+                    <div style="position: relative; flex: 1;">
+                        <i class="fas fa-search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                        <input type="text" id="studentSearch" onkeyup="fetchStudents(1)" placeholder="Search by Roll Number or Name..." style="width: 100%; padding: 0.75rem 1rem 0.75rem 2.75rem; background: var(--surface-2); border: 1px solid var(--border-light); border-radius: 12px; color: var(--navy);">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.75rem;">
+                    <button class="btn btn-outline" onclick="document.getElementById('promotionModal').style.display='flex'">
+                        <i class="fas fa-graduation-cap"></i> Academic Promotion
+                    </button>
+                    <button class="btn btn-primary" onclick="document.getElementById('studentCsvFile').click()">
+                        <i class="fas fa-file-import"></i> Global Import
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── YEAR SELECTOR ───────────────────────────────────────── -->
+        <div class="grid-4 reveal" style="margin-bottom: 3rem;">
+            <div class="stat-card year-card" onclick="selectYear('1st')" id="card-1st" style="cursor: pointer; transition: all 0.3s; text-align: center; border: 2px solid transparent;">
+                <div style="width: 50px; height: 50px; background: rgba(99, 102, 241, 0.1); color: var(--primary); border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.5rem;">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800;">1st Year</h3>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Freshmen Entry</p>
+            </div>
+
+            <div class="stat-card year-card" onclick="selectYear('2nd')" id="card-2nd" style="cursor: pointer; transition: all 0.3s; text-align: center; border: 2px solid transparent;">
+                <div style="width: 50px; height: 50px; background: rgba(16, 185, 129, 0.1); color: #10b981; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.5rem;">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800;">2nd Year</h3>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Sophomore Core</p>
+            </div>
+
+            <div class="stat-card year-card" onclick="selectYear('3rd')" id="card-3rd" style="cursor: pointer; transition: all 0.3s; text-align: center; border: 2px solid transparent;">
+                <div style="width: 50px; height: 50px; background: rgba(245, 158, 11, 0.1); color: #f59e0b; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.5rem;">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800;">3rd Year</h3>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Pre-Final Year</p>
+            </div>
+
+            <div class="stat-card year-card" onclick="selectYear('4th')" id="card-4th" style="cursor: pointer; transition: all 0.3s; text-align: center; border: 2px solid transparent;">
+                <div style="width: 50px; height: 50px; background: rgba(239, 68, 68, 0.1); color: var(--danger); border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.5rem;">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800;">4th Year</h3>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Final Year Placements</p>
+            </div>
+        </div>
+
+        <!-- ── DATA AREA ──────────────────────────────────────────── -->
+        <div id="yearContentArea" class="reveal" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+                <h2 id="selectedYearHeading" style="font-size: 1.5rem; font-weight: 800; margin: 0;">Year Data</h2>
+                <div style="display: flex; gap: 0.75rem;">
+                    <button class="btn btn-outline" id="btnShowTable" onclick="switchView('table')">
+                        <i class="fas fa-list"></i> Table View
+                    </button>
+                    <button class="btn btn-outline" id="btnShowLeaderboard" onclick="switchView('leaderboard')">
+                        <i class="fas fa-trophy"></i> Activity Leaderboard
+                    </button>
+                    <button class="btn btn-primary" onclick="downloadYearReport()">
+                        <i class="fas fa-download"></i> Export CSV
+                    </button>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <div class="table-responsive" id="tableView">
+                    <table style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Roll Number</th>
+                                <th>Student Identity</th>
+                                <th>Academic Info</th>
+                                <th style="text-align: right;">Contact</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentTableBody">
+                            <!-- Loaded via JS -->
+                        </tbody>
+                    </table>
+                    <div id="studentPagination" style="display: flex; gap: 0.5rem; justify-content: center; padding: 2rem;">
+                        <!-- Pagination -->
+                    </div>
+                </div>
+
+                <div class="table-responsive" id="leaderboardView" style="display: none;">
+                    <table style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Identity</th>
+                                <th>Performance Hub</th>
+                                <th style="text-align: right;">Engagement</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboardTableBody">
+                            <!-- Loaded via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Promotion Modal -->
+<div id="promotionModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(8px);">
+    <div class="card" style="width: 100%; max-width: 600px; padding: 2.5rem; border-radius: 24px;">
+        <h3 style="font-weight: 800; margin-bottom: 0.5rem;">Academic Promotion</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">Configure the year promotion rules and enter any detained roll numbers.</p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <div class="form-group">
+                <label>From Year</label>
+                <input type="text" id="promoFrom1" value="1st">
+            </div>
+            <div class="form-group">
+                <label>To Year</label>
+                <input type="text" id="promoTo1" value="2nd">
+            </div>
+        </div>
+        <div class="form-group" style="margin-top: 1.5rem;">
+            <label>Detained Students (Roll Numbers)</label>
+            <textarea id="detainedRolls" placeholder="e.g. 23N81A0501, 23N81A0502" rows="3"></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+            <button class="btn btn-outline" onclick="document.getElementById('promotionModal').style.display='none'">Cancel</button>
+            <button class="btn btn-primary" onclick="submitPromotion()">Execute Promotion</button>
+        </div>
+    </div>
+</div>
+
+<form id="uploadStudentsForm" enctype="multipart/form-data" style="display: none;">
+    <input type="file" id="studentCsvFile" name="file" accept=".csv" onchange="document.getElementById('uploadStudentsForm').requestSubmit()">
+</form>
+
+<script>
+    document.getElementById('uploadStudentsForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const fileInp = document.getElementById('studentCsvFile');
+        if (!fileInp.files.length) return;
+
+        const formData = new FormData();
+        formData.append('file', fileInp.files[0]);
+
+        try {
+            const res = await fetch('/api/students/upload', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+                body: formData
+            });
+
+            const result = await res.json();
+            if (result.success) {
+                alert(result.message);
+                fileInp.value = "";
+                fetchStudents(1);
+            } else {
+                alert("Error: " + result.message);
+            }
+        } catch (err) {
+            alert("Error uploading file.");
+        }
+    };
+
+    let currentYear = '';
+    let currentView = 'table';
+
+    function selectYear(year) {
+        currentYear = year;
+        document.querySelectorAll('.year-card').forEach(c => c.classList.remove('selected'));
+        document.getElementById('card-' + year).classList.add('selected');
+        
+        document.getElementById('yearContentArea').style.display = 'block';
+        document.getElementById('selectedYearHeading').innerText = year + ' Year Dashboard';
+        
+        refreshCurrentView();
+    }
+
+    function switchView(view) {
+        currentView = view;
+        document.getElementById('tableView').style.display = view === 'table' ? 'block' : 'none';
+        document.getElementById('leaderboardView').style.display = view === 'leaderboard' ? 'block' : 'none';
+        
+        document.getElementById('btnShowTable').className = view === 'table' ? 'btn btn-primary' : 'btn btn-outline';
+        document.getElementById('btnShowLeaderboard').className = view === 'leaderboard' ? 'btn btn-primary' : 'btn btn-outline';
+        
+        refreshCurrentView();
+    }
+
+    function refreshCurrentView() {
+        if (currentView === 'table') {
+            fetchStudents(1);
+        } else {
+            fetchLeaderboard();
+        }
+    }
+
+    function downloadYearReport() {
+        window.location.href = '/api/students/export?year=' + currentYear;
+    }
+
+    async function fetchLeaderboard() {
+        const res = await fetch(`/api/students/leaderboard_api?year=${currentYear}`);
+        const data = await res.json();
+        
+        if (data.success) {
+            const tbody = document.getElementById('leaderboardTableBody');
+            tbody.innerHTML = data.leaderboard.map((s, index) => `
+                <tr>
+                    <td data-label="Rank" style="font-weight: 800; color: var(--primary);">#${index + 1}</td>
+                    <td data-label="Identity">
+                        <div style="font-weight: 800; color: var(--navy);">${s.name}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">${s.roll_number}</div>
+                    </td>
+                    <td data-label="Performance Hub">
+                        <div style="font-size: 0.85rem; font-weight: 600;">Academic Performance</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Standard Registry</div>
+                    </td>
+                    <td data-label="Engagement" style="text-align: right;">
+                        <span class="badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 700;">
+                            ${s.attended_events} Events
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+            
+            if (data.leaderboard.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 4rem; color: var(--text-muted);">No activity data found for this year.</td></tr>';
+            }
+        }
+    }
+
+    async function fetchStudents(page = 1) {
+        const search = document.getElementById('studentSearch').value;
+        const res = await fetch(`/api/students/list?page=${page}&search=${search}&year=${currentYear}`);
+        const data = await res.json();
+        
+        if (data.success) {
+            const tbody = document.getElementById('studentTableBody');
+            tbody.innerHTML = data.students.map(s => `
+                <tr>
+                    <td data-label="Roll Number" style="font-weight: 800; color: var(--navy);">${s.roll_number}</td>
+                    <td data-label="Student Identity">
+                        <div style="font-weight: 800; color: var(--navy);">${s.name}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">${s.department} Department</div>
+                    </td>
+                    <td data-label="Academic Info">
+                        <div style="font-size: 0.85rem; font-weight: 600;">Year ${s.year}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Institutional Active</div>
+                    </td>
+                    <td data-label="Contact" style="text-align: right;">
+                        <div style="font-size: 0.85rem; font-weight: 600; color: var(--primary);">${s.email || '—'}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">${s.phone || ''}</div>
+                    </td>
+                </tr>
+            `).join('');
+
+            if (data.students.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">No students found</td></tr>';
+            }
+
+            const pagination = document.getElementById('studentPagination');
+            let pagHtml = '';
+            if(data.pages > 1) {
+                const startPage = Math.max(1, data.current_page - 2);
+                const endPage = Math.min(data.pages, data.current_page + 2);
+                
+                if(data.current_page > 1) pagHtml += `<button onclick="fetchStudents(${data.current_page-1})" class="btn btn-outline" style="padding:0.2rem 0.6rem;">Prev</button>`;
+                
+                for(let i=startPage; i<=endPage; i++) {
+                    pagHtml += `<button onclick="fetchStudents(${i})" class="btn ${i === data.current_page ? 'btn-primary' : 'btn-outline'}" style="padding:0.2rem 0.6rem;">${i}</button>`;
+                }
+                
+                if(data.current_page < data.pages) pagHtml += `<button onclick="fetchStudents(${data.current_page+1})" class="btn btn-outline" style="padding:0.2rem 0.6rem;">Next</button>`;
+            }
+            pagination.innerHTML = pagHtml;
+        }
+    }
+
+    async function submitPromotion() {
+        const rules = {};
+        for (let i = 1; i <= 4; i++) {
+            const from = document.getElementById('promoFrom' + i).value.trim();
+            const to = document.getElementById('promoTo' + i).value.trim();
+            if (from && to) rules[from] = to;
+        }
+
+        const detainedInput = document.getElementById('detainedRolls').value;
+        const detainedRolls = detainedInput.split(',').map(r => r.trim().toUpperCase()).filter(r => r.length > 0);
+        const deleteDetained = document.getElementById('deleteDetained').checked;
+
+        if (!confirm('Are you sure you want to execute this promotion? This will update the entire master database.')) return;
+
+        try {
+            const res = await fetch('/api/students/promote', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    promotion_rules: rules,
+                    detained_rolls: detainedRolls,
+                    delete_detained: deleteDetained
+                })
+            });
+
+            const result = await res.json();
+            if (result.success) {
+                alert('Success: ' + result.message);
+                document.getElementById('promotionModal').style.display = 'none';
+                fetchStudents(1);
+            } else {
+                alert('Error: ' + result.message);
+            }
+        } catch (err) {
+            alert('Failed to execute promotion.');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // By default, select the 1st year to show something initially
+        selectYear('1st');
+    });
+</script>
+{% endblock %}

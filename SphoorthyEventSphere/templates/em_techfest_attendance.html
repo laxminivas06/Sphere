@@ -1,0 +1,95 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+    :root {
+        --tf-primary: #f59e0b;
+        --tf-glass: rgba(30, 41, 59, 0.7);
+        --tf-border: rgba(255, 255, 255, 0.1);
+        --tf-text-muted: #94a3b8;
+    }
+    .page-container { max-width: 1200px; margin: 0 auto; padding: 2rem; min-height: 100vh; }
+    .hub-card { 
+        background: var(--tf-glass); 
+        backdrop-filter: blur(12px); 
+        border: 1px solid var(--tf-border); 
+        border-radius: 24px; 
+        padding: 2rem; 
+    }
+    .admin-table { width: 100%; border-collapse: separate; border-spacing: 0 0.5rem; }
+    .admin-table tr { background: rgba(255,255,255,0.02); transition: background 0.2s; }
+    .admin-table tr:hover { background: rgba(255,255,255,0.05); }
+    .admin-table th { padding: 1rem; color: var(--tf-text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; text-align: left; }
+    .admin-table td { padding: 1.25rem 1rem; border-top: 1px solid var(--tf-border); border-bottom: 1px solid var(--tf-border); }
+    .admin-table td:first-child { border-left: 1px solid var(--tf-border); border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+    .admin-table td:last-child { border-right: 1px solid var(--tf-border); border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+    .status-present { color: #10b981; font-weight: 700; }
+    .status-absent { color: #ef4444; font-weight: 700; opacity: 0.7; }
+</style>
+
+<div class="page-container">
+    <div style="margin-bottom: 3rem; display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+            <a href="/em/techfest/{{ event.id }}/hub" style="color: var(--tf-text-muted); text-decoration: none; font-weight: 600;"><i class="fas fa-chevron-left"></i> Back to Hub</a>
+            <h1 style="margin: 1rem 0 0 0; font-size: 2.5rem; font-weight: 800;">Institutional Attendance</h1>
+            <p style="color: var(--tf-text-muted);">{{ event.title }} • Sphoorthy Engineering College Students</p>
+        </div>
+        <button class="tf-btn tf-btn-primary" onclick="forwardAttendance(event)"><i class="fas fa-paper-plane"></i> Forward to HODs</button>
+    </div>
+
+    <div class="hub-card">
+        <div style="overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Roll No</th>
+                        <th>Name</th>
+                        <th>Dept</th>
+                        <th>Sub-Events</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reg in registrations %}
+                    {% if reg.student_details.is_spoorthy == 'yes' and reg.payment_status in ['paid', 'free'] %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ reg.student_details.roll_number }}</td>
+                        <td>{{ reg.student_details.name }}</td>
+                        <td>{{ reg.student_details.department }}</td>
+                        <td>
+                            {% for se in reg.selected_events %}
+                            <div style="font-size: 0.75rem; color: var(--tf-text-muted);">• {{ se.name }}</div>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% if reg.checked_in %}
+                            <span class="status-present"><i class="fas fa-check-circle"></i> PRESENT</span>
+                            {% else %}
+                            <span class="status-absent"><i class="fas fa-times-circle"></i> ABSENT</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function forwardAttendance(event) {
+        const btn = event.currentTarget;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        const resp = await fetch(`/em/api/techfest/{{ event.id }}/forward-attendance`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrf }
+        });
+        const data = await resp.json();
+        alert(data.message);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Forward to HODs';
+    }
+</script>
+{% endblock %}

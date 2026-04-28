@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+  .hs-main { padding: 2rem; max-width: 800px; margin: 0 auto; text-align: center; }
+  #reader { width: 100%; max-width: 500px; margin: 2rem auto; border-radius: 16px; overflow: hidden; border: 2px solid rgba(255,255,255,.1); }
+  .hs-result { margin-top: 1.5rem; padding: 1.5rem; border-radius: 12px; background: rgba(255,255,255,.05); display: none; }
+  .btn-blue { padding: .75rem 1.5rem; border-radius: 8px; background: #3b82f6; color: #fff; font-weight: bold; cursor: pointer; border: none; }
+</style>
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<div class="hs-main">
+  <div style="text-align:left;margin-bottom:1rem;">
+    <a href="/em/hackathon/{{ event.id }}/hub" style="color:rgba(255,255,255,.5);text-decoration:none;"><i class="fas fa-arrow-left"></i> Back to Hub</a>
+  </div>
+  <h2>Team QR Scanner</h2>
+  <p style="color:rgba(255,255,255,.6);">Scan the QR code provided to the hackathon team leader for entry.</p>
+
+  <div id="reader"></div>
+
+  <div class="hs-result" id="resultBox">
+    <h3 id="resTitle" style="margin:0 0 .5rem 0;"></h3>
+    <p id="resMsg" style="margin:0;color:rgba(255,255,255,.7);"></p>
+    <button class="btn-blue" style="margin-top:1rem;" onclick="resetScanner()">Scan Next</button>
+  </div>
+</div>
+
+<script>
+let scanner = null;
+function onScanSuccess(decodedText) {
+  if(scanner) { scanner.clear(); scanner = null; }
+  document.getElementById('reader').style.display = 'none';
+  const box = document.getElementById('resultBox');
+  box.style.display = 'block';
+  document.getElementById('resTitle').innerText = "Processing...";
+  document.getElementById('resMsg').innerText = "Please wait.";
+
+  fetch('/em/api/hackathon/scan', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({qr_data: decodedText})
+  }).then(r=>r.json()).then(d => {
+    document.getElementById('resTitle').innerText = d.success ? "Success!" : "Notice";
+    document.getElementById('resTitle').style.color = d.success ? "#10b981" : "#f59e0b";
+    document.getElementById('resMsg').innerText = d.message;
+  }).catch(e => {
+    document.getElementById('resTitle').innerText = "Error";
+    document.getElementById('resTitle').style.color = "#ef4444";
+    document.getElementById('resMsg').innerText = "Failed to process QR code.";
+  });
+}
+
+function resetScanner() {
+  document.getElementById('resultBox').style.display = 'none';
+  document.getElementById('reader').style.display = 'block';
+  scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
+  scanner.render(onScanSuccess);
+}
+
+document.addEventListener('DOMContentLoaded', resetScanner);
+</script>
+{% endblock %}

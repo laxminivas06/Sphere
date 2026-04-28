@@ -1,0 +1,397 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+<div class="dashboard-layout">
+    {% include 'sidebar_club.html' %}
+
+    <main class="main-content">
+            <!-- Events Tab -->
+            <div id="tab-events" class="tab-pane">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h2>Manage Events</h2>
+                    <button class="btn btn-primary" onclick="toggleModal('eventModal', true)">Create New Event</button>
+                </div>
+
+                <div class="glass" style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Event</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in events %}
+                            <tr>
+                                <td>{{ e.title }}</td>
+                                <td>{{ e.date }}</td>
+                                <td>
+                                    {% if e.approved %}
+                                        <span class="badge badge-success">Approved</span>
+                                    {% else %}
+                                        <span class="badge badge-pending">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if not e.approved and user.role == 'super_admin' %}
+                                        <button onclick="approveEvent('{{ e.id }}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Approve</button>
+                                    {% endif %}
+                                    <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Edit</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Registrations Tab -->
+            <div id="tab-registrations" class="tab-pane" style="display: none;">
+                <h2>Registrations & Payments</h2>
+                <div class="glass" style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Event</th>
+                                <th>Method</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in registrations %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 600;">{{ r.name }}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ r.roll_number }}</div>
+                                </td>
+                                <td>{{ r.event_id }}</td>
+                                <td>{{ r.payment_method }}</td>
+                                <td>
+                                    {% if r.payment_verified %}
+                                        <span class="badge badge-success">Verified</span>
+                                    {% else %}
+                                        <span class="badge badge-pending">Pending Review</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if not r.payment_verified %}
+                                        <button onclick="openVerifyModal('{{ r.id }}', '{{ r.name }}', '{{ r.payment_proof }}')" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Review Payment</button>
+                                    {% else %}
+                                        <button class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" disabled>Completed</button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Attendance Tab -->
+            <div id="tab-attendance" class="tab-pane" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h2>QR Scanning & Attendance Logs</h2>
+                    <a href="/scanner" class="btn btn-outline">Launch Scanner</a>
+                </div>
+                <div class="glass" style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Event</th>
+                                <th>Attendance Status</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in registrations %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 600;">{{ r.name }}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ r.roll_number }}</div>
+                                </td>
+                                <td>{{ r.event_id }}</td>
+                                <td>
+                                    {% if r.attendance %}
+                                        <span style="color: var(--success); font-weight: 600;">&#10003; Marked Present</span>
+                                    {% else %}
+                                        <span style="color: var(--text-muted);">Not Scanned</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if r.attendance %}
+                                        <span style="font-size: 0.85rem; color: var(--text-muted);">{{ r.attendance }}</span>
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Reports Tab -->
+            <div id="tab-reports" class="tab-pane" style="display: none;">
+                <h2>Attendance Reports</h2>
+                <div class="glass" style="padding: 2rem; margin-bottom: 2rem;">
+                    <div class="form-group" style="max-width: 400px;">
+                        <label>Select Event</label>
+                        <select id="reportEventId">
+                            {% for e in events %}
+                            <option value="{{ e.id }}">{{ e.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="grid-3">
+                    <div class="card glass">
+                        <h3>Export CSV</h3>
+                        <p>Detailed breakdown of attendance by department.</p>
+                        <button onclick="downloadReport()" class="btn btn-primary" style="margin-top: 1rem;">Download CSV</button>
+                    </div>
+                    <div class="card glass">
+                        <h3>Export PDF</h3>
+                        <p>Summary report for college office.</p>
+                        <button class="btn btn-outline" style="margin-top: 1rem;">Download PDF</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email / SMTP Settings Tab -->
+            <div id="tab-email" class="tab-pane" style="display: none;">
+                <h2 style="margin-bottom: 0.5rem;">📧 Email &amp; SMTP Settings</h2>
+                <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 2rem;">
+                    Configure your club's outgoing email. Students receive registration confirmations,
+                    QR codes, and payment updates from this address.
+                </p>
+
+                <div class="glass" style="padding: 2rem; border-radius: 20px; max-width: 680px;">
+                    <h3 style="margin-top: 0; font-size: 1rem;">Gmail SMTP</h3>
+                    <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 1.5rem;">
+                        Enter your Gmail address and a
+                        <a href="https://myaccount.google.com/apppasswords" target="_blank"
+                           style="color: var(--primary);">Gmail App Password</a>.
+                        The server is pre-set to <code>smtp.gmail.com</code>.
+                        Leave password blank to keep the current one.
+                    </p>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-size: 0.8rem; color: var(--text-muted);">Gmail Address</label>
+                            <input type="email" id="club_smtp_email_self"
+                                   placeholder="clubevents@gmail.com"
+                                   style="width: 100%; margin-top: 0.35rem;">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-size: 0.8rem; color: var(--text-muted);">Gmail App Password</label>
+                            <input type="password" id="club_smtp_pass_self"
+                                   placeholder="xxxx xxxx xxxx xxxx"
+                                   style="width: 100%; margin-top: 0.35rem;">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 0.75rem; margin-bottom: 0.75rem;">
+                        <button onclick="saveMySmtp()" class="btn btn-primary">Save SMTP</button>
+                        <button onclick="testMySmtp()" class="btn btn-outline">🧪 Send Test Email</button>
+                    </div>
+                    <div id="smtp_self_msg" style="font-size: 0.82rem;"></div>
+                </div>
+
+                <!-- What gets sent? -->
+                <div class="glass" style="padding: 1.75rem; border-radius: 20px; margin-top: 1.5rem; max-width: 680px;">
+                    <h3 style="margin-top: 0; font-size: 0.95rem;">📬 What emails are sent from this address?</h3>
+                    <ul style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.9; padding-left: 1.25rem;">
+                        <li>🎟️ Registration confirmation + QR code to every registrant</li>
+                        <li>💳 Payment verification confirmation + QR code</li>
+                        <li>🚀 New event promotional email to all past registrants (with poster)</li>
+                        <li>📩 Bulk emails sent from the Bulk Email panel</li>
+                    </ul>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<!-- Modal -->
+<div id="eventModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; padding: 2rem;">
+    <div class="card glass" style="width: 100%; max-width: 600px; padding: 2rem;">
+        <h3>Create New Event</h3>
+        <form id="eventForm">
+            <div class="form-group">
+                <label>Title</label>
+                <input type="text" name="title" required>
+            </div>
+            <div class="grid-3" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" name="date" required>
+                </div>
+                <div class="form-group">
+                    <label>Venue</label>
+                    <input type="text" name="venue" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Club</label>
+                <select name="club_id">
+                    {% for c in clubs %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea name="description" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Poster Image</label>
+                <input type="file" name="poster">
+            </div>
+            <div class="form-group">
+                <label>Proposal Document</label>
+                <input type="file" name="proposal">
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem;">
+                <button type="button" class="btn btn-outline" onclick="toggleModal('eventModal', false)">Cancel</button>
+                <button type="submit" class="btn btn-primary">Submit for Approval</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Payment Verification Modal -->
+<div id="verifyModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; padding: 2rem;">
+    <div class="card glass" style="width: 100%; max-width: 500px; padding: 2rem; text-align: center;">
+        <h3>Payment Verification</h3>
+        <p id="verifyStudentName" style="color: var(--text-muted); margin-bottom: 1rem; font-weight: 500;"></p>
+        <div id="verifyProofContainer" style="margin-bottom: 1.5rem; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 1rem; min-height: 200px; display: flex; align-items: center; justify-content: center;">
+            <!-- Image loaded via JS -->
+        </div>
+        <div style="display: flex; gap: 1rem; justify-content: center;">
+            <button class="btn btn-outline" onclick="toggleModal('verifyModal', false)">Cancel</button>
+            <button id="confirmVerifyBtn" class="btn btn-primary">Approve Verification</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function showTab(tab) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+    document.getElementById('tab-' + tab).style.display = 'block';
+    event.target.classList.add('active');
+}
+
+function toggleModal(id, show) {
+    document.getElementById(id).style.display = show ? 'flex' : 'none';
+}
+
+async function approveEvent(id) {
+    if (!confirm('Approve this event?')) return;
+    const res = await fetch(`/api/events/approve/${id}`, {method: 'POST'});
+    if (res.ok) location.reload();
+}
+
+function openVerifyModal(id, name, proof) {
+    document.getElementById('verifyStudentName').innerText = `Reviewing payment for ${name}`;
+    const proofContainer = document.getElementById('verifyProofContainer');
+    
+    if (proof && proof !== 'None' && proof !== '') {
+        proofContainer.innerHTML = `<img src="/static/uploads/payments/${proof}" alt="Payment Proof" style="max-width: 100%; max-height: 60vh; border-radius: 8px; object-fit: contain;">`;
+    } else {
+        proofContainer.innerHTML = `<span style="color: var(--warning);"><i class="fas fa-exclamation-triangle"></i> No proof uploaded</span>`;
+    }
+    
+    const confirmBtn = document.getElementById('confirmVerifyBtn');
+    confirmBtn.onclick = () => verifyPayment(id);
+    
+    toggleModal('verifyModal', true);
+}
+
+async function verifyPayment(id) {
+    const res = await fetch(`/api/verify-payment/${id}`, {method: 'POST'});
+    if (res.ok) {
+        alert("Payment successfully verified!");
+        location.reload();
+    } else {
+        alert("Verification failed. Please try again.");
+    }
+}
+
+document.getElementById('eventForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const res = await fetch('/api/events/create', {method: 'POST', body: formData});
+    const data = await res.json();
+    if (data.success) {
+        alert(data.message);
+        location.reload();
+    }
+}
+
+function downloadReport() {
+    const eventId = document.getElementById('reportEventId').value;
+    if (!eventId) return alert('Select an event first');
+    window.location.href = `/api/reports/attendance/${eventId}`;
+}
+
+// ── SMTP helpers for club admin ───────────────────────────────────────────────
+const _csrf = () => document.querySelector('meta[name="csrf-token"]').content;
+const _clubId = '{{ club.id }}';
+
+async function loadMySmtp() {
+    try {
+        const r = await fetch(`/api/smtp/get?scope=club&club_id=${_clubId}`);
+        const d = await r.json();
+        if (d.success) {
+            document.getElementById('club_smtp_email_self').value = d.smtp_email || '';
+            if (d.has_password)
+                document.getElementById('club_smtp_pass_self').placeholder = '••••••••••••••• (saved)';
+        }
+    } catch(e) {}
+}
+loadMySmtp();
+
+async function saveMySmtp() {
+    const email = document.getElementById('club_smtp_email_self').value.trim();
+    const pass  = document.getElementById('club_smtp_pass_self').value.trim();
+    const msgEl = document.getElementById('smtp_self_msg');
+    if (!email) { msgEl.textContent = '⚠️ Email is required.'; msgEl.style.color = '#f59e0b'; return; }
+    if (!pass)  { msgEl.textContent = '⚠️ App password is required.';  msgEl.style.color = '#f59e0b'; return; }
+    msgEl.textContent = 'Saving…'; msgEl.style.color = 'var(--text-muted)';
+    const r = await fetch('/api/smtp/update', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': _csrf()},
+        body: JSON.stringify({ scope: 'club', club_id: _clubId,
+                               smtp_email: email, smtp_password: pass,
+                               smtp_server: 'smtp.gmail.com', smtp_port: 587 })
+    });
+    const d = await r.json();
+    msgEl.textContent = d.success ? '✅ SMTP saved!' : ('❌ ' + d.message);
+    msgEl.style.color  = d.success ? '#10b981' : '#f87171';
+}
+
+async function testMySmtp() {
+    const email = document.getElementById('club_smtp_email_self').value.trim();
+    const msgEl = document.getElementById('smtp_self_msg');
+    msgEl.textContent = '🧪 Sending test email…'; msgEl.style.color = 'var(--text-muted)';
+    const r = await fetch('/api/smtp/test', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': _csrf()},
+        body: JSON.stringify({ club_id: _clubId, to_email: email })
+    });
+    const d = await r.json();
+    msgEl.textContent = d.success ? ('✅ ' + d.message) : ('❌ ' + d.message);
+    msgEl.style.color  = d.success ? '#10b981' : '#f87171';
+}
+</script>
+{% endblock %}

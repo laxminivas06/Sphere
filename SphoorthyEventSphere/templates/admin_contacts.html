@@ -1,0 +1,174 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+<div class="dashboard-layout">
+    <aside class="sidebar">
+        <div style="margin-bottom: 2rem;">
+            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏠 Main Menu ⏺️</p>
+            <a href="/admin" class="nav-item">
+                <i class="fas fa-tools"></i>
+                <span>Clubs Setup & Config</span>
+            </a>
+            <a href="/super/approvals" class="nav-item">
+                <i class="fas fa-check-circle"></i>
+                <span>Approvals</span>
+            </a>
+            <a href="/super/master" class="nav-item">
+                <i class="fas fa-database"></i>
+                <span>Master DB</span>
+            </a>
+        </div>
+
+        <div>
+            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏛️ Governance</p>
+            <a href="/super/registry" class="nav-item">
+                <i class="fas fa-folder-open"></i>
+                <span>Institutional Registry</span>
+            </a>
+            <a href="/super/leaderboard" class="nav-item">
+                <i class="fas fa-trophy"></i>
+                <span>Global Leaderboard</span>
+            </a>
+            <a href="/admin/contacts" class="nav-item active">
+                <i class="fas fa-address-book"></i>
+                <span>Contacts</span>
+            </a>
+            <a href="/super/settings" class="nav-item">
+                <i class="fas fa-cog"></i>
+                <span>Global Settings</span>
+            </a>
+            <div class="nav-item" onclick="location.reload()">
+                <i class="fas fa-sync-alt"></i>
+                <span>Refresh</span>
+            </div>
+        </div>
+
+        <div style="margin-top: 1rem;">
+            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: #8b5cf6; margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🎭 College Events</p>
+            <a href="/em/dashboard" class="nav-item" style="background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);">
+                <i class="fas fa-ticket-alt" style="color: #8b5cf6;"></i>
+                <span>Event Manager</span>
+            </a>
+
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header style="margin-bottom: 3rem;">
+            <h1>Institutional <span style="color: var(--primary)">Contacts Directory</span></h1>
+            <p style="color: var(--text-muted)">Manage global department heads and contact information.</p>
+        </header>
+
+    <div class="card glass" style="padding: 3rem; border-radius: 32px; border: 1px solid var(--border-light); background: var(--white); box-shadow: var(--shadow-sm);">
+        <div style="margin-bottom: 2.5rem;">
+            <h3 style="margin-bottom: 1rem; font-size: 1.4rem;">Global HOD Directory</h3>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">
+                This directory is shared across all clubs. Attendance reports triggered by any club admin will be sent to the emails defined below based on the matching department.
+            </p>
+        </div>
+
+        <form id="globalContactsForm" style="display: grid; gap: 1.5rem;">
+            <div id="contactsList" style="display: grid; gap: 1.2rem;">
+                {% if contacts %}
+                    {% for dept, email in contacts.items() %}
+                    <div class="contact-row glass" style="display: flex; gap: 1rem; align-items: center; padding: 1rem; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--border-light);">
+                        <div style="flex: 0 0 150px;">
+                            <label style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.3rem; text-transform: uppercase;">Department</label>
+                            <input type="text" class="form-input" placeholder="e.g. CSE" value="{{ dept }}" style="width: 100%;" required>
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.3rem; text-transform: uppercase;">Head of Department Email</label>
+                            <input type="email" class="form-input" placeholder="hod@college.edu" value="{{ email }}" style="width: 100%;" required>
+                        </div>
+                        <button type="button" onclick="this.parentElement.remove()" style="background: rgba(239, 68, 68, 0.1); border: none; color: #ef4444; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-top: 1.2rem;">
+                            </button>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="contact-row glass" style="display: flex; gap: 1rem; align-items: center; padding: 1rem; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--border-light);">
+                        <div style="flex: 0 0 150px;">
+                            <label style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.3rem; text-transform: uppercase;">Department</label>
+                            <input type="text" class="form-input" placeholder="e.g. CSE" style="width: 100%;" required>
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.3rem; text-transform: uppercase;">Head of Department Email</label>
+                            <input type="email" class="form-input" placeholder="hod@college.edu" style="width: 100%;" required>
+                        </div>
+                        <button type="button" onclick="this.parentElement.remove()" style="background: rgba(239, 68, 68, 0.1); border: none; color: #ef4444; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-top: 1.2rem;">
+                            </button>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border-light);">
+                <button type="button" onclick="addContactRow()" class="btn btn-outline" style="border-style: dashed; padding: 0.8rem 1.5rem;">
+                    Add New Entry
+                </button>
+                <button type="submit" class="btn btn-primary" style="padding: 0.8rem 2.5rem; font-weight: 600;">
+                    Save Global Directory
+                </button>
+            </div>
+        </form>
+    </div>
+    </main>
+</div>
+
+<script>
+    function addContactRow() {
+        const row = document.createElement('div');
+        row.className = 'contact-row glass';
+        row.style = 'display: flex; gap: 1rem; align-items: center; padding: 1rem; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--border-light); margin-bottom: 1.2rem;';
+        row.innerHTML = `
+            <div style="flex: 0 0 150px;">
+                <label style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.3rem; text-transform: uppercase;">Department</label>
+                <input type="text" class="form-input" placeholder="e.g. CSE" style="width: 100%;" required>
+            </div>
+            <div style="flex: 1;">
+                <label style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.3rem; text-transform: uppercase;">Head of Department Email</label>
+                <input type="email" class="form-input" placeholder="hod@college.edu" style="width: 100%;" required>
+            </div>
+            <button type="button" onclick="this.parentElement.remove()" style="background: rgba(239, 68, 68, 0.1); border: none; color: #ef4444; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-top: 1.2rem;">
+                </button>
+        `;
+        document.getElementById('contactsList').appendChild(row);
+    }
+
+    document.getElementById('globalContactsForm').onsubmit = async (ev) => {
+        ev.preventDefault();
+        const btn = ev.target.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+        btn.disabled = true; btn.innerHTML = 'Saving...';
+
+        try {
+            const contacts = {};
+            document.querySelectorAll('.contact-row').forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                const dept = inputs[0].value.trim().toUpperCase();
+                const email = inputs[1].value.trim();
+                if (dept && email) contacts[dept] = email;
+            });
+
+            const res = await fetch('/api/contacts/update', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ contacts: contacts })
+            });
+
+            if (res.ok) {
+                showToast('Global contact directory updated successfully.', 'success');
+            } else {
+                throw new Error();
+            }
+        } catch (e) {
+            showToast('Failed to update directory. Please try again.', 'error');
+        } finally {
+            btn.disabled = false; btn.innerHTML = originalText;
+        }
+    };
+</script>
+{% endblock %}

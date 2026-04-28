@@ -1,0 +1,438 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+<div class="dashboard-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+                <div style="margin-bottom: 2rem;">
+            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏠 Main Menu ⏺️</p>
+        </div>
+
+        <a class="nav-item active" onclick="switchTab('overview', this)">
+            <i class="fas fa-th-large"></i> <span>Overview</span>
+        </a>
+        <a class="nav-item" href="/admin/events/{{ club.id }}">
+            <i class="fas fa-calendar-alt"></i> <span>Event Registry</span>
+        </a>
+        <a class="nav-item" href="/admin/bulk-email/{{ club.id }}">
+            <i class="fas fa-paper-plane"></i> <span>Communications</span>
+        </a>
+        <a class="nav-item" href="/admin/finance/{{ club.id }}">
+            <i class="fas fa-wallet"></i> <span>Finance Hub</span>
+        </a>
+        <a class="nav-item" onclick="switchTab('eventhub', this)">
+            <i class="fas fa-ticket-alt"></i> <span>Event Hub</span>
+        </a>
+        <a class="nav-item" href="/admin/identity/{{ club.id }}">
+            <i class="fas fa-id-card"></i> <span>Club Identity</span>
+        </a>
+        <a class="nav-item" href="/admin/leaderboard/{{ club.id }}">
+            <i class="fas fa-trophy"></i> <span>Top Attendees</span>
+        </a>
+        <a class="nav-item" href="/admin/elections/{{ club.id }}">
+            <i class="fas fa-vote-yea"></i> <span>Elections Zone</span>
+        </a>
+        <a class="nav-item" href="/admin/reports/{{ club.id }}">
+            <i class="fas fa-archive"></i> <span>Academic Year Reports</span>
+        </a>
+        <a class="nav-item" onclick="switchTab('email', this)">
+            <i class="fas fa-envelope"></i> <span>Email / SMTP</span>
+        </a>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="dashboard-content">
+
+        <!-- ============ OVERVIEW TAB ============ -->
+        <div id="tab-overview" class="tab-pane" style="display: block;">
+            <header style="margin-bottom: 3rem;">
+                <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Welcome back, <span
+                        style="color: var(--primary)">{{ club.name }}</span></h1>
+                <p style="color: var(--text-muted)">Here's what's happening with your club today.</p>
+            </header>
+
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+                <div class="stat-card">
+                    <div style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Total
+                        Registrations</div>
+                    <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary); margin: 0.5rem 0;">{{
+                        stats.total_registrations }}</div>
+                    <div style="font-size: 0.85rem; color: var(--success);"><i class="fas fa-chart-line"></i> Lifetime
+                        growth</div>
+                </div>
+                <div class="stat-card">
+                    <div style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Events Hosted
+                    </div>
+                    <div style="font-size: 2.5rem; font-weight: 800; color: var(--info); margin: 0.5rem 0;">{{
+                        events|length }}</div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted);">Organized events</div>
+                </div>
+                <div class="stat-card">
+                    <div style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Total Revenue
+                    </div>
+                    <div style="font-size: 2.5rem; font-weight: 800; color: var(--success); margin: 0.5rem 0;">₹{{
+                        stats.total_revenue }}</div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted);">Verified payments</div>
+                </div>
+            </div>
+
+            <section class="card glass" style="padding: 2.5rem; border-radius: 32px;">
+                <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-bolt"
+                        style="color: #f59e0b; margin-right: 0.5rem;"></i>Quick Actions</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <a href="/scanner" class="btn btn-outline"
+                        style="padding: 1.5rem; flex-direction: column; gap: 0.5rem; text-align: center;">
+                        <i class="fas fa-qrcode" style="font-size: 1.5rem;"></i> Launch Scanner
+                    </a>
+                    <a href="/admin/leaderboard/{{ club.id }}" class="btn btn-outline"
+                        style="padding: 1.5rem; flex-direction: column; gap: 0.5rem; text-align: center;">
+                        <i class="fas fa-trophy" style="font-size: 1.5rem;"></i> Top Attendees
+                    </a>
+                    <a href="/admin/bulk-email/{{ club.id }}" class="btn btn-outline"
+                        style="padding: 1.5rem; flex-direction: column; gap: 0.5rem; text-align: center;">
+                        <i class="fas fa-envelope-open-text" style="font-size: 1.5rem;"></i> Send Bulk Mail
+                    </a>
+                    <a href="/admin/identity/{{ club.id }}" class="btn btn-outline"
+                        style="padding: 1.5rem; flex-direction: column; gap: 0.5rem; text-align: center;">
+                        <i class="fas fa-id-card" style="font-size: 1.5rem;"></i> Club Identity
+                    </a>
+                    <a href="/admin/elections/{{ club.id }}" class="btn btn-outline"
+                        style="padding: 1.5rem; flex-direction: column; gap: 0.5rem; text-align: center;">
+                        <i class="fas fa-vote-yea" style="font-size: 1.5rem;"></i> Setup Elections
+                    </a>
+                </div>
+            </section>
+        </div>
+
+        <!-- ============ EVENT HUB TAB ============ -->
+        <div id="tab-eventhub" class="tab-pane">
+            <style>
+                .eh2-header {
+                    display: flex;
+                    align-items: flex-start;
+                    justify-content: space-between;
+                    gap: 1rem;
+                    flex-wrap: wrap;
+                    margin-bottom: 2rem;
+                }
+                .eh2-header-left h2 { font-size: 1.9rem; font-weight: 800; margin: 0 0 .3rem; }
+                .eh2-header-left p { color: var(--text-muted); margin: 0; font-size: .88rem; }
+                .eh2-header-actions { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; }
+                .eh2-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2.25rem; }
+                .eh2-stat { background: rgba(255, 255, 255, .035); border: 1px solid rgba(255, 255, 255, .07); border-radius: 18px; padding: 1.25rem 1.5rem; position: relative; overflow: hidden; transition: transform .2s, border-color .2s; }
+                .eh2-stat:hover { transform: translateY(-2px); }
+                .eh2-stat-glow { position: absolute; top: -40%; right: -20%; width: 100px; height: 100px; border-radius: 50%; opacity: .07; }
+                .eh2-stat-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; color: rgba(255, 255, 255, .4); margin-bottom: .4rem; }
+                .eh2-stat-val { font-size: 2rem; font-weight: 900; line-height: 1; }
+                .eh2-stat-sub { font-size: .72rem; color: rgba(255, 255, 255, .3); margin-top: .35rem; }
+                .eh2-bar { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+                .eh2-search { flex: 1; min-width: 200px; display: flex; align-items: center; gap: .6rem; background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .09); border-radius: 12px; padding: .55rem 1rem; }
+                .eh2-search input { background: none; border: none; outline: none; color: #fff; font-size: .88rem; width: 100%; }
+                .eh2-search i { color: rgba(255, 255, 255, .3); font-size: .9rem; }
+                .eh2-filter { background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .09); border-radius: 12px; padding: .55rem 1rem; color: #fff; outline: none; font-size: .82rem; cursor: pointer; }
+                .eh2-filter option { background: #1a1a3e; }
+                .eh2-section-lbl { font-size: .72rem; text-transform: uppercase; letter-spacing: .12em; color: rgba(255, 255, 255, .3); font-weight: 700; margin-bottom: .9rem; padding-left: .25rem; }
+                .eh2-list { display: flex; flex-direction: column; gap: .75rem; }
+                .eh2-row { display: flex; align-items: center; gap: 1.25rem; background: rgba(255, 255, 255, .03); border: 1px solid rgba(255, 255, 255, .07); border-radius: 20px; padding: 1.25rem 1.5rem; cursor: pointer; text-decoration: none; color: inherit; transition: all .22s; position: relative; overflow: hidden; }
+                .eh2-row::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px; background: var(--eh2-accent, #6366f1); opacity: 0; transition: opacity .22s; }
+                .eh2-row:hover { border-color: var(--eh2-accent, rgba(99, 102, 241, .4)); background: rgba(99, 102, 241, .05); transform: translateX(3px); box-shadow: 0 6px 24px rgba(0, 0, 0, .2); }
+                .eh2-row:hover::before { opacity: 1; }
+                .eh2-thumb { width: 58px; height: 58px; border-radius: 14px; object-fit: cover; flex-shrink: 0; border: 1px solid rgba(255, 255, 255, .1); }
+                .eh2-thumb-ph { width: 58px; height: 58px; border-radius: 14px; background: rgba(99, 102, 241, .15); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
+                .eh2-info { flex: 1; min-width: 0; }
+                .eh2-info-title { font-weight: 700; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: .25rem; }
+                .eh2-info-meta { display: flex; gap: .9rem; flex-wrap: wrap; font-size: .76rem; color: rgba(255, 255, 255, .45); }
+                .eh2-info-meta span { display: flex; align-items: center; gap: .3rem; }
+                .eh2-pills { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; flex-shrink: 0; }
+                .eh2-pill { display: flex; flex-direction: column; align-items: center; gap: .15rem; background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .07); border-radius: 10px; padding: .35rem .65rem; min-width: 54px; }
+                .eh2-pill-val { font-size: .85rem; font-weight: 800; line-height: 1; }
+                .eh2-pill-lbl { font-size: .58rem; text-transform: uppercase; letter-spacing: .06em; color: rgba(255, 255, 255, .35); }
+                .eh2-badge { padding: .25rem .65rem; border-radius: 8px; font-size: .67rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+                .eh2-badge-active { background: rgba(16, 185, 129, .12); color: #10b981; border: 1px solid rgba(16, 185, 129, .2); }
+                .eh2-badge-cancelled { background: rgba(239, 68, 68, .1); color: #f87171; border: 1px solid rgba(239, 68, 68, .2); }
+                .eh2-badge-draft { background: rgba(148, 163, 184, .1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, .18); }
+                .eh2-badge-free { background: rgba(20, 184, 166, .1); color: #14b8a6; border: 1px solid rgba(20, 184, 166, .2); }
+                .eh2-badge-paid { background: rgba(245, 158, 11, .1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, .2); }
+                .eh2-open { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; background: rgba(99, 102, 241, .12); border: 1px solid rgba(99, 102, 241, .25); color: #818cf8; flex-shrink: 0; transition: all .2s; }
+                .eh2-row:hover .eh2-open { background: rgba(99, 102, 241, .25); transform: translateX(2px); }
+                .eh2-alert { display: inline-flex; align-items: center; gap: .3rem; font-size: .68rem; font-weight: 700; color: #f59e0b; background: rgba(245, 158, 11, .1); border: 1px solid rgba(245, 158, 11, .2); border-radius: 8px; padding: .2rem .5rem; }
+                .eh2-empty { text-align: center; padding: 4rem 2rem; background: rgba(255, 255, 255, .02); border: 1px dashed rgba(255, 255, 255, .09); border-radius: 24px; }
+                .eh2-empty-icon { width: 80px; height: 80px; background: rgba(99, 102, 241, .1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 2rem; color: var(--primary); }
+                @media(max-width:900px) { .eh2-stats { grid-template-columns: repeat(2, 1fr); } .eh2-pills { display: none; } }
+                @media(max-width:600px) { .eh2-stats { grid-template-columns: 1fr 1fr; } .eh2-row { padding: 1rem; } .eh2-thumb, .eh2-thumb-ph { width: 46px; height: 46px; border-radius: 11px; } .eh2-header { flex-direction: column; } .eh2-header-actions { width: 100%; } .eh2-info-title { font-size: .92rem; } }
+            </style>
+
+            <div class="eh2-header">
+                <div class="eh2-header-left">
+                    <h2>Event <span
+                            style="background:linear-gradient(135deg,#6366f1,#8b5cf6,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Hub</span>
+                    </h2>
+                    <p>Your club's event command center — click any event to open its full dashboard.</p>
+                </div>
+                <div class="eh2-header-actions">
+                    <a href="/em/events" target="_blank" class="btn btn-outline"
+                        style="padding:.65rem 1.2rem;border-radius:11px;font-size:.82rem;gap:.5rem;display:inline-flex;align-items:center;">
+                        <i class="fas fa-external-link-alt"></i> Public Events
+                    </a>
+                </div>
+            </div>
+
+            <div class="eh2-stats">
+                <div class="eh2-stat" style="border-color:rgba(99,102,241,.18);">
+                    <div class="eh2-stat-glow" style="background:#6366f1;"></div>
+                    <div class="eh2-stat-label">Total Events</div>
+                    <div class="eh2-stat-val" style="color:#818cf8;">{{ em_stats.total_events }}</div>
+                    <div class="eh2-stat-sub">organized by {{ club.name }}</div>
+                </div>
+                <div class="eh2-stat" style="border-color:rgba(6,182,212,.18);">
+                    <div class="eh2-stat-glow" style="background:#06b6d4;"></div>
+                    <div class="eh2-stat-label">Registrations</div>
+                    <div class="eh2-stat-val" style="color:#06b6d4;">{{ em_stats.total_regs }}</div>
+                    <div class="eh2-stat-sub">across all events</div>
+                </div>
+                <div class="eh2-stat" style="border-color:rgba(16,185,129,.18);">
+                    <div class="eh2-stat-glow" style="background:#10b981;"></div>
+                    <div class="eh2-stat-label">Revenue</div>
+                    <div class="eh2-stat-val" style="color:#10b981;">₹{{ em_stats.total_revenue }}</div>
+                    <div class="eh2-stat-sub">verified payments</div>
+                </div>
+                <div class="eh2-stat" style="border-color:rgba(245,158,11,.18);">
+                    <div class="eh2-stat-glow" style="background:#f59e0b;"></div>
+                    <div class="eh2-stat-label">Check-ins</div>
+                    <div class="eh2-stat-val" style="color:#f59e0b;">{{ em_stats.total_checked_in }}</div>
+                    <div class="eh2-stat-sub">attendees scanned</div>
+                </div>
+            </div>
+
+            {% if club_em_events %}
+            <div class="eh2-bar">
+                <div class="eh2-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="eh2SearchInput" placeholder="Search events by name, venue…"
+                        oninput="eh2Filter()">
+                </div>
+                <select class="eh2-filter" id="eh2StatusFilter" onchange="eh2Filter()">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="draft">Draft</option>
+                </select>
+                <select class="eh2-filter" id="eh2TypeFilter" onchange="eh2Filter()">
+                    <option value="">All Types</option>
+                    <option value="free">Free</option>
+                    <option value="paid">Paid</option>
+                </select>
+            </div>
+
+            <div class="eh2-section-lbl">{{ club_em_events|length }} Event(s) · Click to open Event Dashboard</div>
+            <div class="eh2-list" id="eh2EventList">
+                {% for emev in club_em_events %}
+                {% set accent_colors = ['#6366f1','#8b5cf6','#ec4899','#06b6d4','#10b981','#f59e0b','#f97316','#14b8a6'] %}
+                {% set accent = accent_colors[loop.index0 % accent_colors|length] %}
+                <a class="eh2-row" style="--eh2-accent:{{ accent }};"
+                    {% if emev.event_category == 'hackathon' %} href="/em/hackathon/{{ emev.id }}/hub"
+                    {% elif emev.event_category == 'tech_fest' %} href="/em/techfest/{{ emev.id }}/hub"
+                    {% else %} href="/em/event/{{ emev.id }}/hub" {% endif %}
+                    data-title="{{ emev.title | lower }}" data-venue="{{ (emev.venue or '') | lower }}"
+                    data-status="{{ emev.status | lower }}" data-type="{{ emev.event_type | lower }}">
+
+                    {% if emev.banner %}
+                    <img src="/static/uploads/em/banners/{{ emev.banner }}" class="eh2-thumb" alt="">
+                    {% else %}
+                    <div class="eh2-thumb-ph">🎭</div>
+                    {% endif %}
+
+                    <div class="eh2-info">
+                        <div class="eh2-info-title">{{ emev.title }}</div>
+                        <div class="eh2-info-meta">
+                            {% if emev.date %}<span><i class="fas fa-calendar-alt"></i> {{ emev.date }}</span>{% endif %}
+                            {% if emev.time %}<span><i class="fas fa-clock"></i> {{ emev.time }}</span>{% endif %}
+                            {% if emev.venue %}<span><i class="fas fa-map-marker-alt"></i> {{ emev.venue }}</span>{% endif %}
+                        </div>
+                        <div style="margin-top:.45rem;display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;">
+                            <span class="eh2-badge {% if emev.status == 'active' %}eh2-badge-active{% elif emev.status == 'cancelled' %}eh2-badge-cancelled{% else %}eh2-badge-draft{% endif %}">{{ emev.status }}</span>
+                            {% if emev.event_type == 'paid' %}<span class="eh2-badge eh2-badge-paid">₹{{ emev.ticket_price }}</span>{% else %}<span class="eh2-badge eh2-badge-free">Free</span>{% endif %}
+                            <div style="flex:1"></div>
+                        </div>
+                    </div>
+
+                    <div class="eh2-pills">
+                        <div class="eh2-pill"><span class="eh2-pill-val" style="color:#06b6d4;">{{ emev._reg_count }}</span><span class="eh2-pill-lbl">Regs</span></div>
+                        <div class="eh2-pill"><span class="eh2-pill-val" style="color:#10b981;">{{ emev._checked_in }}</span><span class="eh2-pill-lbl">In</span></div>
+                        <div class="eh2-pill"><span class="eh2-pill-val" style="color:#f59e0b;">₹{{ emev._revenue }}</span><span class="eh2-pill-lbl">Rev</span></div>
+                    </div>
+                    <div class="eh2-open"><i class="fas fa-arrow-right" style="font-size:.8rem;"></i></div>
+                </a>
+                {% endfor %}
+            </div>
+            <div id="eh2NoResults" style="display:none;text-align:center;padding:3rem;color:rgba(255,255,255,.3);"><i class="fas fa-search" style="font-size:2rem;margin-bottom:1rem;display:block;"></i>No events match your search.</div>
+            {% else %}
+            <div class="eh2-empty">
+                <div class="eh2-empty-icon"><i class="fas fa-calendar-star"></i></div>
+                <h3 style="margin-bottom:.75rem;">No Events Yet</h3>
+                <p style="color:var(--text-muted);max-width:420px;margin:0 auto 2rem;font-size:.9rem;">Your club hasn't organized any events through the Event Manager system yet.</p>
+                <a href="/em/events" target="_blank" class="btn btn-primary" style="border-radius:12px;padding:.8rem 2rem;"><i class="fas fa-external-link-alt"></i> Browse All Events</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ============ EMAIL / SMTP TAB ============ -->
+        <div id="tab-email" class="tab-pane">
+            <header style="margin-bottom:2rem;">
+                <h2 style="font-size:1.9rem;font-weight:800;margin-bottom:0.35rem;">
+                    📧 Email &amp; SMTP
+                </h2>
+                <p style="color:var(--text-muted);font-size:0.88rem;">
+                    Configure your club's outgoing email address for automated student notifications.
+                </p>
+            </header>
+
+            <div class="glass" style="padding:2rem;border-radius:20px;max-width:680px;margin-bottom:1.5rem;">
+                <h3 style="margin-top:0;font-size:1rem;">Gmail SMTP Settings</h3>
+                <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1.5rem;">
+                    Enter your Gmail and its
+                    <a href="https://myaccount.google.com/apppasswords" target="_blank"
+                       style="color:var(--primary);">App Password</a>.
+                    SMTP server is pre-set to <code>smtp.gmail.com</code>.
+                    Leave password blank to keep the current saved password.
+                </p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
+                    <div class="form-group" style="margin:0;">
+                        <label style="font-size:0.8rem;color:var(--text-muted);">Gmail Address</label>
+                        <input type="email" id="club_smtp_email_self"
+                               placeholder="clubevents@gmail.com"
+                               style="width:100%;margin-top:0.35rem;">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label style="font-size:0.8rem;color:var(--text-muted);">Gmail App Password</label>
+                        <input type="password" id="club_smtp_pass_self"
+                               placeholder="xxxx xxxx xxxx xxxx"
+                               style="width:100%;margin-top:0.35rem;">
+                    </div>
+                </div>
+                <div style="display:flex;gap:0.75rem;margin-bottom:0.75rem;">
+                    <button onclick="saveMySmtp()" class="btn btn-primary">Save SMTP</button>
+                    <button onclick="testMySmtp()" class="btn btn-outline">🧪 Send Test Email</button>
+                </div>
+                <div id="smtp_self_msg" style="font-size:0.82rem;"></div>
+            </div>
+
+            <div class="glass" style="padding:1.75rem;border-radius:20px;max-width:680px;">
+                <h3 style="margin-top:0;font-size:0.95rem;">📬 Automated Email Triggers</h3>
+                <ul style="color:var(--text-muted);font-size:0.85rem;line-height:2;padding-left:1.25rem;margin:0;">
+                    <li>🎟️ <strong>Registration Confirmation</strong> — QR code sent instantly after student registers</li>
+                    <li>💳 <strong>Payment Verified</strong> — QR code resent once payment is approved</li>
+                    <li>🚀 <strong>New Event Blast</strong> — All past registrants get a promo email with poster</li>
+                    <li>📩 <strong>Bulk Campaigns</strong> — Emails from the Communications panel use this address</li>
+                </ul>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<script>
+    function switchTab(tabId, element) {
+        document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        if (element) {
+            element.classList.add('active');
+        } else {
+            document.querySelectorAll('.nav-item').forEach(i => {
+                if (i.getAttribute('onclick') && i.getAttribute('onclick').includes(`'${tabId}'`)) {
+                    i.classList.add('active');
+                }
+            });
+        }
+        
+        if (tabId !== 'overview') {
+            window.location.hash = tabId;
+        } else {
+            history.replaceState(null, null, ' ');
+        }
+    }
+
+    // Handle hash on load
+    window.addEventListener('DOMContentLoaded', () => {
+        const hash = window.location.hash.replace('#', '');
+        if (hash && document.getElementById('tab-' + hash)) {
+            switchTab(hash);
+        }
+    });
+
+    function eh2Filter() {
+        const q = document.getElementById('eh2SearchInput').value.toLowerCase();
+        const st = document.getElementById('eh2StatusFilter').value.toLowerCase();
+        const tp = document.getElementById('eh2TypeFilter').value.toLowerCase();
+        let visible = 0;
+        document.querySelectorAll('#eh2EventList .eh2-row').forEach(row => {
+            const title = row.dataset.title || '';
+            const venue = row.dataset.venue || '';
+            const status = row.dataset.status || '';
+            const type = row.dataset.type || '';
+            const matchQ = !q || title.includes(q) || venue.includes(q);
+            const matchSt = !st || status === st;
+            const matchTp = !tp || type === tp;
+            const show = matchQ && matchSt && matchTp;
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        document.getElementById('eh2NoResults').style.display = visible === 0 ? '' : 'none';
+    }
+
+    // ── SMTP helpers ─────────────────────────────────────────────────────────────────
+    const _csrf = () => document.querySelector('meta[name="csrf-token"]').content;
+    const _clubId = '{{ club.id }}';
+
+    async function loadMySmtp() {
+        try {
+            const r = await fetch(`/api/smtp/get?scope=club&club_id=${_clubId}`);
+            const d = await r.json();
+            if (d.success) {
+                document.getElementById('club_smtp_email_self').value = d.smtp_email || '';
+                if (d.has_password)
+                    document.getElementById('club_smtp_pass_self').placeholder = '••••••••••••••• (saved)';
+            }
+        } catch(e) {}
+    }
+    loadMySmtp();
+
+    async function saveMySmtp() {
+        const email = document.getElementById('club_smtp_email_self').value.trim();
+        const pass  = document.getElementById('club_smtp_pass_self').value.trim();
+        const msgEl = document.getElementById('smtp_self_msg');
+        if (!email) { msgEl.textContent = '⚠️ Email is required.'; msgEl.style.color = '#f59e0b'; return; }
+        if (!pass)  { msgEl.textContent = '⚠️ App password is required.'; msgEl.style.color = '#f59e0b'; return; }
+        msgEl.textContent = 'Saving…'; msgEl.style.color = 'var(--text-muted)';
+        const r = await fetch('/api/smtp/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': _csrf() },
+            body: JSON.stringify({ scope: 'club', club_id: _clubId,
+                                   smtp_email: email, smtp_password: pass,
+                                   smtp_server: 'smtp.gmail.com', smtp_port: 587 })
+        });
+        const d = await r.json();
+        msgEl.textContent = d.success ? '✅ SMTP saved!' : ('❌ ' + d.message);
+        msgEl.style.color  = d.success ? '#10b981' : '#f87171';
+    }
+
+    async function testMySmtp() {
+        const email = document.getElementById('club_smtp_email_self').value.trim();
+        const msgEl = document.getElementById('smtp_self_msg');
+        msgEl.textContent = '🧪 Sending test email…'; msgEl.style.color = 'var(--text-muted)';
+        const r = await fetch('/api/smtp/test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': _csrf() },
+            body: JSON.stringify({ club_id: _clubId, to_email: email })
+        });
+        const d = await r.json();
+        msgEl.textContent = d.success ? ('✅ ' + d.message) : ('❌ ' + d.message);
+        msgEl.style.color  = d.success ? '#10b981' : '#f87171';
+    }
+</script>
+{% endblock %}

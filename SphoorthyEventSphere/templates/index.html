@@ -1,0 +1,156 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<!-- ─── HERO SECTION ──────────────────────────────────────── -->
+<header class="hero">
+    <div class="hero-inner reveal active">
+        <div class="hero-badge">
+            <i class="fas fa-sparkles"></i> Experience Excellence
+        </div>
+        <h1>
+            Sphoorthy <em>EventSphere</em>
+        </h1>
+        <p class="hero-sub">
+            Your centralized gateway to innovation, competition, and campus life. Explore premier hackathons, cultural festivals, and technical workshops.
+        </p>
+        
+        <div class="hero-ctas">
+            <a href="/clubs/all" class="btn btn-primary">
+                <i class="fas fa-users-viewfinder"></i> Explore Clubs
+            </a>
+            <a href="/events/archive" class="btn btn-outline">
+                <i class="fas fa-history"></i> Past Events
+            </a>
+        </div>
+
+        <div class="hero-stats">
+            <div>
+                <div class="hero-stat-num">{{ stats.events }}{% if stats.events > 0 %}+{% endif %}</div>
+                <div class="hero-stat-label">Active Events</div>
+            </div>
+            <div>
+                <div class="hero-stat-num">{{ (stats.participations / 1000) | round(1) if stats.participations >= 1000 else stats.participations }}{{ 'k+' if stats.participations >= 1000 else '+' }}</div>
+                <div class="hero-stat-label">Participations</div>
+            </div>
+            <div>
+                <div class="hero-stat-num">{{ stats.clubs }}{% if stats.clubs > 0 %}+{% endif %}</div>
+                <div class="hero-stat-label">Student Clubs</div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="section-inner" style="margin-top: -3rem; position: relative; z-index: 10;">
+    
+    <!-- 1. Inter-College Events -->
+    {% if inter_college_events %}
+    <section class="section reveal">
+        <div class="section-tag">Global Impact</div>
+        <h2 class="section-title">Inter-College Events</h2>
+        <p class="section-sub">Compete with the best minds from across the region in our signature flagship events.</p>
+        <div class="section-divider"></div>
+
+        <div class="grid-2">
+            {% for event in inter_college_events %}
+            <a href="/em/events/{{ event.id }}" style="text-decoration: none; color: inherit;">
+                <article class="card">
+                    <div style="aspect-ratio: 16/9; margin: -1.5rem -1.5rem 1.25rem; background: url('{{ event.banner_url }}') center/cover; position: relative; border-radius: var(--radius-lg) var(--radius-lg) 0 0; display: flex; align-items: flex-start; padding: 1.25rem;">
+                        <span class="category-badge">
+                            {{ event.event_category|replace('_', ' ')|title }}
+                        </span>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span class="badge {% if event.event_type == 'paid' %}badge-warning{% else %}badge-success{% endif %}">
+                            {% if event.event_type == 'paid' %}₹{{ event.ticket_price }}{% else %}FREE ENTRY{% endif %}
+                        </span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Signature Event</span>
+                    </div>
+                    <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.75rem; line-height: 1.3; color: var(--navy);">{{ event.title }}</h3>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); padding-top: 1rem; border-top: 1px solid var(--border-light);">
+                        <span><i class="far fa-calendar-alt"></i> {{ event.date }}</span>
+                        <span><i class="fas fa-map-marker-alt"></i> {{ event.venue|truncate(20) }}</span>
+                    </div>
+                </article>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- 2. Signature College Events -->
+    {% if college_events %}
+    <section class="section reveal">
+        <div class="section-tag">Internal Excellence</div>
+        <h2 class="section-title">Signature Festivals</h2>
+        <p class="section-sub">Exclusive flagship competitions and festivals designed specifically for Sphoorthy students.</p>
+        <div class="section-divider"></div>
+
+        <div class="grid-2">
+            {% for event in college_events %}
+            <a href="/em/events/{{ event.id }}" style="text-decoration: none; color: inherit;">
+                <article class="card">
+                    <div style="aspect-ratio: 16/9; margin: -1.5rem -1.5rem 1.25rem; background: url('{{ event.banner_url }}') center/cover; position: relative; border-radius: var(--radius-lg) var(--radius-lg) 0 0; display: flex; align-items: flex-start; padding: 1.25rem;">
+                        <span class="category-badge">
+                            {{ event.event_category|replace('_', ' ')|title }}
+                        </span>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span class="badge {% if event.event_type == 'paid' %}badge-warning{% else %}badge-success{% endif %}">
+                            {% if event.event_type == 'paid' %}₹{{ event.ticket_price }}{% else %}FREE ENTRY{% endif %}
+                        </span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Sphoorthy Only</span>
+                    </div>
+                    <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.75rem; line-height: 1.3; color: var(--navy);">{{ event.title }}</h3>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); padding-top: 1rem; border-top: 1px solid var(--border-light);">
+                        <span><i class="far fa-calendar-alt"></i> {{ event.date }}</span>
+                        <span><i class="fas fa-map-marker-alt"></i> {{ event.venue|truncate(20) }}</span>
+                    </div>
+                </article>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- 3. Ongoing Club Activities -->
+    <section class="section reveal">
+        <div class="section-tag">Daily Buzz</div>
+        <h2 class="section-title">Ongoing Activities</h2>
+        <p class="section-sub">Latest workshops, seminars, and technical sessions organized by our vibrant student clubs.</p>
+        <div class="section-divider"></div>
+
+        {% if ongoing %}
+        <div class="grid-2">
+            {% for event in ongoing %}
+            <a href="/event/{{ event.club_id }}/{{ event.id }}" style="text-decoration: none; color: inherit;">
+                <article class="card">
+                    <div style="aspect-ratio: 1; margin: -1.5rem -1.5rem 1.25rem; background: url('{{ event.poster_url }}') center/cover; position: relative; border-radius: var(--radius-lg) var(--radius-lg) 0 0; display: flex; align-items: flex-start; padding: 1.25rem;">
+                        <span class="category-badge">
+                            {{ event.club_name }}
+                        </span>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span class="badge {% if event.payment_type == 'paid' %}badge-warning{% else %}badge-success{% endif %}">
+                            {{ '₹' + event.fee if event.payment_type == 'paid' else 'FREE' }}
+                        </span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Club Activity</span>
+                    </div>
+                    <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.75rem; line-height: 1.3; color: var(--navy);">{{ event.title }}</h3>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); padding-top: 1rem; border-top: 1px solid var(--border-light);">
+                        <span><i class="far fa-calendar"></i> {{ event.date }}</span>
+                        <span><i class="fas fa-map-marker-alt"></i> {{ event.venue|truncate(20) }}</span>
+                    </div>
+                </article>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card" style="text-align: center; padding: 4rem 1rem; border-style: dashed;">
+            <i class="fas fa-mug-hot" style="font-size: 3rem; color: var(--text-muted); opacity: 0.2; margin-bottom: 1.5rem;"></i>
+            <p style="color: var(--text-muted);">Things are quiet right now. Follow clubs to stay updated!</p>
+        </div>
+        {% endif %}
+    </section>
+
+</main>
+{% endblock %}

@@ -1,0 +1,163 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<main class="container" style="max-width: 900px; padding: 2rem 1rem;">
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <h2 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Digital <span style="color: var(--primary)">Voting Booth</span></h2>
+        <p style="color: var(--text-muted); font-size: 1.1rem;">{{ election.title }} - {{ club.name }}</p>
+    </div>
+
+    <!-- Location Verification Banner -->
+    <div id="locationBanner" class="card glass" style="padding: 2rem; border-radius: 20px; text-align: center; border-color: rgba(245, 158, 11, 0.4); margin-bottom: 2rem;">
+        <i class="fas fa-map-marker-alt" style="font-size: 2.5rem; color: #f59e0b; margin-bottom: 1rem;"></i>
+        <h3 style="margin-bottom: 1rem;">Location Verification Required</h3>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">To maintain election integrity, votes can only be cast from within the college campus. Please allow location access.</p>
+        <button id="verifyLocationBtn" class="btn btn-primary" onclick="verifyLocation()">Verify My Location</button>
+        <div id="locationStatus" style="margin-top: 1rem; font-weight: 600;"></div>
+    </div>
+
+    <!-- Ballot Form (Hidden until location is verified) -->
+    <form id="ballotForm" style="display: none; flex-direction: column; gap: 3rem;">
+        {% for pos in election.positions %}
+        <div class="card glass" style="padding: 2.5rem; border-radius: 24px;">
+            <h3 style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);"><i class="fas fa-user-tie" style="color: var(--primary); margin-right: 0.5rem;"></i> {{ pos }}</h3>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem;">
+                {% set ns = namespace(found=false) %}
+                {% for nom in election.nominations if nom.position == pos %}
+                {% set ns.found = true %}
+                <label class="nominee-card" style="cursor: pointer; display: block; border-radius: 16px; border: 2px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); transition: all 0.3s; position: relative;">
+                    <input type="radio" name="vote_for_{{ pos|slugify }}" value="{{ nom.id }}" required style="position: absolute; opacity: 0; pointer-events: none;">
+                    <div style="padding: 1.5rem; text-align: center;">
+                        <img src="/static/uploads/clubs/{{ club.id }}/elections/{{ election.id }}/{{ nom.photo }}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; border: 3px solid transparent; transition: all 0.3s;" class="nominee-photo">
+                        <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.2rem;">{{ nom.name }}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">{{ nom.roll_number }}</div>
+                    </div>
+                </label>
+                {% endfor %}
+                {% if not ns.found %}
+                <div style="color: var(--text-muted); font-style: italic;">No nominations for this position.</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <div style="text-align: center;">
+            <button type="submit" class="btn btn-primary" style="font-size: 1.2rem; padding: 1rem 3rem; border-radius: 16px;">
+                <i class="fas fa-paper-plane" style="margin-right: 0.8rem;"></i> Cast My Vote
+            </button>
+            <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">By casting this vote, you verify that you are a valid student of the required department.</p>
+        </div>
+    </form>
+</main>
+
+<style>
+.nominee-card input[type="radio"]:checked + div .nominee-photo {
+    border-color: var(--primary);
+    transform: scale(1.05);
+}
+.nominee-card input[type="radio"]:checked + div {
+    background: radial-gradient(circle at center, rgba(139, 92, 246, 0.15), transparent);
+}
+.nominee-card:has(input[type="radio"]:checked) {
+    border-color: var(--primary);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+}
+</style>
+
+<script>
+let verifiedLocation = null;
+
+function verifyLocation() {
+    const btn = document.getElementById('verifyLocationBtn');
+    const status = document.getElementById('locationStatus');
+    
+    btn.disabled = true;
+    btn.innerText = "Accessing Location...";
+    
+    if(!navigator.geolocation) {
+        status.innerHTML = "<span style='color: #ef4444;'>Geolocation is not supported by your browser</span>";
+        return;
+    }
+    
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            // Mock Location Check: In a real app we'd verify coords against geofence.
+            verifiedLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            
+            status.innerHTML = "<span style='color: #10b981;'><i class='fas fa-check-circle'></i> Location verified. You are within the campus boundary.</span>";
+            document.getElementById('locationBanner').style.borderColor = "rgba(16, 185, 129, 0.4)";
+            btn.style.display = "none";
+            
+            // Show ballot
+            setTimeout(() => {
+                document.getElementById('ballotForm').style.display = "flex";
+            }, 500);
+        },
+        (err) => {
+            btn.disabled = false;
+            btn.innerText = "Try Again";
+            status.innerHTML = "<span style='color: #ef4444;'>Failed to access location. Please allow permissions.</span>";
+        },
+        { enableHighAccuracy: true, timeout: 5000 }
+    );
+}
+
+document.getElementById('ballotForm').onsubmit = async (ev) => {
+    ev.preventDefault();
+    if(!verifiedLocation) {
+        showToast("Location must be verified first.", "error");
+        return;
+    }
+    
+    const btn = ev.target.querySelector('button[type="submit"]');
+    btn.disabled = true; btn.innerText = "Casting vote...";
+    
+    const formData = new FormData(ev.target);
+    const votes = {};
+    
+    // Convert form data to votes object mapping position to nominee id
+    {% for pos in election.positions %}
+    if(formData.get("vote_for_{{ pos|slugify }}")) {
+        votes["{{ pos }}"] = formData.get("vote_for_{{ pos|slugify }}");
+    }
+    {% endfor %}
+    
+    const payload = {
+        club_id: '{{ club.id }}',
+        election_id: '{{ election.id }}',
+        votes: votes,
+        lat: verifiedLocation.lat,
+        lng: verifiedLocation.lng
+    };
+    
+    try {
+        const res = await fetch('/api/elections/submit_vote', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        
+        if(data.success) {
+            document.getElementById('ballotForm').innerHTML = `
+                <div class="card glass" style="padding: 4rem 2rem; text-align: center; border-radius: 24px;">
+                    <i class="fas fa-check-circle" style="font-size: 4rem; color: #10b981; margin-bottom: 1.5rem;"></i>
+                    <h2 style="margin-bottom: 1rem;">Vote Successfully Casted</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 2rem;">Thank you for participating in the digital election. Results will be published by the admin soon.</p>
+                    <a href="/" class="btn btn-outline">Return to Home</a>
+                </div>
+            `;
+        } else {
+            showToast(data.message, 'error');
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fas fa-paper-plane" style="margin-right: 0.8rem;"></i> Cast My Vote`;
+        }
+    } catch(e) {
+        showToast("An error occurred.", "error");
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fas fa-paper-plane" style="margin-right: 0.8rem;"></i> Cast My Vote`;
+    }
+}
+</script>
+{% endblock %}

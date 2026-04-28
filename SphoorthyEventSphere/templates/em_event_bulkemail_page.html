@@ -1,0 +1,171 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+.be-wrap{max-width:1000px;margin:0 auto;padding:2.5rem 1.5rem;}
+.be-back{display:inline-flex;align-items:center;gap:.6rem;color:rgba(255,255,255,.5);font-size:.82rem;text-decoration:none;margin-bottom:2rem;padding:.5rem .9rem;border-radius:10px;border:1px solid rgba(255,255,255,.07);transition:.2s;}
+.be-back:hover{color:#fff;background:rgba(255,255,255,.05);}
+.be-header{margin-bottom:2rem;}
+.be-title{font-size:1.6rem;font-weight:800;}
+.be-title span{background:linear-gradient(135deg,#ec4899,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+/* Grid */
+.be-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+.be-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:20px;padding:1.75rem;}
+.be-card h3{font-size:.9rem;font-weight:700;margin-bottom:1.25rem;}
+/* Form */
+.field{margin-bottom:.85rem;}
+.field label{display:block;font-size:.73rem;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.4);margin-bottom:.35rem;}
+.field input,.field select,.field textarea{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:.7rem 1rem;color:#fff;font-size:.88rem;outline:none;transition:.2s;box-sizing:border-box;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:rgba(236,72,153,.5);background:rgba(236,72,153,.06);}
+.field select option{background:#1e1b4b;color:#fff;}
+.be-send-btn{width:100%;background:linear-gradient(135deg,#ec4899,#8b5cf6);border:none;border-radius:12px;padding:.9rem;color:#fff;font-weight:700;font-size:.9rem;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:.5rem;}
+.be-send-btn:hover{opacity:.85;}
+.be-send-btn:disabled{opacity:.5;cursor:not-allowed;}
+/* Recipients */
+.rec-item{display:flex;align-items:center;gap:.75rem;padding:.6rem .75rem;border-radius:10px;transition:.15s;}
+.rec-item:hover{background:rgba(255,255,255,.04);}
+.rec-avatar{width:34px;height:34px;border-radius:50%;background:rgba(236,72,153,.15);display:flex;align-items:center;justify-content:center;color:#ec4899;font-weight:700;font-size:.87rem;flex-shrink:0;}
+.be-resend-info{display:none;padding:.85rem 1rem;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:10px;font-size:.83rem;color:#818cf8;margin-bottom:.85rem;}
+/* Result */
+.be-result{display:none;padding:.85rem 1rem;border-radius:10px;font-size:.85rem;margin-top:.75rem;}
+#be-toast{position:fixed;bottom:2rem;right:2rem;z-index:9999;padding:1rem 1.5rem;border-radius:14px;font-weight:600;font-size:.88rem;display:none;}
+@media(max-width:700px){.be-wrap{padding:1rem;}.be-grid{grid-template-columns:1fr;}}
+</style>
+
+<div class="be-wrap">
+  <a href="/em/event/{{ event.id }}/hub" class="be-back"><i class="fas fa-arrow-left"></i> Back to EventUp</a>
+
+  <div class="be-header">
+    <h1 class="be-title"><i class="fas fa-envelope-open-text" style="color:#ec4899;margin-right:.5rem;font-size:1.3rem;"></i>Bulk Email — <span>{{ event.title }}</span></h1>
+    <p style="color:rgba(255,255,255,.4);font-size:.82rem;margin-top:.2rem;">
+      {% if event.date %}<i class="fas fa-calendar-alt"></i> {{ event.date }} &nbsp;{% endif %}
+      {% if event.venue %}<i class="fas fa-map-marker-alt"></i> {{ event.venue }}{% endif %}
+    </p>
+  </div>
+
+  <div class="be-grid">
+    <!-- Compose -->
+    <div class="be-card">
+      <h3 style="color:#ec4899;"><i class="fas fa-pen-alt" style="margin-right:.5rem;"></i>Compose Email</h3>
+
+      <div class="field">
+        <label>Email Type</label>
+        <select id="emailType" onchange="toggleType()">
+          <option value="reminder">📣 Event Reminder (Custom Message)</option>
+          <option value="resend_pass">🎟️ Resend Event Pass (QR + PDF to all)</option>
+        </select>
+      </div>
+
+      <div id="customFields">
+        <div class="field">
+          <label>Subject *</label>
+          <input type="text" id="emailSubject" placeholder="e.g. Don't miss the event tomorrow!">
+        </div>
+        <div class="field">
+          <label>Message *</label>
+          <textarea id="emailMsg" rows="5" placeholder="Write your message here. Each recipient will be addressed by name…"></textarea>
+        </div>
+      </div>
+
+      <div class="be-resend-info" id="resendInfo">
+        <i class="fas fa-info-circle" style="margin-right:.4rem;"></i>
+        This will resend the full event pass (QR code + PDF ticket) to all registered participants who have a valid email address.
+      </div>
+
+      <button class="be-send-btn" id="sendBtn" onclick="sendBulk()">
+        <i class="fas fa-paper-plane"></i> Send to All Registrants
+      </button>
+      <div class="be-result" id="sendResult"></div>
+    </div>
+
+    <!-- Recipients preview -->
+    <div class="be-card">
+      <h3 style="color:#14b8a6;"><i class="fas fa-users" style="margin-right:.5rem;"></i>Recipients Preview</h3>
+      <div id="recipientsList">
+        <div style="text-align:center;padding:3rem;color:rgba(255,255,255,.3);">
+          <i class="fas fa-spinner fa-spin" style="font-size:1.5rem;display:block;margin-bottom:.75rem;"></i>
+          Loading recipients…
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="be-toast"></div>
+
+<script>
+function showToast(msg,ok=true){
+  const t=document.getElementById('be-toast');
+  t.innerHTML=msg;t.style.background=ok?'rgba(16,185,129,.15)':'rgba(239,68,68,.12)';
+  t.style.color=ok?'#10b981':'#f87171';t.style.border=ok?'1px solid rgba(16,185,129,.3)':'1px solid rgba(239,68,68,.25)';
+  t.style.display='block';setTimeout(()=>t.style.display='none',4000);
+}
+
+function toggleType(){
+  const type = document.getElementById('emailType').value;
+  document.getElementById('customFields').style.display   = type==='resend_pass'?'none':'';
+  document.getElementById('resendInfo').style.display     = type==='resend_pass'?'':'none';
+}
+
+async function loadRecipients(){
+  const r = await fetch('/em/api/club/event/{{ event.id }}/analytics');
+  const d = await r.json();
+  const list = document.getElementById('recipientsList');
+  if(!d.success){ list.innerHTML='<div style="color:rgba(255,255,255,.3);text-align:center;padding:2rem;">Failed to load.</div>'; return; }
+  const recs = (d.tickets||[]).filter(t=>t.payment_status!=='failed'&&t.user_email);
+  if(!recs.length){
+    list.innerHTML='<div style="text-align:center;padding:3rem;color:rgba(255,255,255,.3);"><i class="fas fa-users" style="font-size:2rem;opacity:.2;display:block;margin-bottom:.75rem;"></i>No recipients with email yet.</div>';
+    return;
+  }
+  list.innerHTML=`
+    <div style="font-size:.78rem;color:rgba(255,255,255,.35);margin-bottom:.75rem;padding:.5rem .75rem;background:rgba(236,72,153,.06);border:1px solid rgba(236,72,153,.15);border-radius:8px;">
+      <i class="fas fa-info-circle" style="margin-right:.3rem;color:#ec4899;"></i>${recs.length} recipient${recs.length>1?'s':''} will receive this email
+    </div>
+    <div style="max-height:400px;overflow-y:auto;">
+    ${recs.map(t=>{
+      const init = (t.user_name||'?').charAt(0).toUpperCase();
+      const badge = t.payment_status==='paid'?'<span style="font-size:.65rem;padding:.15rem .5rem;border-radius:5px;background:rgba(245,158,11,.15);color:#f59e0b;font-weight:700;">PAID</span>':
+                    t.payment_status==='free'?'<span style="font-size:.65rem;padding:.15rem .5rem;border-radius:5px;background:rgba(20,184,166,.12);color:#14b8a6;font-weight:700;">FREE</span>':
+                    '<span style="font-size:.65rem;padding:.15rem .5rem;border-radius:5px;background:rgba(245,158,11,.1);color:#f59e0b;font-weight:700;">CASH</span>';
+      return `<div class="rec-item">
+        <div class="rec-avatar">${init}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;font-size:.83rem;">${t.user_name}</div>
+          <div style="font-size:.73rem;color:rgba(255,255,255,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.user_email}</div>
+        </div>
+        ${badge}
+      </div>`;
+    }).join('')}
+    </div>`;
+}
+
+async function sendBulk(){
+  const type    = document.getElementById('emailType').value;
+  const subject = type==='resend_pass'?'':(document.getElementById('emailSubject').value.trim());
+  const message = type==='resend_pass'?'':(document.getElementById('emailMsg').value.trim());
+  if(type!=='resend_pass'&&(!subject||!message)){showToast('Please fill in subject and message',false);return;}
+  if(!confirm(type==='resend_pass'?'Resend event passes to ALL registrants?':`Send this email to all registrants of "${document.title}"?`)) return;
+  const btn = document.getElementById('sendBtn');
+  btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Sending…';
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+  const r = await fetch('/em/api/club/bulk-email/{{ event.id }}',{
+    method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf},
+    body:JSON.stringify({type,subject,message})
+  });
+  const d = await r.json();
+  btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane"></i> Send to All Registrants';
+  const res = document.getElementById('sendResult');
+  res.style.display='';
+  if(d.success){
+    res.style.background='rgba(16,185,129,.1)';res.style.color='#10b981';res.style.border='1px solid rgba(16,185,129,.25)';
+    res.innerHTML=`✅ Done! Sent: ${d.sent} &nbsp;|&nbsp; Failed: ${d.failed} &nbsp;|&nbsp; Total: ${d.total}`;
+    showToast(`✅ Emails sent to ${d.sent} recipients!`);
+  } else {
+    res.style.background='rgba(239,68,68,.1)';res.style.color='#f87171';res.style.border='1px solid rgba(239,68,68,.25)';
+    res.innerHTML='❌ '+(d.message||'Failed');
+  }
+  setTimeout(()=>res.style.display='none',8000);
+}
+
+loadRecipients();
+</script>
+{% endblock %}

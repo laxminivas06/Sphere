@@ -1,0 +1,42 @@
+<aside class="sidebar">
+    <div style="margin-bottom: 2rem;">
+        <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: #8b5cf6; margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🎭 Event Manager</p>
+        <a href="/em/dashboard" class="nav-item {% if request.path == '/em/dashboard' %}active{% endif %}">
+            <i class="fas fa-chart-pie"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="/em/events" class="nav-item {% if request.path == '/em/events' %}active{% endif %}">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Public Events</span>
+        </a>
+    </div>
+
+    <div>
+        <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: #14b8a6; margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🛠️ Tools</p>
+        <a href="/em/scanner" class="nav-item {% if request.path == '/em/scanner' %}active{% endif %}">
+            <i class="fas fa-qrcode"></i>
+            <span>QR Scanner</span>
+        </a>
+        <a href="/em/tickets" class="nav-item {% if request.path == '/em/tickets' %}active{% endif %}">
+            <i class="fas fa-ticket-alt"></i>
+            <span>Ticket Hub</span>
+        </a>
+    </div>
+
+    {% if user.role in ('event_manager', 'super_admin') %}
+    <div style="margin-top: 1rem;">
+        <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: #6366f1; margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏛️ Admin Only</p>
+        <a href="/super/master" class="nav-item">
+            <i class="fas fa-database"></i>
+            <span>Master DB</span>
+        </a>
+    </div>
+    {% endif %}
+
+    <div style="margin-top: auto;">
+        <a href="/" class="nav-item">
+            <i class="fas fa-home"></i>
+            <span>Back to Home</span>
+        </a>
+    </div>
+</aside>

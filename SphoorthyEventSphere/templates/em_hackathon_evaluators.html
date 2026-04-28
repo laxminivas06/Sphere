@@ -1,0 +1,143 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+  :root { --ev-color: #f59e0b; }
+  .he-main { padding: 2.5rem; max-width: 1000px; margin: 0 auto; }
+  .he-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+  .he-list { margin-top: 1.5rem; display: grid; gap: 1rem; }
+  .he-card { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); padding: 1.25rem 1.5rem; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; transition: .2s; }
+  .he-card:hover { border-color: rgba(245,158,11,.3); transform: translateY(-2px); }
+  .btn-create { background: linear-gradient(135deg, var(--ev-color), #f97316); border: none; border-radius: 10px; padding: .65rem 1.25rem; color: #fff; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: .5rem; transition: .2s; text-decoration: none; }
+  .btn-create:hover { transform: translateY(-2px); box-shadow: 0 8px 20px -6px rgba(245,158,11,.5); }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.8); z-index: 1000; justify-content: center; align-items: center; padding: 1rem; }
+  .modal-box { background: #0f172a; border: 1px solid rgba(245,158,11,.3); border-radius: 16px; width: 100%; max-width: 480px; padding: 2rem; }
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { display: block; font-size: .8rem; color: rgba(255,255,255,.6); margin-bottom: .4rem; }
+  .form-control { width: 100%; background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.1); padding: .75rem 1rem; border-radius: 8px; color: #fff; box-sizing: border-box; }
+</style>
+
+<div class="he-main">
+  <div style="margin-bottom:1.5rem;">
+    <a href="/em/hackathon/{{ event.id }}/hub" style="color:rgba(255,255,255,.5);text-decoration:none;font-size:.85rem;display:inline-flex;align-items:center;gap:.4rem;"><i class="fas fa-arrow-left"></i> Back to Hub</a>
+  </div>
+
+  <div class="he-header">
+    <div>
+      <h1 style="margin:0 0 .3rem 0;font-size:1.8rem;display:flex;align-items:center;gap:.75rem;">
+        <div style="width:40px;height:40px;background:rgba(245,158,11,.15);color:var(--ev-color);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;"><i class="fas fa-gavel"></i></div>
+        Evaluators
+      </h1>
+      <p style="margin:0;color:rgba(255,255,255,.5);font-size:.9rem;">Manage evaluators assigned to {{ event.title }}</p>
+    </div>
+    <button class="btn-create" onclick="document.getElementById('createModal').style.display='flex'">
+      <i class="fas fa-plus"></i> Add Evaluator
+    </button>
+  </div>
+
+  <div class="he-list">
+    {% if evaluators %}
+      {% for ev in evaluators %}
+      <div class="he-card">
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <div style="width:48px;height:48px;background:rgba(255,255,255,.05);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.25rem;color:rgba(255,255,255,.5);">
+            <i class="fas fa-user-tie"></i>
+          </div>
+          <div>
+            <h3 style="margin:0 0 .2rem 0;font-size:1.05rem;">{{ ev.name }}</h3>
+            <p style="margin:0;font-size:.8rem;color:rgba(255,255,255,.45);">{{ ev.email }} &middot; {{ ev.phone or 'No phone' }}</p>
+          </div>
+        </div>
+        <div style="background:rgba(245,158,11,.1);color:var(--ev-color);padding:.25rem .75rem;border-radius:6px;font-size:.75rem;font-weight:700;">
+          Assigned
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="text-align:center;padding:4rem;border:2px dashed rgba(255,255,255,.08);border-radius:20px;">
+        <i class="fas fa-user-slash" style="font-size:3rem;opacity:.2;margin-bottom:1rem;display:block;"></i>
+        <div style="font-size:1.1rem;font-weight:600;margin-bottom:.4rem;">No evaluators assigned</div>
+        <div style="font-size:.85rem;color:rgba(255,255,255,.5);">Click 'Add Evaluator' to create a new evaluator for this event.</div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Create Evaluator Modal -->
+<div id="createModal" class="modal-overlay">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+      <h2 style="margin:0;font-size:1.25rem;">Create Evaluator</h2>
+      <button onclick="document.getElementById('createModal').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:1.25rem;cursor:pointer;">&times;</button>
+    </div>
+    
+    <div class="form-group">
+      <label>Full Name</label>
+      <input type="text" id="evName" class="form-control" placeholder="e.g. Dr. Jane Doe">
+    </div>
+    <div class="form-group">
+      <label>Email Address (used for login)</label>
+      <input type="email" id="evEmail" class="form-control" placeholder="jane@example.com">
+    </div>
+    <div class="form-group">
+      <label>Phone Number (optional)</label>
+      <input type="text" id="evPhone" class="form-control" placeholder="e.g. 9876543210">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="text" id="evPass" class="form-control" value="evaluator123">
+    </div>
+
+    <div style="margin-top:2rem;display:flex;gap:1rem;justify-content:flex-end;">
+      <button onclick="document.getElementById('createModal').style.display='none'" style="padding:.65rem 1.25rem;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:none;color:#fff;cursor:pointer;">Cancel</button>
+      <button id="submitEvBtn" onclick="createEvaluator()" class="btn-create">Create & Assign</button>
+    </div>
+  </div>
+</div>
+
+<script>
+async function createEvaluator() {
+  const name = document.getElementById('evName').value.trim();
+  const email = document.getElementById('evEmail').value.trim();
+  const phone = document.getElementById('evPhone').value.trim();
+  const password = document.getElementById('evPass').value.trim();
+  
+  if (!name || !email || !password) {
+    alert("Name, email, and password are required.");
+    return;
+  }
+  
+  const btn = document.getElementById('submitEvBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+  
+  const payload = {
+    event_id: "{{ event.id }}",
+    name: name,
+    email: email,
+    phone: phone,
+    password: password
+  };
+  
+  try {
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const r = await fetch('/em/api/evaluators/create', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (d.success) {
+      location.reload();
+    } else {
+      alert("Error: " + (d.message || "Failed to create evaluator."));
+      btn.disabled = false;
+      btn.innerHTML = "Create & Assign";
+    }
+  } catch(e) {
+    alert("Network error.");
+    btn.disabled = false;
+    btn.innerHTML = "Create & Assign";
+  }
+}
+</script>
+{% endblock %}

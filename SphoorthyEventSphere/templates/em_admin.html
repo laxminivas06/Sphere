@@ -1,0 +1,1658 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+:root{--em-purple:#8b5cf6;--em-indigo:#6366f1;--em-teal:#14b8a6;--em-pink:#ec4899;--em-sidebar-width:280px;}
+.em-layout{display:grid;grid-template-columns:var(--em-sidebar-width) 1fr;margin-top:0 !important;min-height:calc(100vh - 68px);}
+.em-nav-group{margin-bottom:1.25rem;}
+.em-nav-label{font-size:0.75rem;font-weight:700;letter-spacing:0.15rem;text-transform:uppercase;color:var(--primary);margin-left:1rem;margin-bottom:1rem;display:block;}
+.em-nav{display:flex;align-items:center;gap:0.75rem;padding:0.75rem 1rem;border-radius:var(--radius-md);color:var(--text-secondary);text-decoration:none;cursor:pointer;border:none;transition:all 0.2s ease;font-size:0.875rem;font-weight:600;background:transparent;width:100%;margin-bottom:0.25rem;}
+.em-nav:hover{background:var(--surface-2);color:var(--navy);transform:translateX(4px);}
+.em-nav.active{background:var(--surface-2);color:var(--primary);}
+.em-nav i{width:16px;text-align:center;font-size:1rem;}
+.em-main{padding:2.5rem;min-width:0;background:transparent;}
+.tab-pane{display:none;}
+.tab-pane.active{display:block;animation:fadeIn .35s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* Stats */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:1.25rem;margin-bottom:2.5rem;}
+.stat-tile{background:var(--white);border:1px solid var(--border-light);border-radius:18px;padding:1.4rem 1.5rem;position:relative;overflow:hidden;transition:all .2s;box-shadow:var(--shadow-sm);}
+.stat-tile:hover{transform:translateY(-2px);border-color:var(--primary);box-shadow:var(--shadow-md);}
+.stat-tile::before{content:'';position:absolute;top:-30%;right:-10%;width:120px;height:120px;border-radius:50%;opacity:.05;background:var(--primary);}
+.stat-tile-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:.35rem;font-weight:700;}
+.stat-tile-val{font-size:2rem;font-weight:800;line-height:1;color:var(--navy);}
+.stat-tile-sub{font-size:.75rem;color:var(--text-muted);margin-top:.3rem;}
+/* Cards */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;gap:1rem;flex-wrap:wrap;}
+.section-header h2{font-size:1.15rem;font-weight:700;margin:0;}
+.event-row{background:var(--white);border:1px solid var(--border-light);border-radius:16px;padding:1.25rem 1.5rem;display:flex;gap:1rem;align-items:center;margin-bottom:.75rem;transition:all .2s;flex-wrap:wrap;box-shadow:var(--shadow-sm);}
+.event-row:hover{border-color:var(--primary);background:var(--surface-2);}
+.event-row-banner{width:60px;height:60px;border-radius:12px;object-fit:cover;flex-shrink:0;background:rgba(99,102,241,.15);display:flex;align-items:center;justify-content:center;font-size:1.5rem;}
+.event-row-info{flex:1;}
+.event-row-title{font-weight:800;font-size:.95rem;margin-bottom:.25rem;color:var(--navy);}
+.event-row-meta{font-size:.78rem;color:var(--text-muted);display:flex;gap:.75rem;flex-wrap:wrap;}
+.event-actions{display:flex;gap:.5rem;flex-wrap:wrap;}
+.btn-sm{padding:.45rem .9rem;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer;border:1px solid;transition:.2s;text-decoration:none;display:inline-flex;align-items:center;gap:.35rem;}
+.btn-sm:hover{opacity:.8;}
+.btn-sm-primary{background:rgba(99,102,241,.2);border-color:rgba(99,102,241,.4);color:var(--em-indigo);}
+.btn-sm-danger{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#f87171;}
+.btn-sm-teal{background:rgba(20,184,166,.1);border-color:rgba(20,184,166,.3);color:var(--em-teal);}
+.btn-sm-green{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.3);color:#10b981;}
+.btn-sm-amber{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.3);color:#f59e0b;}
+.badge{padding:.2rem .6rem;border-radius:6px;font-size:.68rem;font-weight:700;text-transform:uppercase;}
+.badge-free{background:rgba(16,185,129,.15);color:#10b981;}
+.badge-paid{background:rgba(245,158,11,.15);color:#f59e0b;}
+.badge-active{background:rgba(99,102,241,.15);color:var(--em-indigo);}
+.badge-cancelled{background:rgba(239,68,68,.1);color:#f87171;}
+.badge-pending_cash{background:rgba(245,158,11,.15);color:#f59e0b;}
+/* Modal */
+.em-modal{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.8);z-index:999;justify-content:center;align-items:center;padding:1rem;}
+.em-modal-box{background:var(--white);border:1px solid var(--border-light);border-radius:24px;padding:2.25rem;width:100%;max-width:620px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
+.em-modal-box h3{margin-bottom:.35rem;font-size:1.15rem;color:var(--navy);font-weight:800;}
+.form-em{display:flex;flex-direction:column;gap:.85rem;}
+.form-group-em label{display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.06em;font-weight:700;}
+.form-group-em input,.form-group-em select,.form-group-em textarea{width:100%;background:var(--surface-2);border:1px solid var(--border-light);border-radius:10px;padding:.75rem 1rem;color:var(--navy);font-size:.9rem;outline:none;transition:.2s;}
+.form-group-em input:focus,.form-group-em select:focus,.form-group-em textarea:focus{border-color:var(--primary);background:var(--white);box-shadow:0 0 0 3px rgba(99,102,241,0.1);}
+.form-group-em select option{background:var(--white);color:var(--navy);}
+.form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:.85rem;}
+/* Chart canvas */
+#deptChart,#yearChart{max-height:220px;}
+/* Tickets table */
+.ticket-table{width:100%;border-collapse:collapse;font-size:.83rem;}
+.ticket-table th{text-align:left;padding:.75rem 1rem;color:var(--text-muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border-light);font-weight:700;}
+.ticket-table td{padding:.75rem 1rem;border-bottom:1px solid var(--border-light);vertical-align:middle;color:var(--text-secondary);}
+.ticket-table tr:hover td{background:var(--surface-2);}
+/* Analytics panel */
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem;}
+.analytics-card{background:var(--white);border:1px solid var(--border-light);border-radius:18px;padding:1.5rem;box-shadow:var(--shadow-sm);}
+.analytics-card h4{font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:1.25rem;font-weight:700;}
+/* QR Grid */
+.qr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;}
+.qr-card{background:var(--white);border:1px solid var(--border-light);border-radius:14px;padding:1.25rem;text-align:center;transition:all .2s;box-shadow:var(--shadow-sm);}
+.qr-card:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:var(--shadow-md);}
+.qr-card img{width:120px;height:120px;border-radius:8px;margin-bottom:.75rem;background:var(--white);padding:4px;border:1px solid var(--border-light);}
+.qr-card-name{font-weight:800;font-size:.85rem;margin-bottom:.2rem;color:var(--navy);}
+.qr-card-meta{font-size:.72rem;color:var(--text-muted);}
+/* Role badge */
+.role-badge{display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .85rem;border-radius:20px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+.role-badge-manager{background:linear-gradient(135deg,rgba(99,102,241,.2),rgba(139,92,246,.2));color:var(--em-purple);border:1px solid rgba(139,92,246,.3);}
+.role-badge-admin{background:rgba(20,184,166,.12);color:var(--em-teal);border:1px solid rgba(20,184,166,.25);}
+/* Responsive */
+  .em-sidebar{width:var(--em-sidebar-width);background:var(--white);border-right:1px solid var(--border-light);padding:1.5rem 1rem;display:flex;flex-direction:column;gap:0.25rem;position:sticky;top:68px;height:calc(100vh - 68px);z-index:100;overflow-y:auto;scrollbar-width:none;}
+  .em-sidebar::-webkit-scrollbar{display:none;}
+  
+  @media (max-width: 900px) {
+    .em-layout { grid-template-columns: 1fr; margin-top: 0; }
+    .em-sidebar { display: none !important; }
+    .em-main { padding: 1.5rem; }
+    .analytics-grid { grid-template-columns: 1fr; }
+    .form-grid-2 { grid-template-columns: 1fr; }
+    .qr-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  }
+</style>
+
+<div class="em-layout">
+  <!-- Sidebar -->
+  <aside class="em-sidebar">
+    {% if user.role == 'event_admin' %}
+      <div class="em-nav-group">
+        <div class="em-nav-label">🏠 Main Menu ⏺️</div>
+        <button class="em-nav active" onclick="showTab('overview',this)"><i class="fas fa-chart-pie"></i><span>Dashboard</span></button>
+        {% if active_event_id %}
+          {% set ae = all_events|selectattr('id', 'eq', active_event_id)|first %}
+          <button class="em-nav" onclick='openEditEventModal({{ ae|tojson|safe }})'><i class="fas fa-info-circle"></i><span>About Event</span></button>
+          <button class="em-nav" onclick="showTab('settings',this)"><i class="fas fa-cog"></i><span>Event App</span></button>
+        {% else %}
+          <button class="em-nav" onclick="showTab('events',this)"><i class="fas fa-calendar-alt"></i><span>My Events</span></button>
+        {% endif %}
+        <a href="/em/scanner" class="em-nav"><i class="fas fa-qrcode"></i><span>QR Scanner</span></a>
+        <a href="/em/events" class="em-nav"><i class="fas fa-ticket-alt"></i><span>Public Events</span></a>
+      </div>
+      <div class="em-nav-group" style="margin-top:auto;">
+        <a href="/" class="em-nav"><i class="fas fa-home"></i><span>Home</span></a>
+        <a href="/api/logout" class="em-nav" style="color: #f87171;"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+      </div>
+    {% else %}
+      <div class="em-nav-group">
+        <div class="em-nav-label">🏠 Main Menu ⏺️</div>
+        <button class="em-nav active" onclick="showTab('overview',this)"><i class="fas fa-chart-pie"></i><span>Dashboard</span></button>
+        <a href="/em/events" class="em-nav"><i class="fas fa-ticket-alt"></i><span>Public Events</span></a>
+      </div>
+    
+      <div class="em-nav-group">
+        <div class="em-nav-label">🏛️ Governance</div>
+        <button class="em-nav" onclick="showTab('events',this)"><i class="fas fa-calendar-alt"></i><span>My Events</span></button>
+      </div>
+    
+      <div class="em-nav-group">
+        <div class="em-nav-label">🎭 College Events</div>
+        <button class="em-nav" onclick="showTab('admins',this)"><i class="fas fa-user-shield"></i><span>Event Admins</span></button>
+        <button class="em-nav" onclick="showTab('settings',this)"><i class="fas fa-cog"></i><span>Gateway & Email</span></button>
+      </div>
+    
+      <div class="em-nav-group" style="margin-top:auto;">
+        <a href="/em/scanner" class="em-nav"><i class="fas fa-qrcode"></i><span>QR Scanner</span></a>
+        <a href="/" class="em-nav"><i class="fas fa-home"></i><span>Home</span></a>
+        <a href="/api/logout" class="em-nav" style="color: #f87171;"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+      </div>
+    {% endif %}
+  </aside>
+
+  <!-- Main -->
+  <main class="em-main">
+
+    <!-- -- Overview Tab ----------------------------------------------- -->
+    <div id="tab-overview" class="tab-pane active">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;">
+        <div style="flex:1;">
+          <h1 style="margin-bottom:.25rem;">
+            {% if user.role == 'super_admin' %}
+            Event <span style="background:linear-gradient(135deg,var(--em-indigo),var(--em-teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Overview (Super Admin)</span>
+            {% elif user.role == 'event_manager' %}
+            Event <span style="background:linear-gradient(135deg,var(--em-indigo),var(--em-purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Manager</span>
+            {% else %}
+            {% if active_event_id %}
+              {% set ae = all_events|selectattr('id', 'eq', active_event_id)|first %}
+              <span style="color:var(--em-teal);">{{ ae.title if ae else 'No Active Event' }}</span>
+            {% else %}
+              <span style="color:var(--em-teal);">No Active Event Selected</span>
+            {% endif %}
+            {% endif %}
+          </h1>
+          <p style="color:var(--text-muted);margin:0;">
+            {% if user.role == 'super_admin' %}
+            View all events, registrations, and analytics across the institution.
+            {% elif user.role == 'event_manager' %}
+            Create events, manage admins, track registrations & analytics.
+            {% else %}
+            Manage your assigned event — update details, manage app settings, scan QR codes, and view analytics.
+            {% endif %}
+          </p>
+        </div>
+        <div class="role-badge role-badge-manager">
+          <i class="fas {% if user.role == 'super_admin' %}fa-globe{% else %}fa-crown{% endif %}"></i>
+          {{ user.name }} · {% if user.role == 'super_admin' %}Super Admin{% else %}Event Manager{% endif %}
+        </div>
+      </div>
+
+      {% if active_event_id %}
+        {% set ev_tickets = all_tickets|selectattr('event_id', 'eq', active_event_id)|list %}
+        {% set total_tickets = ev_tickets|selectattr('payment_status','ne','failed')|list %}
+        {% set paid_tickets  = ev_tickets|selectattr('payment_status','eq','paid')|list %}
+        {% set checked_in    = ev_tickets|selectattr('checked_in')|list %}
+      {% else %}
+        {% set total_tickets = all_tickets|selectattr('payment_status','ne','failed')|list %}
+        {% set paid_tickets  = all_tickets|selectattr('payment_status','eq','paid')|list %}
+        {% set checked_in    = all_tickets|selectattr('checked_in')|list %}
+      {% endif %}
+
+      <div class="stats-row">
+        {% if user.role != 'event_admin' %}
+        <div class="stat-tile" style="border-color:rgba(99,102,241,.2);">
+          <div class="stat-tile-label">Total Events</div>
+          <div class="stat-tile-val" style="color:var(--em-indigo);">{{ events|length }}</div>
+          <div class="stat-tile-sub">{% if user.role == 'event_manager' or user.role == 'super_admin' %}All events{% else %}Assigned events{% endif %}</div>
+        </div>
+        {% endif %}
+        <div class="stat-tile" style="border-color:rgba(139,92,246,.2);">
+          <div class="stat-tile-label">Registrations</div>
+          <div class="stat-tile-val" style="color:var(--em-purple);">{{ total_tickets|length }}</div>
+          <div class="stat-tile-sub">Total tickets issued</div>
+        </div>
+        <div class="stat-tile" style="border-color:rgba(16,185,129,.2);">
+          <div class="stat-tile-label">Revenue</div>
+          <div class="stat-tile-val" style="color:#10b981;">₹{{ paid_tickets|sum(attribute='amount') }}</div>
+          <div class="stat-tile-sub">From paid tickets</div>
+        </div>
+        <div class="stat-tile" style="border-color:rgba(20,184,166,.2);">
+          <div class="stat-tile-label">Check-ins</div>
+          <div class="stat-tile-val" style="color:var(--em-teal);">{{ checked_in|length }}</div>
+          <div class="stat-tile-sub">Venue entries</div>
+        </div>
+      </div>
+
+      <!-- Per-event analytics -->
+      <div class="section-header">
+        <h2>Event Analytics</h2>
+        {% if user.role == 'event_manager' or user.role == 'super_admin' %}
+        <select id="analyticsEvent" onchange="loadAnalytics(this.value)" style="background:var(--white);border:1px solid var(--border-light);border-radius:10px;padding:.5rem 1rem;color:var(--navy);outline:none;font-size:.85rem;">
+          <option value="">Select an event…</option>
+          {% for ev in events %}<option value="{{ ev.id }}">{{ ev.title }}</option>{% endfor %}
+        </select>
+        {% elif user.role == 'event_admin' and active_event_id %}
+        <input type="hidden" id="analyticsEvent" value="{{ active_event_id }}">
+        <script>document.addEventListener('DOMContentLoaded', () => loadAnalytics('{{ active_event_id }}'));</script>
+        {% endif %}
+      </div>
+      <div id="analyticsPanel" style="display:none;">
+        <div style="display:flex; justify-content:flex-end; margin-bottom: 1rem;">
+          <button class="btn-sm btn-sm-primary" onclick="exportOverviewCSV()" style="padding:.5rem 1rem;">
+             <i class="fas fa-download"></i> Download Attendance CSV
+          </button>
+        </div>
+        <div class="stats-row" id="analyticsStats"></div>
+        <div class="analytics-grid">
+          <div class="analytics-card"><h4>Department Distribution</h4><canvas id="deptChart"></canvas></div>
+          <div class="analytics-card"><h4>Year Distribution</h4><canvas id="yearChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- -- Events Tab -------------------------------------------------- -->
+    <div id="tab-events" class="tab-pane">
+      <div class="section-header">
+        <h2>My Events ({{ events|length }})</h2>
+        {% if user.role == 'event_manager' or user.role == 'super_admin' %}
+        <button class="btn-sm btn-sm-primary" onclick="openModal('createEventModal')" style="padding:.65rem 1.25rem;">
+          <i class="fas fa-plus"></i> Create Event
+        </button>
+        {% endif %}
+      </div>
+
+      {% if events %}
+      {% for ev in events %}
+      <div class="event-row" style="cursor:pointer;" onclick="if(event.target.closest('.event-actions')) return; window.location.href='/em/event/{{ ev.id }}/hub'">
+        <div class="event-row-banner">
+          {% if ev.banner %}<img src="/static/uploads/em/banners/{{ ev.banner }}" style="width:60px;height:60px;border-radius:12px;object-fit:cover;" onerror="this.style.display='none'">{% else %}
+          <div style="width:60px;height:60px;border-radius:12px;background:rgba(99,102,241,.15);display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎭</div>
+          {% endif %}
+        </div>
+        <div class="event-row-info">
+          <div class="event-row-title">{{ ev.title }}
+            <span class="badge badge-{{ ev.event_type }}">{{ ev.event_type|upper }}</span>
+            <span class="badge badge-{{ ev.status }}">{{ ev.status|upper }}</span>
+          </div>
+          <div class="event-row-meta">
+            {% if ev.date %}<span><i class="fas fa-calendar-alt"></i> {{ ev.date }}</span>{% endif %}
+            {% if ev.venue %}<span><i class="fas fa-map-marker-alt"></i> {{ ev.venue }}</span>{% endif %}
+            {% if ev.organized_by %}<span><i class="fas fa-building"></i> {{ ev.organized_by }}</span>{% endif %}
+            {% if ev.event_type == 'paid' %}<span><i class="fas fa-rupee-sign"></i> ₹{{ ev.ticket_price }}</span>{% endif %}
+            <span><i class="fas fa-users"></i> {{ all_tickets|selectattr('event_id','eq',ev.id)|list|length }} registered</span>
+          </div>
+        </div>
+        <div class="event-actions">
+          <a href="/em/events/{{ ev.id }}" class="btn-sm btn-sm-primary" target="_blank" title="View Public Page"><i class="fas fa-eye"></i></a>
+          
+          {% if ev.event_category == 'hackathon' %}
+          <a href="/em/hackathon/{{ ev.id }}/hub" class="btn-sm btn-sm-amber" title="Manage Hackathon"><i class="fas fa-rocket"></i> Manage</a>
+          {% elif ev.event_category == 'tech_fest' %}
+          <a href="/em/techfest/{{ ev.id }}/hub" class="btn-sm btn-sm-teal" title="Manage Tech Fest"><i class="fas fa-microchip"></i> Manage</a>
+          {% else %}
+          <a href="/em/event/{{ ev.id }}/hub" class="btn-sm btn-sm-primary" title="Manage Event"><i class="fas fa-tasks"></i> Manage</a>
+          {% endif %}
+
+          <button class="btn-sm btn-sm-primary" onclick='openEditEventModal({{ ev|tojson|safe }})' title="Edit Details"><i class="fas fa-edit"></i></button>
+          {% if user.role == 'event_manager' or user.role == 'super_admin' %}
+          <button class="btn-sm btn-sm-danger" onclick="cancelEvent('{{ ev.id }}','{{ ev.title }}')" title="Cancel Event"><i class="fas fa-ban"></i></button>
+          {% endif %}
+          <button class="btn-sm btn-sm-teal" onclick="document.getElementById('analyticsEvent').value='{{ ev.id }}';loadAnalytics('{{ ev.id }}');showTab('overview',null)" title="Quick Stats"><i class="fas fa-chart-bar"></i></button>
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div style="text-align:center;padding:4rem;color:var(--text-muted);border:2px dashed rgba(255,255,255,.07);border-radius:20px;">
+        <i class="fas fa-calendar-times" style="font-size:3rem;opacity:.2;display:block;margin-bottom:1rem;"></i>
+        {% if user.role == 'event_manager' or user.role == 'super_admin' %}No events created yet. Click "Create Event" to get started.{% else %}No events assigned to you yet. Contact the Event Manager.{% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- -- Tickets Tab -------------------------------------------------- -->
+    <div id="tab-tickets" class="tab-pane">
+      <div class="section-header">
+        <h2>Ticket Management</h2>
+        <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;">
+          <select id="ticketEventFilter" onchange="searchTickets()" style="background:var(--white);border:1px solid var(--border-light);border-radius:10px;padding:.5rem .9rem;color:var(--navy);outline:none;font-size:.82rem;">
+            <option value="">All Events</option>
+            {% for ev in events %}<option value="{{ ev.id }}">{{ ev.title }}</option>{% endfor %}
+          </select>
+          <div style="display:flex;gap:.5rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:.4rem .9rem;align-items:center;">
+            <i class="fas fa-search" style="color:rgba(255,255,255,.3);font-size:.8rem;"></i>
+            <input type="text" id="ticketSearch" placeholder="Search name, roll, ticket ID..." oninput="searchTickets()" style="background:none;border:none;outline:none;color:var(--navy);font-size:.85rem;width:200px;">
+          </div>
+          <button class="btn-sm btn-sm-teal" onclick="exportTickets()" style="padding:.5rem .9rem;border-radius:10px;">
+            <i class="fas fa-download"></i> CSV
+          </button>
+        </div>
+      </div>
+      <div style="overflow-x:auto;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:16px;">
+        <table class="ticket-table">
+          <thead>
+            <tr>
+              <th>Ticket ID</th><th>Student</th><th>Event</th><th>Status</th><th>Check-in</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="ticketsBody">
+            <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">Select an event or search to view tickets…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+
+    <!-- -- All QR Codes Tab -------------------------------------------- -->
+    <div id="tab-allqr" class="tab-pane">
+      <div class="section-header">
+        <h2><i class="fas fa-th" style="color:var(--em-purple);margin-right:.5rem;"></i>All QR Codes</h2>
+        {% if user.role == 'event_manager' or events|length > 1 %}
+        <select id="qrEventFilter" onchange="loadQRCodes(this.value)" style="background:var(--white);border:1px solid var(--border-light);border-radius:10px;padding:.5rem .9rem;color:var(--navy);outline:none;font-size:.82rem;">
+          <option value="">Select an event…</option>
+          {% for ev in events %}<option value="{{ ev.id }}">{{ ev.title }}</option>{% endfor %}
+        </select>
+        {% elif user.role == 'event_admin' and events|length == 1 %}
+        <input type="hidden" id="qrEventFilter" value="{{ events[0].id }}">
+        <script>document.addEventListener('DOMContentLoaded', () => loadQRCodes('{{ events[0].id }}'));</script>
+        {% endif %}
+      </div>
+      <div id="qrGrid" class="qr-grid"></div>
+      <div id="qrPlaceholder" style="text-align:center;padding:4rem;color:var(--text-muted);border:2px dashed rgba(255,255,255,.07);border-radius:20px;">
+        <i class="fas fa-qrcode" style="font-size:3rem;opacity:.2;display:block;margin-bottom:1rem;"></i>
+        Select an event to view all issued QR codes.
+      </div>
+    </div>
+
+    <!-- == Attendance Tab == -->
+    <div id="tab-attendance" class="tab-pane">
+      <div class="section-header">
+        <h2><i class="fas fa-users" style="color:var(--em-teal);margin-right:.5rem;"></i>Attendance by Department</h2>
+        <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;">
+          {% if user.role == 'event_manager' or events|length > 1 %}
+          <select id="attendanceEvent" onchange="loadAttendance(this.value)" style="background:var(--white);border:1px solid var(--border-light);border-radius:10px;padding:.5rem .9rem;color:var(--navy);outline:none;font-size:.82rem;">
+            <option value="">Select an event…</option>
+            {% for ev in events %}<option value="{{ ev.id }}">{{ ev.title }}</option>{% endfor %}
+          </select>
+          {% elif user.role == 'event_admin' and events|length == 1 %}
+          <input type="hidden" id="attendanceEvent" value="{{ events[0].id }}">
+          <script>document.addEventListener('DOMContentLoaded', () => loadAttendance('{{ events[0].id }}'));</script>
+          <span style="color:var(--em-teal);font-size:.9rem;font-weight:600;"><i class="fas fa-check-circle" style="margin-right:.4rem;"></i>{{ events[0].title }}</span>
+          {% endif %}
+          <button class="btn-sm btn-sm-teal" onclick="exportAttendanceCSV()" style="padding:.5rem .9rem;"><i class="fas fa-download"></i> Export CSV</button>
+        </div>
+      </div>
+      <div id="attendancePlaceholder" style="text-align:center;padding:4rem;color:var(--text-muted);border:2px dashed rgba(255,255,255,.07);border-radius:20px;">
+        <i class="fas fa-users" style="font-size:3rem;opacity:.2;display:block;margin-bottom:1rem;"></i>
+        Select an event to view attendance breakdown by department.
+      </div>
+      <div id="attendanceStats" class="stats-row" style="display:none;"></div>
+      <div id="attendanceDeptList" style="display:none;margin-top:1.5rem;"></div>
+    </div>
+
+    <!-- == Bulk Email Tab (event_manager / event_admin / super_admin) == -->
+    {% if user.role in ('event_manager', 'event_admin', 'super_admin') %}
+    <div id="tab-bulkemail" class="tab-pane">
+      <div class="section-header">
+        <h2><i class="fas fa-envelope-open-text" style="color:var(--em-pink);margin-right:.5rem;"></i>Bulk Email to Registrants</h2>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;" id="bulkEmailLayout">
+        <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:1.75rem;">
+          <h3 style="font-size:.95rem;font-weight:700;margin-bottom:1.25rem;color:var(--em-pink);">📧 Compose Email</h3>
+          <div class="form-em">
+            <div class="form-group-em">
+              <label>Select Event</label>
+              <select id="bulkEmailEvent" onchange="previewRecipients()" style="background:var(--surface-2);border:1px solid var(--border-light);border-radius:10px;padding:.75rem 1rem;color:var(--navy);font-size:.9rem;outline:none;width:100%;">
+                <option value="">— Select an event —</option>
+                {% for ev in events %}<option value="{{ ev.id }}">{{ ev.title }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="form-group-em">
+              <label>Email Type</label>
+              <select id="bulkEmailType" onchange="toggleCustomEmail()" style="background:var(--surface-2);border:1px solid var(--border-light);border-radius:10px;padding:.75rem 1rem;color:var(--navy);font-size:.9rem;outline:none;width:100%;">
+                <option value="reminder">📣 Event Reminder</option>
+                <option value="resend_pass">🎟️ Resend Event Pass (PDF + QR to all)</option>
+              </select>
+            </div>
+            <div id="customEmailFields">
+              <div class="form-group-em">
+                <label>Subject</label>
+                <input type="text" id="bulkEmailSubject" placeholder="e.g. Reminder: Don't Miss the Event Tomorrow!" style="background:var(--surface-2);border:1px solid var(--border-light);border-radius:10px;padding:.75rem 1rem;color:var(--navy);font-size:.9rem;outline:none;width:100%;box-sizing:border-box;">
+              </div>
+              <div class="form-group-em">
+                <label>Message</label>
+                <textarea id="bulkEmailMsg" rows="5" placeholder="Write your message here. Each recipient will be addressed by name..." style="background:var(--surface-2);border:1px solid var(--border-light);border-radius:10px;padding:.75rem 1rem;color:var(--navy);font-size:.9rem;outline:none;width:100%;resize:vertical;box-sizing:border-box;"></textarea>
+              </div>
+            </div>
+            <div id="resendPassInfo" style="display:none;padding:.85rem 1rem;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:10px;font-size:.83rem;color:var(--em-indigo);">
+              <i class="fas fa-info-circle" style="margin-right:.4rem;"></i>
+              This will resend the full event pass (QR code + PDF ticket) to all registered participants via email.
+            </div>
+            <button onclick="sendBulkEmail()" id="sendBulkBtn" style="background:linear-gradient(135deg,var(--em-pink),var(--em-purple));border:none;border-radius:12px;padding:.9rem 2rem;color:#fff;font-weight:700;cursor:pointer;transition:.2s;width:100%;font-size:.9rem;">
+              <i class="fas fa-paper-plane" style="margin-right:.5rem;"></i>Send to All Registrants
+            </button>
+            <div id="bulkEmailResult" style="display:none;padding:.85rem 1rem;border-radius:10px;font-size:.85rem;margin-top:.5rem;"></div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:1.75rem;">
+          <h3 style="font-size:.95rem;font-weight:700;margin-bottom:1.25rem;color:var(--em-teal);">👥 Recipients Preview</h3>
+          <div id="recipientsList" style="max-height:440px;overflow-y:auto;">
+            <div style="text-align:center;padding:3rem;color:var(--text-muted);">
+              <i class="fas fa-users" style="font-size:2rem;opacity:.2;display:block;margin-bottom:.75rem;"></i>
+              Select an event to preview recipients.
+            </div>
+          </div>
+        </div>
+      </div>
+      {% raw %}<style>@media(max-width:700px){#bulkEmailLayout{grid-template-columns:1fr!important;}}</style>{% endraw %}
+    </div>
+    {% endif %}
+
+    <!-- == Event Admins Tab (Event Manager / Super Admin) == -->
+    {% if user.role == 'event_manager' or user.role == 'super_admin' %}
+    <div id="tab-admins" class="tab-pane">
+      <div class="section-header">
+        <h2>Event Admins ({{ em_admins|length }})</h2>
+        <button class="btn-sm btn-sm-primary" onclick="openModal('createAdminModal')" style="padding:.65rem 1.25rem;"><i class="fas fa-plus"></i> Add Admin</button>
+      </div>
+      <div style="padding:.85rem 1.25rem;background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15);border-radius:14px;font-size:.82rem;color:var(--em-indigo);margin-bottom:1.5rem;">
+        <i class="fas fa-info-circle" style="margin-right:.5rem;"></i>
+        Event admins have separate login credentials. They can view registrations, scan QR codes at the entrance, and manage their assigned events. All payments must be made online via the gateway.
+      </div>
+      {% if em_admins %}
+      {% for a in em_admins %}
+      <div class="event-row">
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(20,184,166,.15);display:flex;align-items:center;justify-content:center;color:var(--em-teal);font-size:1.1rem;flex-shrink:0;"><i class="fas fa-user-shield"></i></div>
+        <div class="event-row-info">
+          <div class="event-row-title">{{ a.name }}</div>
+          <div class="event-row-meta"><span>{{ a.email }}</span> <span>{{ a.assigned_events|length }} events assigned</span></div>
+        </div>
+        <div class="event-actions">
+          {% if a.assigned_events|length == 0 %}
+          <button class="btn-sm btn-sm-primary" onclick="openAssignModal('{{ a.id }}','{{ a.name }}',{{ a.assigned_events|tojson|safe }})"><i class="fas fa-tasks"></i> Assign Event</button>
+          {% else %}
+          <button class="btn-sm btn-sm-primary" onclick="openAssignModal('{{ a.id }}','{{ a.name }}',{{ a.assigned_events|tojson|safe }})"><i class="fas fa-exchange-alt"></i> Reassign</button>
+          {% endif %}
+          <button class="btn-sm btn-sm-danger" onclick="deleteAdmin('{{ a.id }}','{{ a.name }}')"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div style="text-align:center;padding:3rem;color:var(--text-muted);border:2px dashed rgba(255,255,255,.07);border-radius:16px;">No event admins created yet. Click "Add Admin" to create one.</div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- -- Settings Tab ---------------------------- -->
+    {% if user.role in ('event_manager', 'super_admin', 'event_admin') %}
+    <div id="tab-settings" class="tab-pane">
+      <div class="section-header"><h2>Payment Gateway Settings</h2></div>
+      <div style="max-width:560px;">
+        <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:2rem;margin-bottom:1.5rem;">
+          <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem;">
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(99,102,241,.15);display:flex;align-items:center;justify-content:center;color:var(--em-indigo);"><i class="fas fa-credit-card"></i></div>
+            <div><h3 style="margin:0;font-size:1rem;">Razorpay Integration</h3><p style="margin:0;font-size:.78rem;color:var(--text-muted);">No-cost setup · Free to start</p></div>
+          </div>
+          <div class="form-em">
+            <div class="form-grid-2">
+              <div class="form-group-em">
+                <label>Razorpay Key ID</label>
+                <input type="text" id="rzpKeyId" placeholder="rzp_test_XXXXXXXXXXXXXXXX" value="{{ settings.razorpay_key_id or '' }}">
+              </div>
+              <div class="form-group-em">
+                <label>Razorpay Key Secret</label>
+                <input type="password" id="rzpKeySecret" placeholder="Your key secret" value="{{ settings.razorpay_key_secret or '' }}">
+              </div>
+            </div>
+            
+            <div style="margin-top:1.5rem; padding:1.25rem; background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.15); border-radius:14px; display:flex; align-items:center; justify-content:space-between; gap:1rem;">
+              <div>
+                <h4 style="margin:0; font-size:0.9rem; color:var(--em-indigo);">Payment Demo Mode</h4>
+                <p style="margin:0.25rem 0 0; font-size:0.75rem; color:var(--text-muted);">Enable to skip real payments and use mock verification for testing.</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="payDemoMode" {% if settings.payment_demo_mode %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:2rem;margin-bottom:1.5rem;">
+          <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem;">
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(20,184,166,.15);display:flex;align-items:center;justify-content:center;color:var(--em-teal);"><i class="fas fa-paper-plane"></i></div>
+            <div><h3 style="margin:0;font-size:1rem;">Email Server (SMTP)</h3><p style="margin:0;font-size:.78rem;color:var(--text-muted);">Send verification & bulk emails</p></div>
+          </div>
+          <div class="form-em">
+            <div class="form-grid-2">
+              <div class="form-group-em"><label>SMTP Server (Fixed)</label><input type="text" id="smtpServer" placeholder="smtp.gmail.com" value="{{ settings.smtp_server or '' }}" readonly style="background:rgba(255,255,255,0.03);cursor:not-allowed;opacity:0.7;"></div>
+              <div class="form-group-em"><label>SMTP Port (Fixed)</label><input type="number" id="smtpPort" placeholder="587" value="{{ settings.smtp_port or '' }}" readonly style="background:rgba(255,255,255,0.03);cursor:not-allowed;opacity:0.7;"></div>
+            </div>
+            <div class="form-grid-2">
+              <div class="form-group-em"><label>SMTP User</label><input type="text" id="smtpUser" placeholder="your-email@gmail.com" value="{{ settings.smtp_user or '' }}"></div>
+              <div class="form-group-em"><label>SMTP Password</label><input type="password" id="smtpPass" placeholder="App-specific password" value="{{ settings.smtp_pass or '' }}"></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:2rem;">
+          <button onclick="saveSettings()" style="background:linear-gradient(135deg,var(--em-indigo),var(--em-purple));border:none;border-radius:12px;padding:.9rem 2.5rem;color:#fff;font-weight:700;cursor:pointer;transition:.2s;width:100%;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+            Save All Settings
+          </button>
+          <div id="settingsMsg" style="display:none;padding:.75rem;border-radius:10px;font-size:.85rem;margin-top:1rem;"></div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- == Hackathon Teams Tab (event_manager / event_admin / super_admin) == -->
+    {% if user.role in ('event_manager', 'event_admin', 'super_admin') %}
+    <div id="tab-hackathon" class="tab-pane">
+      <div class="section-header">
+        <h2><i class="fas fa-rocket" style="color:var(--em-purple);margin-right:.5rem;"></i>Hackathon Events & Teams</h2>
+      </div>
+      {% set hackathon_events = events | selectattr('event_category','eq','hackathon') | list %}
+      {% if hackathon_events %}
+      {% for ev in hackathon_events %}
+      <div class="event-row" style="flex-direction:column;gap:0;padding:0;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:1rem;padding:1.25rem 1.5rem;flex-wrap:wrap;">
+          <div style="width:48px;height:48px;border-radius:12px;background:rgba(139,92,246,.15);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">🚀</div>
+          <div style="flex:1;">
+            <div class="event-row-title">{{ ev.title }} <span class="badge" style="background:rgba(139,92,246,.15);color:var(--em-purple);">HACKATHON</span></div>
+            <div class="event-row-meta">
+              {% if ev.date %}<span><i class="fas fa-calendar-alt"></i> {{ ev.date }}</span>{% endif %}
+              {% if ev.min_team_size %}<span><i class="fas fa-users"></i> {{ ev.min_team_size }}–{{ ev.max_team_size }} per team</span>{% endif %}
+            </div>
+          </div>
+          <div class="event-actions">
+            <a href="/em/hackathon/{{ ev.id }}/hub" class="btn-sm btn-sm-primary"><i class="fas fa-rocket"></i> Manage Hackathon</a>
+            <a href="/em/hackathon/{{ ev.id }}/leaderboard" class="btn-sm btn-sm-teal" target="_blank"><i class="fas fa-trophy"></i> Leaderboard</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div style="text-align:center;padding:4rem;color:var(--text-muted);border:2px dashed rgba(255,255,255,.07);border-radius:20px;">
+        <i class="fas fa-rocket" style="font-size:3rem;opacity:.2;display:block;margin-bottom:1rem;"></i>
+        No hackathon events yet. Create one with category &ldquo;Hackathon&rdquo;.
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- == Tech Fest Hub Tab (admin & super_admin) == -->
+    {% if user.role == 'event_admin' or user.role == 'super_admin' or user.role == 'event_manager' %}
+    <div id="tab-techfest_hub" class="tab-pane">
+      <div class="section-header">
+        <h2><i class="fas fa-microchip" style="color:var(--em-indigo);margin-right:.5rem;"></i>Tech Fest Events</h2>
+      </div>
+      {% set techfest_events = events | selectattr('event_category','eq','tech_fest') | list %}
+      {% if techfest_events %}
+      {% for ev in techfest_events %}
+      <div class="event-row" style="flex-direction:column;gap:0;padding:0;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:1rem;padding:1.25rem 1.5rem;flex-wrap:wrap;">
+          <div style="width:48px;height:48px;border-radius:12px;background:rgba(99,102,241,.15);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">⚙️</div>
+          <div style="flex:1;">
+            <div class="event-row-title">{{ ev.title }} <span class="badge" style="background:rgba(99,102,241,.15);color:var(--em-indigo);">TECH FEST</span></div>
+            <div class="event-row-meta">
+              {% if ev.date %}<span><i class="fas fa-calendar-alt"></i> {{ ev.date }}</span>{% endif %}
+              <span><i class="fas fa-building"></i> {{ ev.organized_by }}</span>
+            </div>
+          </div>
+          <div class="event-actions">
+            <a href="/em/techfest/{{ ev.id }}/hub" class="btn-sm btn-sm-primary"><i class="fas fa-microchip"></i> Manage Tech Fest</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div style="text-align:center;padding:4rem;color:var(--text-muted);border:2px dashed rgba(255,255,255,.07);border-radius:20px;">
+        <i class="fas fa-microchip" style="font-size:3rem;opacity:.2;display:block;margin-bottom:1rem;"></i>
+        No tech fest events yet. Create one with category &ldquo;Tech Fest&rdquo;.
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- == Evaluators Tab (admin & super_admin) == -->
+    {% if user.role == 'event_admin' or user.role == 'super_admin' %}
+    <div id="tab-evaluators" class="tab-pane">
+      <div class="section-header">
+        <h2>Evaluators</h2>
+        <button class="btn-sm btn-sm-primary" onclick="openModal('createEvaluatorModal')" style="padding:.65rem 1.25rem;"><i class="fas fa-plus"></i> Add Evaluator</button>
+      </div>
+      <div style="padding:.85rem 1.25rem;background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.15);border-radius:14px;font-size:.82rem;color:var(--em-purple);margin-bottom:1.5rem;">
+        <i class="fas fa-info-circle" style="margin-right:.5rem;"></i>
+        Evaluators have a separate login and can only score hackathon projects for events assigned to them.
+      </div>
+      <div id="evaluatorsList">
+        <div style="text-align:center;padding:3rem;color:var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading…</div>
+      </div>
+    </div>
+    {% endif %}
+
+  </main>
+</div>
+
+<!-- -- Modals -------------------------------------------------------------------- -->
+<!-- Create Event Modal -->
+{% if user.role == 'event_manager' or user.role == 'super_admin' %}
+<div id="createEventModal" class="em-modal">
+  <div class="em-modal-box">
+    <h3>Create New Event</h3>
+    <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1.5rem;">Configure your event details. Specialized dashboards (Hackathon/Tech Fest) will be available based on the category.</p>
+    <form id="createEventForm" enctype="multipart/form-data" class="form-em">
+      <div class="form-group-em"><label>Event Title *</label><input type="text" name="title" placeholder="e.g. Annual Tech Fest 2026" required></div>
+      
+      <div class="form-grid-2">
+        <div class="form-group-em">
+          <label>Category</label>
+          <select name="event_category" id="eventCategorySelect" onchange="toggleSpecialFields()">
+            <option value="club_event" selected>🎭 Club Event</option>
+            <option value="tech_fest">⚙️ Tech Fest</option>
+            <option value="hackathon">🚀 Hackathon</option>
+            <option value="workshop">🔧 Workshop</option>
+            <option value="seminar">📚 Seminar</option>
+            <option value="freshers_party">🎉 Freshers Party</option>
+            <option value="annual_day">🏆 Annual Day</option>
+            <option value="college_fest">🎊 College Fest</option>
+            <option value="other">✨ Other</option>
+          </select>
+        </div>
+        <div class="form-group-em">
+          <label>Organized By *</label>
+          <select name="organized_by_id" id="organizedBySelect" onchange="updateOrganizedByName()" required>
+            <option value="">— Select Club/Entity —</option>
+            {% for c in clubs %}
+            <option value="{{ c.id }}" data-name="{{ c.name }}">{{ c.name }}</option>
+            {% endfor %}
+            <option value="__other__" data-name="">Other (Type manually)</option>
+          </select>
+          <input type="hidden" name="organized_by" id="organizedByHidden">
+        </div>
+      </div>
+
+      <div class="form-group-em" id="organizedByManual" style="display:none;">
+        <label>Specify Organizer Name</label>
+        <input type="text" id="organizedByManualInput" placeholder="e.g. Dept of CSE" oninput="document.getElementById('organizedByHidden').value=this.value">
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group-em"><label>Date *</label><input type="date" name="date" required></div>
+        <div class="form-group-em"><label>Time</label><input type="time" name="time"></div>
+      </div>
+
+      <div class="form-group-em"><label>Venue</label><input type="text" name="venue" placeholder="e.g. Block A Auditorium"></div>
+
+      <div class="form-grid-2">
+        <div class="form-group-em">
+          <label>Event Type</label>
+          <select name="event_type" id="eventTypeSelect" onchange="togglePriceField()">
+            <option value="free">Free</option>
+            <option value="paid">Paid</option>
+          </select>
+        </div>
+        <div class="form-group-em" id="priceField" style="display:none;">
+          <label>Ticket Price (₹)</label>
+          <input type="number" name="ticket_price" placeholder="0" min="0">
+        </div>
+      </div>
+
+      <div class="form-group-em"><label>Maximum Capacity</label><input type="number" name="max_capacity" placeholder="e.g. 500 (Leave blank for unlimited)"></div>
+      
+      <div class="form-group-em"><label>Description</label><textarea name="description" rows="3" placeholder="Briefly describe the event..."></textarea></div>
+
+      <div class="form-group-em">
+        <label>Assign Event Admin</label>
+        <select name="assigned_admin">
+          <option value="">None (I will manage it myself)</option>
+          {% for a in available_admins %}
+            <option value="{{ a.email }}">{{ a.name }} ({{ a.email }})</option>
+          {% endfor %}
+        </select>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.3rem;">Only admins without an assigned event are shown here.</div>
+      </div>
+
+      <div class="form-group-em">
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;background:rgba(99,102,241,0.05);padding:0.75rem;border-radius:10px;border:1px solid rgba(99,102,241,0.1);">
+          <input type="checkbox" name="allow_external" value="yes" style="width:auto;margin:0;"> 
+          <span style="font-size:0.85rem;color:var(--navy);font-weight:600;">Allow External Students (Other Colleges)</span>
+        </label>
+      </div>
+
+      <div class="form-group-em"><label>Event Banner</label><input type="file" name="banner" accept="image/*"></div>
+
+      <!-- Specialized info banners -->
+      <div id="hackathonFields" style="display:none;margin-top:.5rem;">
+        <div style="padding:.65rem 1rem;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:10px;font-size:.82rem;color:var(--em-purple);">
+          <i class="fas fa-info-circle" style="margin-right:.4rem;"></i>Hackathon Mode enabled. You can set team sizes and rounds in the Hackathon Hub later.
+        </div>
+      </div>
+      <div id="techfestFields" style="display:none;margin-top:.5rem;">
+        <div style="padding:.65rem 1rem;background:rgba(20,184,166,.08);border:1px solid rgba(20,184,166,.2);border-radius:10px;font-size:.82rem;color:var(--em-teal);">
+          <i class="fas fa-info-circle" style="margin-right:.4rem;"></i>Tech Fest Mode enabled. You can add sub-events and manage departments in the Tech Fest Hub.
+        </div>
+      </div>
+
+      <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1rem;">
+        <button type="button" class="btn-sm" onclick="closeModal('createEventModal')" style="border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.5);background:none;">Cancel</button>
+        <button type="submit" style="background:linear-gradient(135deg,var(--em-indigo),var(--em-purple));border:none;border-radius:10px;padding:.75rem 2rem;color:#fff;font-weight:700;cursor:pointer;">Create Event</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- Edit Event Modal (accessible to all admin roles) -->
+<div id="editEventModal" class="em-modal">
+  <div class="em-modal-box">
+    <h3>Edit Event</h3>
+    <form id="editEventForm" enctype="multipart/form-data" class="form-em">
+      <input type="hidden" name="event_id" id="editEventId">
+      <div class="form-group-em"><label>Event Title *</label><input type="text" name="title" id="editTitle" required></div>
+      
+      <div class="form-grid-2">
+        <div class="form-group-em">
+          <label>Category</label>
+          <select name="event_category" id="editEventCategory" onchange="toggleEditSpecialFields()">
+            <option value="club_event">🎭 Club Event</option>
+            <option value="tech_fest">⚙️ Tech Fest</option>
+            <option value="hackathon">🚀 Hackathon</option>
+            <option value="workshop">🔧 Workshop</option>
+            <option value="seminar">📚 Seminar</option>
+            <option value="freshers_party">🎉 Freshers Party</option>
+            <option value="annual_day">🏆 Annual Day</option>
+            <option value="college_fest">🎊 College Fest</option>
+            <option value="other">✨ Other</option>
+          </select>
+        </div>
+        <div class="form-group-em">
+          <label>Organized By *</label>
+          <select name="organized_by_id" id="editOrganizedBySelect" onchange="updateEditOrganizedByName()" required>
+            <option value="">— Select Club/Entity —</option>
+            {% for c in clubs %}
+            <option value="{{ c.id }}" data-name="{{ c.name }}">{{ c.name }}</option>
+            {% endfor %}
+            <option value="__other__" data-name="">Other (Type manually)</option>
+          </select>
+          <input type="hidden" name="organized_by" id="editOrganizedByHidden">
+        </div>
+      </div>
+
+      <div class="form-group-em" id="editOrganizedByManual" style="display:none;">
+        <label>Specify Organizer Name</label>
+        <input type="text" id="editOrganizedByManualInput" placeholder="e.g. Dept of CSE" oninput="document.getElementById('editOrganizedByHidden').value=this.value">
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group-em"><label>Date *</label><input type="date" name="date" id="editDate" required></div>
+        <div class="form-group-em"><label>Time</label><input type="time" name="time" id="editTime"></div>
+      </div>
+      <div class="form-group-em"><label>Venue</label><input type="text" name="venue" id="editVenue"></div>
+      
+      <div class="form-grid-2">
+        <div class="form-group-em">
+          <label>Event Type</label>
+          <select name="event_type" id="editEventType" onchange="toggleEditPriceField()">
+            <option value="free">Free</option>
+            <option value="paid">Paid</option>
+          </select>
+        </div>
+        <div class="form-group-em" id="editPriceField" style="display:none;">
+          <label>Ticket Price (₹)</label>
+          <input type="number" name="ticket_price" id="editTicketPrice" min="0">
+        </div>
+      </div>
+      
+      <div class="form-group-em"><label>Description</label><textarea name="description" id="editDescription" rows="3"></textarea></div>
+      
+      <div class="form-grid-2">
+        <div class="form-group-em"><label>Max Capacity</label><input type="number" name="max_capacity" id="editMaxCapacity"></div>
+        <div class="form-group-em">
+          <label>Assign Event Admin</label>
+          <select name="assigned_admin" id="editAssignedAdmin">
+            <option value="">None (I will manage it myself)</option>
+            {% for a in em_admins %}
+              <option value="{{ a.email }}">{{ a.name }} ({{ a.email }})</option>
+            {% endfor %}
+          </select>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.3rem;">Note: Assigning an admin here will replace their current assignment if they already have one.</div>
+        </div>
+      </div>
+
+      <div class="form-group-em">
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;background:rgba(99,102,241,0.05);padding:0.75rem;border-radius:10px;border:1px solid rgba(99,102,241,0.1);">
+          <input type="checkbox" name="allow_external" value="yes" id="editAllowExternal" style="width:auto;margin:0;"> 
+          <span style="font-size:0.85rem;color:var(--navy);font-weight:600;">Allow External Students (Other Colleges)</span>
+        </label>
+      </div>
+      
+      <!-- Hackathon Setup Fields (shown only if category == hackathon) -->
+      <div id="editHackathonFields" style="display:none;border-top:1px dashed rgba(139,92,246,.3);padding-top:1rem;margin-top:.5rem;">
+        <h4 style="color:var(--em-purple);font-size:.9rem;margin-bottom:1rem;text-transform:uppercase;letter-spacing:.05em;"><i class="fas fa-rocket"></i> Hackathon Settings</h4>
+        <div class="form-grid-2">
+          <div class="form-group-em"><label>Min Team Size</label><input type="number" name="min_team_size" id="editMinTeam" placeholder="1" min="1"></div>
+          <div class="form-group-em"><label>Max Team Size</label><input type="number" name="max_team_size" id="editMaxTeam" placeholder="4" min="1"></div>
+        </div>
+        <div class="form-group-em"><label>Problem Statement URL (optional)</label><input type="url" name="problem_statement_url" id="editProblemUrl" placeholder="https://..."></div>
+        <div class="form-group-em"><label>Evaluation Criteria (comma-separated)</label><input type="text" name="evaluation_criteria" id="editEvalCriteria" placeholder="Innovation, Execution, Presentation"></div>
+      </div>
+
+      <div class="form-group-em"><label>Event Banner (Optional)</label><input type="file" name="banner" accept="image/*"></div>
+      
+      <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:.5rem;">
+        <button type="button" class="btn-sm" onclick="closeModal('editEventModal')" style="border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);background:none;padding:.65rem 1.25rem;border-radius:10px;cursor:pointer;">Cancel</button>
+        <button type="submit" style="background:linear-gradient(135deg,var(--em-indigo),var(--em-purple));border:none;border-radius:10px;padding:.65rem 1.5rem;color:#fff;font-weight:700;cursor:pointer;">Update Event</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if user.role == 'event_manager' or user.role == 'super_admin' %}
+<!-- Create Admin Modal -->
+<div id="createAdminModal" class="em-modal">
+  <div class="em-modal-box">
+    <h3>Add Event Admin</h3>
+    <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1.5rem;">Event admins get their own login credentials. They can manage assigned events, scan QR codes, and view registrations. All payments are processed online.</p>
+    <form id="createAdminForm" class="form-em">
+      <div class="form-grid-2">
+        <div class="form-group-em"><label>Full Name *</label><input type="text" id="adminName" placeholder="Admin Name" required></div>
+        <div class="form-group-em"><label>Phone</label><input type="text" id="adminPhone" placeholder="Phone number"></div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-group-em"><label>Email (Login ID) *</label><input type="email" id="adminEmail" placeholder="freshers_admin@college.edu" required></div>
+        <div class="form-group-em"><label>Password *</label><input type="password" id="adminPass" required></div>
+      </div>
+      <div style="padding:.85rem 1.25rem;background:rgba(20,184,166,.06);border:1px solid rgba(20,184,166,.15);border-radius:12px;font-size:.82rem;color:var(--em-teal);">
+        <i class="fas fa-info-circle" style="margin-right:.4rem;"></i>
+        This admin will log in with the email & password above. Their dashboard will show only the events you assign. They can scan QR codes and view all registrations. All payments must be made via the online gateway.
+      </div>
+      <div style="display:flex;gap:.75rem;justify-content:flex-end;">
+        <button type="button" onclick="closeModal('createAdminModal')" style="border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);background:none;padding:.65rem 1.25rem;border-radius:10px;cursor:pointer;">Cancel</button>
+        <button type="submit" style="background:linear-gradient(135deg,var(--em-indigo),var(--em-purple));border:none;border-radius:10px;padding:.65rem 1.5rem;color:#fff;font-weight:700;cursor:pointer;font-size:.88rem;">Create Admin</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Assign Events Modal -->
+<div id="assignModal" class="em-modal">
+  <div class="em-modal-box">
+    <h3>Assign Events to <span id="assignAdminName"></span></h3>
+    <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1.5rem;">Select the events this admin can manage.</p>
+    <input type="hidden" id="assignAdminId">
+    <div id="assignEventsList" style="display:flex;flex-direction:column;gap:.5rem;max-height:300px;overflow-y:auto;margin-bottom:1.5rem;"></div>
+    <div style="display:flex;gap:.75rem;justify-content:flex-end;">
+      <button onclick="closeModal('assignModal')" style="border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);background:none;padding:.65rem 1.25rem;border-radius:10px;cursor:pointer;">Cancel</button>
+      <button onclick="saveAssignment()" style="background:linear-gradient(135deg,var(--em-indigo),var(--em-purple));border:none;border-radius:10px;padding:.65rem 1.5rem;color:#fff;font-weight:700;cursor:pointer;font-size:.88rem;">Save Assignment</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Toast -->
+<div id="toast" style="position:fixed;bottom:2rem;right:2rem;z-index:9999;padding:1rem 1.5rem;border-radius:14px;font-weight:600;font-size:.88rem;display:none;animation:fadeIn .3s ease;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const ALL_EVENTS   = {{ all_events|tojson|safe }};
+const ALL_EM_ADMINS = {{ em_admins|tojson|safe }};
+const USER_ROLE    = '{{ user.role }}';
+let deptChartInst = null, yearChartInst = null;
+
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.em-nav').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function showToast(msg, ok=true) {
+  const t = document.getElementById('toast');
+  t.innerHTML = msg;
+  t.style.background = ok ? 'rgba(16,185,129,.15)' : 'rgba(239,68,68,.12)';
+  t.style.color      = ok ? '#10b981' : '#f87171';
+  t.style.border     = ok ? '1px solid rgba(16,185,129,.3)' : '1px solid rgba(239,68,68,.25)';
+  t.style.display    = 'block';
+  setTimeout(() => t.style.display = 'none', 3500);
+}
+
+function togglePriceField() {
+  const t = document.getElementById('eventTypeSelect').value;
+  document.getElementById('priceField').style.display = t === 'paid' ? '' : 'none';
+}
+
+function toggleEditPriceField() {
+  const t = document.getElementById('editEventType').value;
+  document.getElementById('editPriceField').style.display = t === 'paid' ? 'block' : 'none';
+}
+
+function openEditEventModal(e) {
+  document.getElementById('editEventId').value = e.id;
+  document.getElementById('editTitle').value = e.title || '';
+  document.getElementById('editEventCategory').value = e.event_category || 'club_event';
+  document.getElementById('editOrganizedBySelect').value = e.organized_by_id || '';
+  document.getElementById('editOrganizedByHidden').value = e.organized_by || '';
+  document.getElementById('editDate').value = e.date || '';
+  document.getElementById('editTime').value = e.time || '';
+  document.getElementById('editVenue').value = e.venue || '';
+  document.getElementById('editEventType').value = e.event_type || 'free';
+  document.getElementById('editTicketPrice').value = e.ticket_price || '';
+  document.getElementById('editDescription').value = e.description || '';
+  document.getElementById('editMaxCapacity').value = e.max_capacity || '';
+  document.getElementById('editAssignedAdmin').value = e.assigned_admin || '';
+  document.getElementById('editAllowExternal').checked = e.allow_external === true;
+  
+  if (e.organized_by_id === '__other__') {
+    document.getElementById('editOrganizedByManual').style.display = 'block';
+    document.getElementById('editOrganizedByManualInput').value = e.organized_by || '';
+  } else {
+    document.getElementById('editOrganizedByManual').style.display = 'none';
+  }
+
+  if (e.event_category === 'hackathon') {
+    document.getElementById('editHackathonFields').style.display = 'block';
+    document.getElementById('editMinTeam').value = e.min_team_size || 1;
+    document.getElementById('editMaxTeam').value = e.max_team_size || 5;
+    document.getElementById('editProblemUrl').value = e.problem_statement_url || '';
+    document.getElementById('editEvalCriteria').value = e.evaluation_criteria || '';
+  } else {
+    document.getElementById('editHackathonFields').style.display = 'none';
+  }
+
+  toggleEditPriceField();
+  openModal('editEventModal');
+}
+
+function toggleEditSpecialFields() {
+  const cat = document.getElementById('editEventCategory').value;
+  document.getElementById('editHackathonFields').style.display = (cat === 'hackathon' ? 'block' : 'none');
+}
+
+function updateEditOrganizedByName() {
+  const sel = document.getElementById('editOrganizedBySelect');
+  const opt = sel.options[sel.selectedIndex];
+  const manual = document.getElementById('editOrganizedByManual');
+  const hidden = document.getElementById('editOrganizedByHidden');
+  
+  if (sel.value === '__other__') {
+    manual.style.display = 'block';
+    hidden.value = document.getElementById('editOrganizedByManualInput').value;
+  } else {
+    manual.style.display = 'none';
+    hidden.value = opt.getAttribute('data-name');
+  }
+}
+
+// Organized By — Club Dropdown
+function updateOrganizedByName() {
+  const sel = document.getElementById('organizedBySelect');
+  const opt = sel.options[sel.selectedIndex];
+  const manual = document.getElementById('organizedByManual');
+  const hidden = document.getElementById('organizedByHidden');
+  if (sel.value === '__other__') {
+    manual.style.display = '';
+    hidden.value = '';
+  } else {
+    manual.style.display = 'none';
+    hidden.value = opt.getAttribute('data-name') || '';
+  }
+}
+
+// Create Event
+{% if user.role == 'event_manager' or user.role == 'super_admin' %}
+document.getElementById('createEventForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  // Ensure organized_by is set  
+  if (!fd.get('organized_by') || fd.get('organized_by') === '') {
+    const sel = document.getElementById('organizedBySelect');
+    const opt = sel.options[sel.selectedIndex];
+    if (sel.value !== '__other__') {
+      fd.set('organized_by', opt.getAttribute('data-name') || '');
+    }
+  }
+  const r  = await fetch('/em/api/events/create', { method: 'POST', headers: {"X-CSRFToken": document.querySelector("meta[name=\"csrf-token\"]").content}, body: fd });
+  const d  = await r.json();
+  if (d.success) { showToast('✅ Event created!'); closeModal('createEventModal'); setTimeout(() => location.reload(), 1000); }
+  else showToast('❌ ' + (d.message || 'Failed'), false);
+};
+
+
+// Cancel Event
+async function cancelEvent(id, title) {
+  if (!confirm(`Cancel event "${title}"? This will remove it from public listing.`)) return;
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+  const r = await fetch(`/em/api/events/cancel/${id}`, { method: 'POST', headers: {'Content-Type':'application/json', 'X-CSRFToken': csrf} });
+  const d = await r.json();
+  if (d.success) { showToast('Event cancelled'); setTimeout(() => location.reload(), 1000); }
+  else showToast('❌ Failed', false);
+}
+
+// Create Admin
+document.getElementById('createAdminForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+  const r = await fetch('/em/api/admins/create', {
+    method: 'POST', headers: {'Content-Type':'application/json', 'X-CSRFToken': csrf},
+    body: JSON.stringify({
+      name: document.getElementById('adminName').value,
+      email: document.getElementById('adminEmail').value,
+      password: document.getElementById('adminPass').value,
+      phone: document.getElementById('adminPhone').value
+    })
+  });
+  const d = await r.json();
+  if (d.success) { showToast('✅ Admin created!'); closeModal('createAdminModal'); setTimeout(() => location.reload(), 1000); }
+  else showToast('❌ ' + (d.message || 'Failed'), false);
+};
+
+// Assign Events
+function openAssignModal(adminId, adminName, assignedEvents) {
+  document.getElementById('assignAdminId').value = adminId;
+  document.getElementById('assignAdminName').textContent = adminName;
+
+  // Build set of events already occupied by OTHER admins
+  const occupiedMap = {}; // event_id -> admin_name
+  ALL_EM_ADMINS.forEach(adm => {
+    if (adm.id === adminId) return; // skip self
+    (adm.assigned_events || []).forEach(eid => {
+      const ev = ALL_EVENTS.find(e => e.id === eid && e.status === 'active');
+      if (ev) occupiedMap[eid] = adm.name;
+    });
+  });
+
+  const activeEvents = ALL_EVENTS.filter(e => e.status === 'active');
+  const list = document.getElementById('assignEventsList');
+  if (!activeEvents.length) {
+    list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted);">No active events available.</div>';
+  } else {
+    list.innerHTML = activeEvents.map(ev => {
+      const isMine     = assignedEvents.includes(ev.id);
+      const takenBy    = occupiedMap[ev.id];
+      const isDisabled = takenBy && !isMine;
+      return `
+      <label style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;
+        background:${isDisabled ? 'rgba(239,68,68,.04)' : 'rgba(255,255,255,.03)'};
+        border:1px solid ${isDisabled ? 'rgba(239,68,68,.18)' : 'rgba(255,255,255,.07)'};
+        border-radius:10px;cursor:${isDisabled ? 'not-allowed' : 'pointer'};
+        opacity:${isDisabled ? '.55' : '1'};">
+        <input type="checkbox" value="${ev.id}" ${isMine ? 'checked' : ''}
+          ${isDisabled ? 'disabled' : ''} style="accent-color:var(--em-indigo);">
+        <span style="flex:1;">
+          <span style="font-weight:600;font-size:.88rem;">${ev.title}</span>
+          <span style="font-size:.75rem;color:var(--text-muted);display:block;">
+            ${ev.date||''} · ${ev.event_type==='paid'?'₹'+ev.ticket_price:'Free'}
+            ${ev.organized_by?' · '+ev.organized_by:''}
+          </span>
+          ${isDisabled ? `<span style="font-size:.72rem;color:#f87171;font-weight:600;"><i class="fas fa-lock" style="margin-right:.25rem;"></i>Already assigned to <strong>${takenBy}</strong></span>` : ''}
+        </span>
+      </label>`;
+    }).join('');
+  }
+  openModal('assignModal');
+}
+async function saveAssignment() {
+  const id  = document.getElementById('assignAdminId').value;
+  const ids = [...document.querySelectorAll('#assignEventsList input:checked:not(:disabled)')].map(c => c.value);
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+  const r   = await fetch(`/em/api/admins/${id}/assign`, {
+    method: 'POST', headers: {'Content-Type':'application/json', 'X-CSRFToken': csrf},
+    body: JSON.stringify({ event_ids: ids })
+  });
+  const d = await r.json();
+  if (d.success) { showToast('✅ Events assigned!'); closeModal('assignModal'); setTimeout(() => location.reload(), 1000); }
+  else showToast('❌ ' + (d.message || 'Assignment failed'), false);
+}
+async function deleteAdmin(id, name) {
+  if (!confirm(`Remove admin "${name}"?`)) return;
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+  const r = await fetch(`/em/api/admins/${id}/delete`, { method: 'POST', headers: {'Content-Type':'application/json', 'X-CSRFToken': csrf} });
+  const d = await r.json();
+  if (d.success) { showToast('Admin removed'); setTimeout(() => location.reload(), 1000); }
+  else showToast('❌ Failed', false);
+}
+
+// Settings
+async function saveSettings() {
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+  const r = await fetch('/em/api/settings', {
+    method: 'POST', headers: {'Content-Type':'application/json', 'X-CSRFToken': csrf},
+    body: JSON.stringify({
+      razorpay_key_id:     document.getElementById('rzpKeyId').value.trim(),
+      razorpay_key_secret: document.getElementById('rzpKeySecret').value.trim(),
+      payment_demo_mode:   document.getElementById('payDemoMode').checked,
+      smtp_server:         document.getElementById('smtpServer').value.trim(),
+      smtp_port:           document.getElementById('smtpPort').value.trim(),
+      smtp_user:           document.getElementById('smtpUser').value.trim(),
+      smtp_pass:           document.getElementById('smtpPass').value.trim()
+    })
+  });
+  const d = await r.json();
+  const msg = document.getElementById('settingsMsg');
+  msg.style.display = 'block';
+  if (d.success) {
+    msg.textContent = '✅ Settings saved!';
+    msg.style.background = 'rgba(16,185,129,.12)'; msg.style.color = '#10b981'; msg.style.border = '1px solid rgba(16,185,129,.25)';
+  } else {
+    msg.textContent = '❌ Failed';
+    msg.style.background = 'rgba(239,68,68,.1)'; msg.style.color = '#f87171'; msg.style.border = '1px solid rgba(239,68,68,.25)';
+  }
+  setTimeout(() => msg.style.display = 'none', 3000);
+}
+{% endif %}
+
+// Edit Event (available to all admin roles for their assigned events)
+document.addEventListener('DOMContentLoaded', () => {
+  const editForm = document.getElementById('editEventForm');
+  if (editForm) {
+    editForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const id = document.getElementById('editEventId').value;
+      const csrf = document.querySelector('meta[name="csrf-token"]').content;
+      const r = await fetch('/em/api/events/update/' + id, { method: 'POST', body: fd, headers: {'X-CSRFToken': csrf} });
+      const d = await r.json();
+      if (d.success) { showToast('✅ Event updated!'); closeModal('editEventModal'); setTimeout(() => location.reload(), 1000); }
+      else showToast('❌ Failed', false);
+    };
+  }
+});
+
+// ═══ Ticket search (all roles) ═══════════════════════════════════════════════
+function exportTickets() {
+  const eventId = document.getElementById('ticketEventFilter').value;
+  if (!eventId) {
+    showToast('Please select an event from the dropdown first to export.', false);
+    return;
+  }
+  window.location.href = `/em/api/ticket/export/${eventId}`;
+}
+
+let ticketDebounce;
+async function searchTickets() {
+  clearTimeout(ticketDebounce);
+  ticketDebounce = setTimeout(async () => {
+    const q       = document.getElementById('ticketSearch').value;
+    const eventId = document.getElementById('ticketEventFilter').value;
+    const params  = new URLSearchParams({ q, event_id: eventId });
+    const r       = await fetch('/em/api/ticket/search?' + params);
+    const d       = await r.json();
+    renderTickets(d.tickets || []);
+  }, 300);
+}
+function renderTickets(tickets) {
+  const tbody = document.getElementById('ticketsBody');
+  if (!tickets.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">No tickets found.</td></tr>';
+    return;
+  }
+  const evMap = Object.fromEntries(ALL_EVENTS.map(e => [e.id, e.title]));
+  tbody.innerHTML = tickets.map(t => `
+    <tr>
+      <td><code style="background:rgba(99,102,241,.1);padding:.2rem .5rem;border-radius:6px;color:var(--em-indigo);font-size:.78rem;">${t.ticket_id}</code></td>
+      <td><div style="font-weight:600;font-size:.85rem;">${t.user_name}</div><div style="color:var(--text-muted);font-size:.75rem;">${t.user_roll||''} · ${t.user_dept||''}</div></td>
+      <td style="font-size:.82rem;color:var(--text-muted);">${evMap[t.event_id]||t.event_id}</td>
+      <td>
+        ${t.payment_status==='paid'?'<span class="badge badge-paid">PAID</span>':
+          t.payment_status==='free'?'<span class="badge badge-free">FREE</span>':
+          '<span class="badge" style="background:rgba(239,68,68,.1);color:#f87171;">'+t.payment_status+'</span>'}
+      </td>
+      <td>${t.checked_in?`<span class="badge" style="background:rgba(16,185,129,.12);color:#10b981;">✓ ${(t.checked_in_at||'').substring(11,16)}</span>`:'<span style="color:var(--text-muted);font-size:.8rem;">Pending</span>'}</td>
+      <td>
+        <div style="display:flex;gap:.4rem;">
+          <a href="/em/ticket/${t.ticket_id}" class="btn-sm btn-sm-primary" target="_blank"><i class="fas fa-eye"></i></a>
+          <button class="btn-sm btn-sm-teal" onclick="resendTicket('${t.ticket_id}')"><i class="fas fa-envelope"></i></button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+async function resendTicket(id) {
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+  const r = await fetch(`/em/api/ticket/${id}/resend`, { method:'POST', headers:{'Content-Type':'application/json', 'X-CSRFToken': csrf} });
+  const d = await r.json();
+  showToast(d.success ? '✅ Email resent' : '❌ ' + d.message, d.success);
+}
+
+// ═══ Payments Tab ════════════════════════════════════════════════════════════
+async function loadPayments(eventId) {
+  if (!eventId) {
+    document.getElementById('paymentPlaceholder').style.display = '';
+    document.getElementById('paymentStats').style.display = 'none';
+    document.getElementById('pendingCashSection').style.display = 'none';
+    document.getElementById('verifiedSection').style.display = 'none';
+    return;
+  }
+  document.getElementById('paymentPlaceholder').style.display = 'none';
+  
+  const r = await fetch(`/em/api/analytics/${eventId}`);
+  const d = await r.json();
+  if (!d.success) return;
+
+  // Stats
+  const statsDiv = document.getElementById('paymentStats');
+  statsDiv.style.display = '';
+  statsDiv.innerHTML = `
+    <div class="stat-tile" style="border-color:rgba(16,185,129,.2);"><div class="stat-tile-label">Total Revenue</div><div class="stat-tile-val" style="color:#10b981;">₹${d.revenue}</div><div class="stat-tile-sub">${d.paid} paid tickets</div></div>
+    <div class="stat-tile" style="border-color:rgba(99,102,241,.2);"><div class="stat-tile-label">Total Registered</div><div class="stat-tile-val" style="color:var(--em-indigo);">${d.total}</div><div class="stat-tile-sub">${d.free} free · ${d.paid} paid</div></div>`;
+
+  // Pending cash
+  const pending = d.tickets.filter(t => t.payment_status === 'pending_cash');
+  if (pending.length > 0) {
+    document.getElementById('pendingCashSection').style.display = '';
+    document.getElementById('pendingCashBody').innerHTML = pending.map(t => `
+      <tr>
+        <td><code style="background:rgba(245,158,11,.1);padding:.2rem .5rem;border-radius:6px;color:#f59e0b;font-size:.78rem;">${t.ticket_id}</code></td>
+        <td><div style="font-weight:600;font-size:.85rem;">${t.user_name}</div><div style="color:var(--text-muted);font-size:.75rem;">${t.user_roll||''} · ${t.user_dept||''}</div></td>
+        <td style="font-weight:700;color:#f59e0b;">₹${t.amount}</td>
+        <td style="font-size:.78rem;color:var(--text-muted);">${(t.created_at||'').substring(0,10)}</td>
+        <td><button class="btn-sm btn-sm-green" onclick="verifyCash('${t.ticket_id}')"><i class="fas fa-check"></i> Verify Cash</button></td>
+      </tr>`).join('');
+  } else {
+    document.getElementById('pendingCashSection').style.display = 'none';
+  }
+
+  // Verified
+  const verified = d.tickets.filter(t => t.payment_status === 'paid');
+  if (verified.length > 0) {
+    document.getElementById('verifiedSection').style.display = '';
+    document.getElementById('verifiedBody').innerHTML = verified.map(t => `
+      <tr>
+        <td><code style="background:rgba(16,185,129,.1);padding:.2rem .5rem;border-radius:6px;color:#10b981;font-size:.78rem;">${t.ticket_id}</code></td>
+        <td><div style="font-weight:600;font-size:.85rem;">${t.user_name}</div><div style="color:var(--text-muted);font-size:.75rem;">${t.user_roll||''}</div></td>
+        <td style="font-weight:700;color:#10b981;">₹${t.amount}</td>
+        <td><span class="badge ${t.payment_method&&t.payment_method.includes('Cash')?'badge-pending_cash':'badge-paid'}">${t.payment_method||'Online'}</span></td>
+        <td style="font-size:.78rem;color:var(--text-muted);">${t.verified_at?(t.verified_at||'').substring(0,10):(t.created_at||'').substring(0,10)}</td>
+      </tr>`).join('');
+  } else {
+    document.getElementById('verifiedSection').style.display = 'none';
+  }
+}
+
+
+// ═══ CSV Export from Overview analytics ══════════════════════════════════════
+let _lastAnalyticsData = null;
+function exportOverviewCSV() {
+  const evId = document.getElementById('analyticsEvent') ? document.getElementById('analyticsEvent').value : '';
+  if (!evId) { showToast('Select an event first', false); return; }
+  window.location.href = `/em/api/ticket/export/${evId}`;
+}
+
+// ═══ QR Codes Grid ═══════════════════════════════════════════════════════════
+async function loadQRCodes(eventId) {
+  const grid = document.getElementById('qrGrid');
+  const ph = document.getElementById('qrPlaceholder');
+  if (!eventId) { grid.innerHTML = ''; ph.style.display = ''; return; }
+  ph.style.display = 'none';
+  
+  const r = await fetch(`/em/api/analytics/${eventId}`);
+  const d = await r.json();
+  if (!d.success) return;
+
+  const tickets = d.tickets.filter(t => t.payment_status !== 'failed');
+  if (!tickets.length) {
+    grid.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-muted);grid-column:1/-1;">No tickets issued for this event yet.</div>';
+    return;
+  }
+  grid.innerHTML = tickets.map(t => `
+    <div class="qr-card">
+      <img src="/em/api/ticket/${t.ticket_id}/qr" alt="QR ${t.ticket_id}">
+      <div class="qr-card-name">${t.user_name}</div>
+      <div class="qr-card-meta">${t.ticket_id}</div>
+      <div class="qr-card-meta">${t.user_roll||t.user_email||''}</div>
+      <div style="margin-top:.5rem;">
+        ${t.payment_status==='paid'?'<span class="badge badge-paid">PAID</span>':
+          t.payment_status==='free'?'<span class="badge badge-free">FREE</span>':
+          '<span class="badge badge-pending_cash">CASH PENDING</span>'}
+        ${t.checked_in?'<span class="badge" style="background:rgba(16,185,129,.12);color:#10b981;margin-left:.25rem;">✓ IN</span>':''}
+      </div>
+      <div style="margin-top:.75rem;display:flex;gap:.35rem;justify-content:center;">
+        <a href="/em/api/ticket/${t.ticket_id}/download" class="btn-sm btn-sm-primary" title="Download PDF Pass" target="_blank"><i class="fas fa-file-pdf"></i></a>
+        <button class="btn-sm btn-sm-teal" onclick="resendTicket('${t.ticket_id}')" title="Resend Pass to Email"><i class="fas fa-envelope"></i></button>
+        <a href="/em/ticket/${t.ticket_id}" class="btn-sm btn-sm-primary" title="View Ticket" target="_blank" style="background:rgba(20,184,166,.1);border-color:rgba(20,184,166,.3);color:var(--em-teal);"><i class="fas fa-eye"></i></a>
+      </div>
+    </div>`).join('');
+}
+
+// ═══ Analytics ═══════════════════════════════════════════════════════════════
+async function loadAnalytics(eventId) {
+  if (!eventId) {
+      localStorage.removeItem('selectedEventId');
+      return;
+  }
+  localStorage.setItem('selectedEventId', eventId);
+  const r = await fetch(`/em/api/analytics/${eventId}`);
+  const d = await r.json();
+  if (!d.success) return;
+
+  // Update top-level aggregate tiles too
+  const topTiles = document.querySelector('.stats-row');
+  if (topTiles) {
+      topTiles.innerHTML = `
+        <div class="stat-tile" style="border-color:rgba(99,102,241,.2);">
+          <div class="stat-tile-label">Total Registered</div>
+          <div class="stat-tile-val" style="color:var(--em-indigo);">${d.total}</div>
+          <div class="stat-tile-sub">For this event</div>
+        </div>
+        <div class="stat-tile" style="border-color:rgba(139,92,246,.2);">
+          <div class="stat-tile-label">Paid Registrations</div>
+          <div class="stat-tile-val" style="color:var(--em-purple);">${d.paid}</div>
+          <div class="stat-tile-sub">${d.free} free tickets</div>
+        </div>
+        <div class="stat-tile" style="border-color:rgba(16,185,129,.2);">
+          <div class="stat-tile-label">Revenue Generated</div>
+          <div class="stat-tile-val" style="color:#10b981;">₹${d.revenue}</div>
+          <div class="stat-tile-sub">Verified payments</div>
+        </div>
+        <div class="stat-tile" style="border-color:rgba(20,184,166,.2);">
+          <div class="stat-tile-label">Check-ins</div>
+          <div class="stat-tile-val" style="color:var(--em-teal);">${d.checked_in}</div>
+          <div class="stat-tile-sub">${d.total ? Math.round(d.checked_in/d.total*100) : 0}% attendance</div>
+        </div>
+      `;
+  }
+
+  document.getElementById('analyticsPanel').style.display = '';
+  document.getElementById('analyticsStats').innerHTML = `
+    <div class="stat-tile" style="border-color:rgba(99,102,241,.2);"><div class="stat-tile-label">Total Registered</div><div class="stat-tile-val" style="color:var(--em-indigo);">${d.total}</div></div>
+    <div class="stat-tile" style="border-color:rgba(16,185,129,.2);"><div class="stat-tile-label">Checked In</div><div class="stat-tile-val" style="color:#10b981;">${d.checked_in}</div><div class="stat-tile-sub">${d.total?Math.round(d.checked_in/d.total*100):0}% attendance</div></div>
+    <div class="stat-tile" style="border-color:rgba(245,158,11,.2);"><div class="stat-tile-label">Revenue</div><div class="stat-tile-val" style="color:#f59e0b;">₹${d.revenue}</div><div class="stat-tile-sub">${d.paid} paid · ${d.free} free</div></div>
+    <div class="stat-tile" style="border-color:rgba(139,92,246,.2);"><div class="stat-tile-label">Unchecked</div><div class="stat-tile-val" style="color:var(--em-purple);">${d.total - d.checked_in}</div></div>`;
+
+  const buildChart = (canvasId, inst, labels, values, colors) => {
+    if (inst) inst.destroy();
+    return new Chart(document.getElementById(canvasId), {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0, hoverOffset: 6 }] },
+      options: { plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 12, padding: 12, font: { size: 11 } } } }, cutout: '65%' }
+    });
+  };
+  const palette1 = ['#6366f1','#8b5cf6','#ec4899','#14b8a6','#f59e0b','#10b981','#3b82f6'];
+  const palette2 = ['#ec4899','#f59e0b','#10b981','#6366f1','#14b8a6'];
+  deptChartInst = buildChart('deptChart', deptChartInst, Object.keys(d.dept_distribution), Object.values(d.dept_distribution), palette1);
+  yearChartInst = buildChart('yearChart', yearChartInst, Object.keys(d.year_distribution), Object.values(d.year_distribution), palette2);
+}
+
+// ═══ Attendance Tab ═══════════════════════════════════════════════════════════
+let _attendanceEventId = null;
+async function loadAttendance(eventId) {
+  _attendanceEventId = eventId;
+  const ph = document.getElementById('attendancePlaceholder');
+  const stats = document.getElementById('attendanceStats');
+  const deptList = document.getElementById('attendanceDeptList');
+  if (!eventId) { ph.style.display=''; stats.style.display='none'; deptList.style.display='none'; return; }
+  ph.style.display = 'none';
+  const r = await fetch(`/em/api/analytics/${eventId}`);
+  const d = await r.json();
+  if (!d.success) return;
+
+  stats.style.display = '';
+  stats.innerHTML = `
+    <div class="stat-tile" style="border-color:rgba(99,102,241,.2);"><div class="stat-tile-label">Total Registered</div><div class="stat-tile-val" style="color:var(--em-indigo);">${d.total}</div></div>
+    <div class="stat-tile" style="border-color:rgba(16,185,129,.2);"><div class="stat-tile-label">Checked In</div><div class="stat-tile-val" style="color:#10b981;">${d.checked_in}</div><div class="stat-tile-sub">${d.total?Math.round(d.checked_in/d.total*100):0}% attendance</div></div>
+    <div class="stat-tile" style="border-color:rgba(236,72,153,.2);"><div class="stat-tile-label">Not Yet Arrived</div><div class="stat-tile-val" style="color:var(--em-pink);">${d.total - d.checked_in}</div></div>
+    <div class="stat-tile" style="border-color:rgba(20,184,166,.2);"><div class="stat-tile-label">Departments</div><div class="stat-tile-val" style="color:var(--em-teal);">${Object.keys(d.dept_distribution).length}</div></div>`;
+
+  deptList.style.display = '';
+  const tickets = d.tickets;
+  deptList.innerHTML = Object.entries(d.dept_distribution)
+    .sort((a,b) => b[1]-a[1])
+    .map(([dept, count]) => {
+      const depts = tickets.filter(t => (t.user_dept||'N/A') === dept);
+      const ci = depts.filter(t => t.checked_in).length;
+      return `
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:1.25rem;margin-bottom:.75rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem;">
+        <div style="font-weight:700;font-size:.95rem;">${dept}</div>
+        <div style="display:flex;gap:.4rem;align-items:center;">
+          <span class="badge badge-active">${count} registered</span>
+          <span class="badge badge-free">${ci} present</span>
+          <span style="font-size:.75rem;color:var(--text-muted);padding:.2rem .5rem;background:rgba(255,255,255,.05);border-radius:6px;">${count?Math.round(ci/count*100):0}%</span>
+        </div>
+      </div>
+      <details style="cursor:pointer;">
+        <summary style="color:var(--text-muted);font-size:.8rem;outline:none;list-style:none;display:flex;align-items:center;gap:.4rem;">
+          <i class="fas fa-chevron-right" style="font-size:.6rem;"></i> View ${count} attendees
+        </summary>
+        <div style="overflow-x:auto;margin-top:.75rem;">
+          <table class="ticket-table" style="font-size:.8rem;">
+            <thead><tr><th>Name</th><th>Roll No.</th><th>Year</th><th>Payment</th><th>Check-in</th><th>Actions</th></tr></thead>
+            <tbody>
+              ${depts.map(t=>`<tr>
+                <td style="font-weight:600;">${t.user_name}</td>
+                <td style="color:var(--text-muted);">${t.user_roll||'-'}</td>
+                <td style="color:var(--text-muted);">${t.user_year||'-'}</td>
+                <td>${t.payment_status==='paid'?'<span class="badge badge-paid">PAID</span>':t.payment_status==='free'?'<span class="badge badge-free">FREE</span>':'<span class="badge badge-pending_cash">CASH</span>'}</td>
+                <td>${t.checked_in?`<span class="badge" style="background:rgba(16,185,129,.12);color:#10b981;">✓ ${(t.checked_in_at||'').substring(11,16)}</span>`:'<span style="color:var(--text-muted);font-size:.78rem;">Absent</span>'}</td>
+                <td><div style="display:flex;gap:.3rem;">
+                  <button class="btn-sm btn-sm-teal" onclick="resendTicket('${t.ticket_id}')" title="Resend Pass"><i class="fas fa-envelope"></i></button>
+                  <a href="/em/api/ticket/${t.ticket_id}/download" class="btn-sm btn-sm-primary" title="Download PDF" target="_blank"><i class="fas fa-file-pdf"></i></a>
+                </div></td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>`;
+    }).join('');
+}
+
+function exportAttendanceCSV() {
+  if (!_attendanceEventId) { showToast('Select an event first', false); return; }
+  window.location.href = `/em/api/ticket/export/${_attendanceEventId}`;
+}
+
+// ═══ Bulk Email Tab ═══════════════════════════════════════════════════════════
+function toggleCustomEmail() {
+  const type = document.getElementById('bulkEmailType').value;
+  document.getElementById('customEmailFields').style.display = type === 'resend_pass' ? 'none' : '';
+  document.getElementById('resendPassInfo').style.display = type === 'resend_pass' ? '' : 'none';
+}
+
+async function previewRecipients() {
+  const eventId = document.getElementById('bulkEmailEvent').value;
+  const list = document.getElementById('recipientsList');
+  if (!eventId) {
+    list.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-muted);"><i class="fas fa-users" style="font-size:2rem;opacity:.2;display:block;margin-bottom:.75rem;"></i>Select an event to preview recipients.</div>';
+    return;
+  }
+  list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+  const r = await fetch(`/em/api/analytics/${eventId}`);
+  const d = await r.json();
+  if (!d.success) return;
+  const recipients = d.tickets.filter(t => t.payment_status !== 'failed' && t.user_email);
+  list.innerHTML = `
+    <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.75rem;padding:.5rem .75rem;background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15);border-radius:8px;">
+      <i class="fas fa-info-circle" style="margin-right:.3rem;"></i> ${recipients.length} recipients will receive this email
+    </div>
+    ${recipients.map(t=>`
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem .75rem;border-radius:10px;transition:.15s;" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background='none'">
+        <div style="width:34px;height:34px;border-radius:50%;background:rgba(99,102,241,.15);display:flex;align-items:center;justify-content:center;color:var(--em-indigo);font-size:.85rem;font-weight:700;flex-shrink:0;">${t.user_name.charAt(0).toUpperCase()}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;font-size:.83rem;">${t.user_name}</div>
+          <div style="font-size:.73rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.user_email}</div>
+        </div>
+        ${t.payment_status==='paid'?'<span class="badge badge-paid" style="font-size:.65rem;">PAID</span>':t.payment_status==='free'?'<span class="badge badge-free" style="font-size:.65rem;">FREE</span>':'<span class="badge badge-pending_cash" style="font-size:.65rem;">CASH</span>'}
+      </div>`).join('')}`;
+}
+
+async function sendBulkEmail() {
+  const eventId = document.getElementById('bulkEmailEvent').value;
+  if (!eventId) { showToast('Please select an event first', false); return; }
+  const type = document.getElementById('bulkEmailType').value;
+  const subject = type === 'resend_pass' ? '' : (document.getElementById('bulkEmailSubject').value.trim());
+  const message = type === 'resend_pass' ? '' : (document.getElementById('bulkEmailMsg').value.trim());
+  if (type !== 'resend_pass' && (!subject || !message)) { showToast('Please fill in subject and message', false); return; }
+  if (!confirm(type==='resend_pass'?'Resend event passes to ALL registrants?':'Send this email to ALL registrants?')) return;
+  const btn = document.getElementById('sendBulkBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:.5rem;"></i>Sending…';
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+  const r = await fetch(`/em/api/bulk-email/${eventId}`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-CSRFToken':csrf},
+    body: JSON.stringify({type, subject, message})
+  });
+  const d = await r.json();
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right:.5rem;"></i>Send to All Registrants';
+  const res = document.getElementById('bulkEmailResult');
+  res.style.display = '';
+  if (d.success) {
+    res.style.background='rgba(16,185,129,.1)'; res.style.color='#10b981'; res.style.border='1px solid rgba(16,185,129,.25)';
+    res.innerHTML = `✅ Done! Sent: ${d.sent} &nbsp;|&nbsp; Failed: ${d.failed} &nbsp;|&nbsp; Total: ${d.total}`;
+    showToast(`✅ Emails sent to ${d.sent} recipients!`);
+  } else {
+    res.style.background='rgba(239,68,68,.1)'; res.style.color='#f87171'; res.style.border='1px solid rgba(239,68,68,.25)';
+    res.innerHTML = '❌ ' + (d.message || 'Failed to send emails');
+  }
+  setTimeout(() => res.style.display = 'none', 6000);
+}
+
+// ═══ Hackathon Fields Toggle ══════════════════════════════════════════════════
+function toggleHackathonFields() {
+  const val = document.getElementById('eventCategorySelect')?.value;
+  const box = document.getElementById('hackathonFields');
+  if (box) box.style.display = (val === 'hackathon') ? '' : 'none';
+}
+
+// ═══ Evaluators Tab ══════════════════════════════════════════════════════════
+const HACKATHON_EVENTS = {{ all_events | selectattr('event_category','eq','hackathon') | list | tojson | safe }};
+
+async function loadEvaluators() {
+  const r = await fetch('/em/api/evaluators/list');
+  const d = await r.json();
+  const el = document.getElementById('evaluatorsList');
+  if (!el) return;
+  if (!d.success || !d.evaluators.length) {
+    el.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-muted);border:2px dashed rgba(255,255,255,.07);border-radius:16px;"><i class="fas fa-star-half-alt" style="font-size:3rem;opacity:.2;display:block;margin-bottom:1rem;"></i>No evaluators created yet. Click &ldquo;Add Evaluator&rdquo; to create one.</div>';
+    return;
+  }
+  el.innerHTML = d.evaluators.map(ev => `
+  <div class="event-row">
+    <div style="width:44px;height:44px;border-radius:12px;background:rgba(139,92,246,.15);display:flex;align-items:center;justify-content:center;color:var(--em-purple);font-size:1.1rem;flex-shrink:0;"><i class="fas fa-user-graduate"></i></div>
+    <div class="event-row-info">
+      <div class="event-row-title">${ev.name}</div>
+      <div class="event-row-meta"><span>${ev.email}</span><span>${ev.assigned_events.length} hackathon(s) assigned</span></div>
+    </div>
+    <div class="event-actions">
+      <button class="btn-sm btn-sm-primary" onclick='openAssignEvaluatorModal("${ev.id}","${ev.name}",${JSON.stringify(ev.assigned_events)})'><i class="fas fa-tasks"></i> Assign</button>
+      <button class="btn-sm btn-sm-danger" onclick="deleteEvaluator('${ev.id}','${ev.name}')"><i class="fas fa-trash"></i></button>
+    </div>
+  </div>`).join('');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const tab = document.getElementById('tab-evaluators');
+  if (tab) loadEvaluators();
+});
+
+document.getElementById('createEvaluatorForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+  const r = await fetch('/em/api/evaluators/create', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-CSRFToken':csrf},
+    body: JSON.stringify({
+      name: document.getElementById('evName').value,
+      email: document.getElementById('evEmail').value,
+      password: document.getElementById('evPass').value,
+      phone: document.getElementById('evPhone').value
+    })
+  });
+  const d = await r.json();
+  if (d.success) { showToast('✅ Evaluator created!'); closeModal('createEvaluatorModal'); loadEvaluators(); }
+  else showToast('❌ ' + (d.message||'Failed'), false);
+});
+
+async function deleteEvaluator(id, name) {
+  if (!confirm(`Remove evaluator "${name}"?`)) return;
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+  const r = await fetch(`/em/api/evaluators/${id}/delete`, {method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf}});
+  const d = await r.json();
+  if (d.success) { showToast('Evaluator removed'); loadEvaluators(); }
+  else showToast('❌ Failed', false);
+}
+
+let _assignEvId = null;
+function openAssignEvaluatorModal(evId, evName, assigned) {
+  _assignEvId = evId;
+  document.getElementById('assignEvName').textContent = evName;
+  const list = document.getElementById('assignEvEventsList');
+  list.innerHTML = HACKATHON_EVENTS.map(ev => `
+    <label style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;cursor:pointer;">
+      <input type="checkbox" value="${ev.id}" ${assigned.includes(ev.id)?'checked':''} style="accent-color:var(--em-purple);">
+      <span>
+        <span style="font-weight:600;font-size:.88rem;">${ev.title}</span>
+        <span style="font-size:.75rem;color:var(--text-muted);display:block;">${ev.date||''}</span>
+      </span>
+    </label>`).join('') || '<p style="color:var(--text-muted);text-align:center;padding:1rem;">No hackathon events yet.</p>';
+  openModal('assignEvaluatorModal');
+}
+
+async function saveEvaluatorAssignment() {
+  const boxes = document.querySelectorAll('#assignEvEventsList input[type=checkbox]');
+  const ids = [...boxes].filter(b=>b.checked).map(b=>b.value);
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+  const r = await fetch(`/em/api/evaluators/${_assignEvId}/assign`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-CSRFToken':csrf},
+    body: JSON.stringify({event_ids: ids})
+  });
+  const d = await r.json();
+  if (d.success) { showToast('✅ Assignment saved!'); closeModal('assignEvaluatorModal'); loadEvaluators(); }
+  else showToast('❌ Failed', false);
+}
+
+function toggleSpecialFields() {
+  const cat = document.getElementById('eventCategorySelect')?.value;
+  if(!cat) return;
+  const h = document.getElementById('hackathonFields');
+  const t = document.getElementById('techfestFields');
+  if(h) h.style.display = (cat === 'hackathon' ? 'block' : 'none');
+  if(t) t.style.display = (cat === 'tech_fest' ? 'block' : 'none');
+}
+document.addEventListener('DOMContentLoaded', () => {
+    toggleSpecialFields();
+    
+    // Restore selected event
+    const savedEventId = localStorage.getItem('selectedEventId');
+    if (savedEventId) {
+        const select = document.getElementById('analyticsEvent');
+        if (select) {
+            select.value = savedEventId;
+            loadAnalytics(savedEventId);
+        }
+    }
+});
+</script>
+
+<!-- Create Evaluator Modal -->
+{% if user.role == 'event_manager' or user.role == 'super_admin' %}
+<div id="createEvaluatorModal" class="em-modal">
+  <div class="em-modal-box">
+    <h3>Add Evaluator</h3>
+    <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1.5rem;">Evaluators get a separate login and can score hackathon projects for events you assign.</p>
+    <form id="createEvaluatorForm" class="form-em">
+      <div class="form-grid-2">
+        <div class="form-group-em"><label>Full Name *</label><input type="text" id="evName" placeholder="Evaluator Name" required></div>
+        <div class="form-group-em"><label>Phone</label><input type="text" id="evPhone" placeholder="Phone number"></div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-group-em"><label>Email (Login ID) *</label><input type="email" id="evEmail" placeholder="evaluator@college.edu" required></div>
+        <div class="form-group-em"><label>Password *</label><input type="password" id="evPass" value="evaluator123" required></div>
+      </div>
+      <div style="padding:.85rem 1.25rem;background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.15);border-radius:12px;font-size:.82rem;color:var(--em-purple);">
+        <i class="fas fa-info-circle" style="margin-right:.4rem;"></i>
+        This evaluator will log in at the main login page. Assign hackathon events after creation.
+      </div>
+      <div style="display:flex;gap:.75rem;justify-content:flex-end;">
+        <button type="button" onclick="closeModal('createEvaluatorModal')" style="border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);background:none;padding:.65rem 1.25rem;border-radius:10px;cursor:pointer;">Cancel</button>
+        <button type="submit" style="background:linear-gradient(135deg,var(--em-indigo),var(--em-purple));border:none;border-radius:10px;padding:.65rem 1.5rem;color:#fff;font-weight:700;cursor:pointer;font-size:.88rem;">Create Evaluator</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Assign Evaluator Modal -->
+<div id="assignEvaluatorModal" class="em-modal">
+  <div class="em-modal-box">
+    <h3>Assign Hackathons to <span id="assignEvName"></span></h3>
+    <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1.5rem;">Select the hackathon events this evaluator can score.</p>
+    <div id="assignEvEventsList" style="display:flex;flex-direction:column;gap:.5rem;max-height:300px;overflow-y:auto;margin-bottom:1.5rem;"></div>
+    <div style="display:flex;gap:.75rem;justify-content:flex-end;">
+      <button onclick="closeModal('assignEvaluatorModal')" style="border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);background:none;padding:.65rem 1.25rem;border-radius:10px;cursor:pointer;">Cancel</button>
+      <button onclick="saveEvaluatorAssignment()" style="background:linear-gradient(135deg,var(--em-indigo),var(--em-purple));border:none;border-radius:10px;padding:.65rem 1.5rem;color:#fff;font-weight:700;cursor:pointer;font-size:.88rem;">Save Assignment</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

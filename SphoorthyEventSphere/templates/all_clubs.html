@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<main class="section">
+    <div class="section-inner">
+        <div class="reveal active" style="margin-bottom: 3.5rem;">
+            <div class="section-tag">Campus Life</div>
+            <h1 class="section-title" style="font-size: 2.5rem;">Student <span style="color: var(--navy-light);">Communities</span></h1>
+            <p class="section-sub">Discover and join the diverse student-led clubs that drive innovation and culture at Sphoorthy.</p>
+        </div>
+
+        <div class="grid-3">
+            {% for club in clubs %}
+            <a href="/club/{{ club.id }}" style="text-decoration: none; color: inherit;" class="reveal">
+                <article class="card" style="padding: 0; overflow: hidden; height: 100%; display: flex; flex-direction: column;">
+                    <div style="height: 120px; background: url('{% if club.cover_image %}/static/uploads/clubs/{{ club.id }}/details/{{ club.cover_image }}{% else %}https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=400{% endif %}') center/cover; position: relative;">
+                        <div style="position: absolute; bottom: -24px; left: 1.5rem; width: 64px; height: 64px; border-radius: 12px; background: white; padding: 4px; box-shadow: var(--shadow-md); border: 1px solid var(--border-light);">
+                            <img src="{% if club.logo %}/static/uploads/clubs/{{ club.id }}/details/{{ club.logo }}{% else %}https://ui-avatars.com/api/?name={{ club.name }}&background=202B81&color=fff{% endif %}" 
+                                 style="width: 100%; height: 100%; border-radius: 8px; object-fit: cover;">
+                        </div>
+                    </div>
+                    <div style="padding: 2.5rem 1.5rem 1.5rem; flex: 1; display: flex; flex-direction: column;">
+                        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--navy); margin-bottom: 0.75rem;">{{ club.name }}</h3>
+                        <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem; flex: 1;">
+                            {{ club.vision|truncate(120) }}
+                        </p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; border-top: 1px solid var(--border-light);">
+                            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">
+                                <i class="fas fa-user-tie"></i> {{ club.mentor.name|truncate(15) if club.mentor else 'N/A' }}
+                            </span>
+                            <span style="font-size: 0.75rem; font-weight: 800; color: var(--navy-light); text-transform: uppercase;">
+                                Explore <i class="fas fa-arrow-right" style="margin-left: 0.25rem;"></i>
+                            </span>
+                        </div>
+                    </div>
+                </article>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</main>
+{% endblock %}

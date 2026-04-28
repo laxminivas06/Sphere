@@ -1,0 +1,187 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+:root{--ht-purple:#8b5cf6;--ht-indigo:#6366f1;--ht-teal:#14b8a6;--ht-gold:#f59e0b;}
+.ht-main{padding:2.5rem;max-width:1200px;margin:0 auto;}
+.page-header{display:flex;align-items:center;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;}
+.stat-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem;margin-bottom:2rem;}
+.stat-tile{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:1.25rem 1.5rem;}
+.stat-tile-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:.3rem;}
+.stat-tile-val{font-size:2rem;font-weight:800;}
+.team-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:18px;margin-bottom:1rem;overflow:hidden;transition:.2s;}
+.team-card:hover{border-color:rgba(139,92,246,.25);}
+.team-header{display:flex;align-items:center;gap:1rem;padding:1.25rem 1.5rem;flex-wrap:wrap;}
+.team-name{font-weight:700;font-size:1rem;}
+.team-meta{font-size:.77rem;color:rgba(255,255,255,.4);}
+.member-chip{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .75rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:20px;font-size:.75rem;margin:.2rem;}
+.member-chip.leader{background:rgba(139,92,246,.12);border-color:rgba(139,92,246,.25);color:var(--ht-purple);}
+.submission-box{background:rgba(20,184,166,.05);border-top:1px solid rgba(20,184,166,.15);padding:1.1rem 1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
+.score-badge{padding:.35rem .75rem;border-radius:8px;font-size:.78rem;font-weight:700;}
+.score-badge-good{background:rgba(16,185,129,.12);color:#10b981;}
+.score-badge-mid{background:rgba(245,158,11,.12);color:var(--ht-gold);}
+.score-badge-none{background:rgba(255,255,255,.07);color:rgba(255,255,255,.4);}
+.btn-sm{padding:.45rem .9rem;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer;border:1px solid;transition:.2s;text-decoration:none;display:inline-flex;align-items:center;gap:.35rem;}
+.btn-primary{background:rgba(99,102,241,.15);border-color:rgba(99,102,241,.3);color:var(--ht-indigo);}
+.btn-teal{background:rgba(20,184,166,.1);border-color:rgba(20,184,166,.25);color:var(--ht-teal);}
+.btn-gold{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.25);color:var(--ht-gold);}
+.btn-danger{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25);color:#f87171;}
+.score-detail-row{padding:.75rem 1.5rem;border-top:1px solid rgba(255,255,255,.05);display:flex;gap:1rem;flex-wrap:wrap;align-items:center;font-size:.8rem;}
+@media(max-width:700px){.ht-main{padding:1.25rem;}.stat-row{grid-template-columns:1fr 1fr;}}
+</style>
+
+<div class="ht-main">
+  <!-- Back + Header -->
+  <div class="page-header">
+    <a href="/em/dashboard" class="btn-sm btn-primary" style="flex-shrink:0;"><i class="fas fa-arrow-left"></i> Dashboard</a>
+    <div style="width:52px;height:52px;border-radius:16px;background:rgba(139,92,246,.15);display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🚀</div>
+    <div style="flex:1;">
+      <h1 style="margin:0;font-size:1.3rem;">{{ event.title }} — <span style="color:var(--ht-purple);">Teams</span></h1>
+      <p style="margin:.2rem 0 0;color:rgba(255,255,255,.4);font-size:.82rem;">
+        {% if event.date %}<i class="fas fa-calendar-alt" style="margin-right:.3rem;"></i>{{ event.date }}{% endif %}
+        {% if event.venue %}&nbsp;&middot;&nbsp;{{ event.venue }}{% endif %}
+        {% if event.min_team_size %}&nbsp;&middot;&nbsp;{{ event.min_team_size }}–{{ event.max_team_size }} members/team{% endif %}
+      </p>
+    </div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+      <a href="/em/hackathon/{{ event.id }}/leaderboard" class="btn-sm btn-gold" target="_blank"><i class="fas fa-trophy"></i> Leaderboard</a>
+      <button class="btn-sm btn-teal" onclick="exportTeamsCSV()"><i class="fas fa-download"></i> Export CSV</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  {% set submitted_count = teams|selectattr('submitted')|list|length %}
+  {% set total_scores = scores|length %}
+  <div class="stat-row">
+    <div class="stat-tile" style="border-color:rgba(139,92,246,.2);">
+      <div class="stat-tile-label">Total Teams</div>
+      <div class="stat-tile-val" style="color:var(--ht-purple);">{{ teams|length }}</div>
+    </div>
+    <div class="stat-tile" style="border-color:rgba(20,184,166,.2);">
+      <div class="stat-tile-label">Submitted Projects</div>
+      <div class="stat-tile-val" style="color:var(--ht-teal);">{{ submitted_count }}</div>
+    </div>
+    <div class="stat-tile" style="border-color:rgba(245,158,11,.2);">
+      <div class="stat-tile-label">Scores Given</div>
+      <div class="stat-tile-val" style="color:var(--ht-gold);">{{ total_scores }}</div>
+    </div>
+    <div class="stat-tile" style="border-color:rgba(99,102,241,.2);">
+      <div class="stat-tile-label">Evaluators</div>
+      <div class="stat-tile-val" style="color:var(--ht-indigo);">{{ evaluators|length }}</div>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div style="display:flex;gap:.75rem;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;">
+    <div style="flex:1;display:flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:.6rem 1rem;">
+      <i class="fas fa-search" style="color:rgba(255,255,255,.3);font-size:.85rem;"></i>
+      <input type="text" id="teamSearch" placeholder="Search team name or member…" oninput="filterTeams()" style="background:none;border:none;outline:none;color:#fff;font-size:.88rem;width:100%;">
+    </div>
+    <select id="statusFilter" onchange="filterTeams()" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:.6rem 1rem;color:#fff;outline:none;font-size:.85rem;">
+      <option value="">All Teams</option>
+      <option value="submitted">Submitted</option>
+      <option value="not_submitted">Not Submitted</option>
+    </select>
+  </div>
+
+  <!-- Teams -->
+  {% if teams %}
+  <div id="teamsList">
+  {% for team in teams %}
+  {% set team_scores = scores | selectattr('team_id','eq',team.team_id) | list %}
+  {% set avg_score = (team_scores | sum(attribute='total') / team_scores|length) | round(1) if team_scores else 0 %}
+  <div class="team-card" data-team="{{ team.team_name|lower }}" data-submitted="{{ 'submitted' if team.submitted else 'not_submitted' }}">
+    <div class="team-header">
+      <div style="width:44px;height:44px;border-radius:12px;background:rgba(139,92,246,.12);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">👥</div>
+      <div style="flex:1;">
+        <div class="team-name">{{ team.team_name }}</div>
+        <div class="team-meta">ID: {{ team.team_id }} &middot; {{ team.members|length }} member(s)</div>
+        <div style="margin-top:.4rem;">
+          {% for m in team.members %}
+          <span class="member-chip {% if m.is_leader %}leader{% endif %}">
+            {% if m.is_leader %}<i class="fas fa-crown" style="font-size:.65rem;"></i>{% endif %}
+            {{ m.name or m.roll_number or m.email or 'Unknown' }}
+            {% if m.dept %}<span style="opacity:.6;"> · {{ m.dept }}</span>{% endif %}
+          </span>
+          {% endfor %}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.5rem;">
+        {% if team.submitted %}
+        <span style="background:rgba(16,185,129,.12);color:#10b981;padding:.3rem .75rem;border-radius:8px;font-size:.72rem;font-weight:700;"><i class="fas fa-check-circle"></i> Submitted</span>
+        {% else %}
+        <span style="background:rgba(245,158,11,.1);color:var(--ht-gold);padding:.3rem .75rem;border-radius:8px;font-size:.72rem;font-weight:700;">Pending Submission</span>
+        {% endif %}
+        {% if avg_score > 0 %}
+        <span class="score-badge {% if avg_score >= 25 %}score-badge-good{% else %}score-badge-mid{% endif %}">Avg: {{ avg_score }}</span>
+        {% else %}
+        <span class="score-badge score-badge-none">Not scored</span>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if team.submitted %}
+    <div class="submission-box">
+      <i class="fas fa-folder-open" style="color:var(--ht-teal);font-size:1rem;flex-shrink:0;"></i>
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:.88rem;">{{ team.project_title or 'Project Submitted' }}</div>
+        {% if team.description %}<div style="font-size:.75rem;color:rgba(255,255,255,.4);margin-top:.15rem;">{{ team.description[:120] }}{% if team.description|length > 120 %}…{% endif %}</div>{% endif %}
+      </div>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
+        {% if team.github_url %}<a href="{{ team.github_url }}" class="btn-sm btn-primary" target="_blank"><i class="fab fa-github"></i> Code</a>{% endif %}
+        {% if team.demo_url %}<a href="{{ team.demo_url }}" class="btn-sm btn-teal" target="_blank"><i class="fas fa-play"></i> Demo</a>{% endif %}
+        {% if team.submission_file %}<a href="/static/uploads/em/hackathon_submissions/{{ team.submission_file }}" class="btn-sm btn-gold" target="_blank"><i class="fas fa-file"></i> File</a>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if team_scores %}
+    <div class="score-detail-row">
+      <i class="fas fa-star" style="color:var(--ht-gold);"></i>
+      <span style="font-weight:600;">Scores by evaluators:</span>
+      {% for s in team_scores %}
+      <span style="background:rgba(255,255,255,.05);border-radius:8px;padding:.2rem .6rem;"><strong>{{ s.evaluator_name or s.evaluator_id }}</strong>: {{ s.total }} pts</span>
+      {% endfor %}
+      <span style="margin-left:auto;color:var(--ht-gold);font-weight:700;">Avg: {{ avg_score }}</span>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:5rem;color:rgba(255,255,255,.3);border:2px dashed rgba(255,255,255,.07);border-radius:24px;">
+    <i class="fas fa-users" style="font-size:3rem;opacity:.2;display:block;margin-bottom:1rem;"></i>
+    No teams registered yet for this hackathon.
+  </div>
+  {% endif %}
+</div>
+
+<script>
+const TEAMS_DATA = {{ teams|tojson|safe }};
+
+function filterTeams() {
+  const q = document.getElementById('teamSearch').value.toLowerCase();
+  const status = document.getElementById('statusFilter').value;
+  document.querySelectorAll('#teamsList .team-card').forEach(card => {
+    const name = card.dataset.team;
+    const sub = card.dataset.submitted;
+    const matchesQ = !q || name.includes(q);
+    const matchesSt = !status || sub === status;
+    card.style.display = matchesQ && matchesSt ? '' : 'none';
+  });
+}
+
+function exportTeamsCSV() {
+  const rows = [['Team ID','Team Name','Leader','Members','Submitted','Project Title','GitHub','Demo']];
+  TEAMS_DATA.forEach(t => {
+    const leader = t.members.find(m=>m.is_leader);
+    const others = t.members.filter(m=>!m.is_leader).map(m=>m.name||m.roll_number||m.email).join('; ');
+    rows.push([t.team_id, t.team_name, leader?(leader.name||leader.roll_number):'', others, t.submitted?'Yes':'No', t.project_title||'', t.github_url||'', t.demo_url||'']);
+  });
+  const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'hackathon_teams_{{ event.id }}.csv';
+  a.click();
+}
+</script>
+{% endblock %}

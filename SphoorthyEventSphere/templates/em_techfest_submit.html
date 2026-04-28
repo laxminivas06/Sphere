@@ -1,0 +1,139 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+    :root {
+        --tf-primary: #6366f1;
+        --tf-glass: rgba(30, 41, 59, 0.7);
+        --tf-border: rgba(255, 255, 255, 0.1);
+        --tf-text-muted: #94a3b8;
+    }
+    .page-container { max-width: 900px; margin: 0 auto; padding: 2rem; min-height: 100vh; }
+    .hub-card { 
+        background: var(--tf-glass); 
+        backdrop-filter: blur(12px); 
+        border: 1px solid var(--tf-border); 
+        border-radius: 24px; 
+        padding: 2rem; 
+        margin-bottom: 2rem;
+    }
+    .sub-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid var(--tf-border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .tf-label { display: block; margin-bottom: 0.5rem; color: var(--tf-text-muted); font-weight: 600; font-size: 0.85rem; text-transform: uppercase; }
+    .tf-input { width: 100%; padding: 0.8rem; border-radius: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--tf-border); color: white; margin-bottom: 1.5rem; }
+</style>
+
+<div class="page-container">
+    <div style="margin-bottom: 3rem;">
+        <h1 style="margin: 0; font-size: 2.5rem; font-weight: 800;">Tech Fest Submissions</h1>
+        <p style="color: var(--tf-text-muted);">Provide project details and presentations for your registered tracks.</p>
+    </div>
+
+    {% if not selected_events %}
+    <div class="hub-card" style="text-align: center; padding: 4rem;">
+        <i class="fas fa-exclamation-circle" style="font-size: 3rem; color: var(--tf-text-muted); opacity: 0.5; margin-bottom: 1.5rem;"></i>
+        <h3 style="margin: 0;">No active registrations found.</h3>
+        <p style="color: var(--tf-text-muted); margin-top: 0.5rem;">Please register for sub-events first to submit requirements.</p>
+    </div>
+    {% endif %}
+
+    {% for se in selected_events %}
+    <div class="hub-card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: 1px solid var(--tf-border); padding-bottom: 1rem;">
+            <div>
+                <h3 style="margin: 0; font-size: 1.5rem; color: var(--tf-primary);">{{ se.name }}</h3>
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                    <span style="font-size: 0.7rem; background: rgba(255,255,255,0.05); color: var(--tf-text-muted); padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid var(--tf-border);">
+                        {{ se.sub_event_type|default('Normal')|title }}
+                    </span>
+                    {% if se.sub_event_type in ['ideathon', 'project_expo', 'paper_presentation', 'tech_byte'] %}
+                    <span style="font-size: 0.7rem; background: rgba(168, 85, 247, 0.1); color: #a855f7; padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid rgba(168, 85, 247, 0.2);">
+                        <i class="fas fa-gavel"></i> Evaluation Required
+                    </span>
+                    {% endif %}
+                </div>
+                <p style="color: var(--tf-text-muted); font-size: 0.85rem; margin-top: 0.5rem;">Reg ID: {{ registrations.reg_id }}</p>
+            </div>
+            {% if se.submitted %}
+            <span style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 700;">
+                <i class="fas fa-check-circle"></i> SUBMITTED
+            </span>
+            {% else %}
+            <span style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 700;">
+                <i class="fas fa-clock"></i> PENDING
+            </span>
+            {% endif %}
+        </div>
+
+        {% if not se.requirements %}
+        <p style="color: var(--tf-text-muted); font-style: italic; text-align: center; padding: 1rem;">No specific submission requirements for this track.</p>
+        {% else %}
+        <form onsubmit="handleTfSubmit(event, '{{ se.event_id }}')" enctype="multipart/form-data">
+            <input type="hidden" name="event_id" value="{{ event_id }}">
+            <input type="hidden" name="sub_event_id" value="{{ se.event_id }}">
+            
+            {% for req in se.requirements %}
+            <div class="tf-form-group">
+                <label class="tf-label">{{ req.name }}</label>
+                {% if req.type == 'file' %}
+                <input type="file" name="{{ req.name }}" class="tf-input" {{ 'required' if not se.responses or not se.responses[req.name] }}>
+                {% if se.responses and se.responses[req.name] %}
+                <p style="font-size: 0.75rem; color: #10b981; margin-top: -1rem; margin-bottom: 1.5rem;">
+                    <i class="fas fa-file-alt"></i> Current: {{ se.responses[req.name] }}
+                </p>
+                {% endif %}
+                {% else %}
+                <textarea name="{{ req.name }}" class="tf-input" rows="3" required>{{ se.responses[req.name] if se.responses and se.responses[req.name] else '' }}</textarea>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <button type="submit" class="tf-btn tf-btn-primary" style="width: 100%; padding: 1rem; font-weight: 700;">
+                <i class="fas fa-upload"></i> {{ 'Update Submission' if se.submitted else 'Submit Documents' }}
+            </button>
+        </form>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+    async function handleTfSubmit(e, subEventId) {
+        e.preventDefault();
+        const form = e.target;
+        const btn = form.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+
+        const formData = new FormData(form);
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+        try {
+            const resp = await fetch('/api/techfest/submit', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrf },
+                body: formData
+            });
+            const data = await resp.json();
+            if (data.success) {
+                alert('✅ ' + data.message);
+                location.reload();
+            } else {
+                alert('❌ ' + data.message);
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        } catch (err) {
+            alert('❌ Network error. Please try again.');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,479 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+<div class="dashboard-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+                <div style="margin-bottom: 2rem;">
+            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏠 Main Menu ⏺️</p>
+        </div>
+
+        <a class="nav-item" href="/admin/club/{{ club.id }}">
+            <i class="fas fa-th-large"></i> <span>Overview</span>
+        </a>
+        <a class="nav-item" href="/admin/events/{{ club.id }}">
+            <i class="fas fa-calendar-alt"></i> <span>Event Registry</span>
+        </a>
+        <a class="nav-item" href="/admin/bulk-email/{{ club.id }}">
+            <i class="fas fa-paper-plane"></i> <span>Communications</span>
+        </a>
+        <a class="nav-item" href="/admin/finance/{{ club.id }}">
+            <i class="fas fa-wallet"></i> <span>Finance Hub</span>
+        </a>
+        <a class="nav-item" href="/admin/club/{{ club.id }}#eventhub">
+            <i class="fas fa-ticket-alt"></i> <span>Event Hub</span>
+        </a>
+        <a class="nav-item active" href="/admin/identity/{{ club.id }}">
+            <i class="fas fa-id-card"></i> <span>Club Identity</span>
+        </a>
+        <a class="nav-item" href="/admin/leaderboard/{{ club.id }}">
+            <i class="fas fa-trophy"></i> <span>Top Attendees</span>
+        </a>
+        <a class="nav-item" href="/admin/elections/{{ club.id }}">
+            <i class="fas fa-vote-yea"></i> <span>Elections Zone</span>
+        </a>
+        <a class="nav-item" href="/admin/reports/{{ club.id }}">
+            <i class="fas fa-archive"></i> <span>Academic Year Reports</span>
+        </a>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header style="margin-bottom: 3rem;">
+            <h2 style="font-size: 2rem;">Club <span style="color: var(--primary)">Profile</span></h2>
+            <p style="color: var(--text-muted)">Manage how your club appears to the campus community.</p>
+        </header>
+
+        <form id="profileForm" enctype="multipart/form-data">
+            <!-- Visual Branding -->
+            <div class="glass" style="padding: 2.5rem; border-radius: 28px; margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 2rem; display:flex; align-items:center; gap:0.8rem;"><i
+                        class="fas fa-paint-brush" style="color:var(--primary);"></i> Visual Branding</h3>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 3rem;">
+                    <div
+                        style="display: flex; flex-direction: column; align-items: center; gap: 1.5rem; text-align: center; background: rgba(0,0,0,0.2); padding: 2rem; border-radius: 20px;">
+                        <div
+                            style="width: 120px; height: 120px; border-radius: 50%; overflow: hidden; border: 3px solid var(--primary); background: #000;">
+                            <img id="logoPreview" src="/static/uploads/clubs/{{ club.id }}/details/{{ club.logo }}"
+                                style="width:100%; height:100%; object-fit:cover;">
+                        </div>
+                        <div>
+                            <h4 style="margin-bottom: 0.5rem;">Club Logo</h4>
+                            <label class="btn btn-outline"
+                                style="cursor: pointer; padding: 0.5rem 1rem; font-size: 0.8rem;">
+                                Change Logo <input type="file" name="logo" style="display:none;"
+                                    onchange="previewImage(this, 'logoPreview')">
+                            </label>
+                        </div>
+                    </div>
+
+                    <div
+                        style="display: flex; flex-direction: column; align-items: center; gap: 1.5rem; text-align: center; background: rgba(0,0,0,0.2); padding: 2rem; border-radius: 20px;">
+                        <div
+                            style="width: 100%; height: 120px; border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background: #000;">
+                            <img id="coverPreview"
+                                src="/static/uploads/clubs/{{ club.id }}/details/{{ club.cover_image }}"
+                                style="width:100%; height:100%; object-fit:cover;">
+                        </div>
+                        <div>
+                            <h4 style="margin-bottom: 0.5rem;">Cover Image</h4>
+                            <label class="btn btn-outline"
+                                style="cursor: pointer; padding: 0.5rem 1rem; font-size: 0.8rem;">
+                                Change Image <input type="file" name="cover_image" style="display:none;"
+                                    onchange="previewImage(this, 'coverPreview')">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mentors Section -->
+            <div class="glass" style="padding: 2.5rem; border-radius: 28px; margin-bottom: 2rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem;">
+                    <h3 style="display:flex; align-items:center; gap:0.8rem;"><i class="fas fa-chalkboard-teacher"
+                            style="color:var(--primary);"></i> Mentors</h3>
+                    <button type="button" class="btn btn-outline" onclick="addMentor()"
+                        style="padding: 0.5rem 1.2rem; font-size: 0.8rem;">+ Add Mentor</button>
+                </div>
+                <div id="mentorsList"
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                    {% set existing_mentors = club.mentors if club.mentors else ([club.mentor] if club.mentor and club.mentor.name else []) %}
+                    {% for m in existing_mentors %}
+                    <div class="mentor-card glass"
+                        style="padding:1.5rem; border-radius:20px; position:relative; background:rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+                        <button type="button" onclick="this.parentElement.remove()"
+                            style="position:absolute; top:1rem; right:1rem; background:none; border:none; color:#ff4444; cursor:pointer;"><i
+                                class="fas fa-trash"></i></button>
+                        <div style="display:flex; flex-direction:column; gap:1.2rem;">
+                            <div style="display:flex; gap:1.2rem; align-items:center;">
+                                <div
+                                    style="width:60px; height:60px; border-radius:50%; background:rgba(255,255,255,0.05); overflow:hidden; border:2px solid var(--primary);">
+                                    <img id="mentor-preview-{{ loop.index0 }}"
+                                        src="{% if m.photo %}/static/uploads/clubs/{{ club.id }}/mentors/{{ m.photo }}{% else %}https://ui-avatars.com/api/?name={{ m.name|urlencode }}&background=6366f1&color=fff{% endif %}"
+                                        style="width:100%; height:100%; object-fit:cover;">
+                                </div>
+                                <label class="btn btn-outline"
+                                    style="font-size:0.65rem; padding:0.3rem 0.6rem; cursor:pointer;">
+                                    Change <input type="file" name="mentor_photos" style="display:none;"
+                                        onchange="previewBearer(this, 'mentor-preview-{{ loop.index0 }}')">
+                                </label>
+                                <input type="hidden" name="existing_mentor_photos" value="{{ m.photo }}">
+                            </div>
+                            <div style="display:grid; gap:0.8rem;">
+                                <input type="text" name="mentor_names" placeholder="Name" value="{{ m.name }}"
+                                    required style="font-weight:600;">
+                                <input type="text" name="mentor_roles" placeholder="Designation (e.g. Main Mentor)"
+                                    value="{{ m.designation }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Office Bearers Section -->
+            <div class="glass" style="padding: 2.5rem; border-radius: 28px; margin-bottom: 2rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem;">
+                    <h3 style="display:flex; align-items:center; gap:0.8rem;"><i class="fas fa-users"
+                            style="color:var(--primary);"></i> Office Bearers</h3>
+                    <button type="button" class="btn btn-outline" onclick="addBearer()"
+                        style="padding: 0.5rem 1.2rem; font-size: 0.8rem;">+ Add Member</button>
+                </div>
+                <div id="bearersList"
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                    {% for b in club.office_bearers %}
+                    <div class="bearer-card glass"
+                        style="padding:1.5rem; border-radius:20px; position:relative; background:rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+                        <button type="button" onclick="this.parentElement.remove()"
+                            style="position:absolute; top:1rem; right:1rem; background:none; border:none; color:#ff4444; cursor:pointer;"><i
+                                class="fas fa-trash"></i></button>
+                        <div style="display:flex; flex-direction:column; gap:1.2rem;">
+                            <div style="display:flex; gap:1.2rem; align-items:center;">
+                                <div
+                                    style="width:60px; height:60px; border-radius:50%; background:rgba(255,255,255,0.05); overflow:hidden; border:2px solid var(--primary);">
+                                    <img id="bearer-preview-{{ loop.index0 }}"
+                                        src="{% if b.photo %}/static/uploads/clubs/{{ club.id }}/office_bearers/{{ b.photo }}{% else %}https://ui-avatars.com/api/?name={{ b.name|urlencode }}&background=6366f1&color=fff{% endif %}"
+                                        style="width:100%; height:100%; object-fit:cover;">
+                                </div>
+                                <label class="btn btn-outline"
+                                    style="font-size:0.65rem; padding:0.3rem 0.6rem; cursor:pointer;">
+                                    Change <input type="file" name="bearer_photos" style="display:none;"
+                                        onchange="previewBearer(this, 'bearer-preview-{{ loop.index0 }}')">
+                                </label>
+                                <input type="hidden" name="existing_bearer_photos" value="{{ b.photo }}">
+                            </div>
+                            <div style="display:grid; gap:0.8rem;">
+                                <input type="text" name="bearer_names" placeholder="Name" value="{{ b.name }}"
+                                    required style="font-weight:600;">
+                                <input type="text" name="bearer_roles" placeholder="Role (e.g. Secretary)"
+                                    value="{{ b.role }}" required>
+                                <input type="text" name="bearer_phones" placeholder="Phone" value="{{ b.phone }}"
+                                    required>
+                                <select name="bearer_years" required style="padding:0.8rem; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; width:100%;">
+                                    <option value="" disabled {% if not b.year %}selected{% endif %}>Year of Study</option>
+                                    <option value="1st Year" {% if b.year == '1st Year' %}selected{% endif %}>1st Year</option>
+                                    <option value="2nd Year" {% if b.year == '2nd Year' %}selected{% endif %}>2nd Year</option>
+                                    <option value="3rd Year" {% if b.year == '3rd Year' %}selected{% endif %}>3rd Year</option>
+                                    <option value="4th Year" {% if b.year == '4th Year' %}selected{% endif %}>4th Year</option>
+                                </select>
+                                <input type="text" name="bearer_depts" placeholder="Department / Branch" value="{{ b.department }}"
+                                    required>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Office Bearer Requests Section -->
+            <div class="glass" style="padding: 2.5rem; border-radius: 28px; margin-bottom: 2rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem;">
+                    <h3 style="display:flex; align-items:center; gap:0.8rem;"><i class="fas fa-user-plus"
+                            style="color:var(--primary);"></i> Office Bearer Requests</h3>
+                    <button type="button" class="btn btn-outline" onclick="toggleModal('requestBearerModal', true)"
+                        style="padding: 0.5rem 1.2rem; font-size: 0.8rem;"><i class="fas fa-paper-plane"></i>
+                        Request New Bearer</button>
+                </div>
+
+                {% if ob_requests %}
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <th style="padding: 1rem; color: var(--text-muted);">Name</th>
+                                <th style="padding: 1rem; color: var(--text-muted);">Role</th>
+                                <th style="padding: 1rem; color: var(--text-muted);">Submitted</th>
+                                <th style="padding: 1rem; color: var(--text-muted);">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in ob_requests %}
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <td style="padding: 1rem; color:#fff; font-weight:600;">{{ req.name }}</td>
+                                <td style="padding: 1rem; color:#e2e8f0;">{{ req.role }}</td>
+                                <td style="padding: 1rem; color:var(--text-muted);">{{ req.timestamp }}</td>
+                                <td style="padding: 1rem;">
+                                    {% if req.status == 'pending' %}
+                                    <span class="badge"
+                                        style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 0.4rem 0.8rem; border-radius: 8px;">Pending
+                                        Approval</span>
+                                    {% elif req.status == 'approved' %}
+                                    <span class="badge"
+                                        style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 0.4rem 0.8rem; border-radius: 8px;">Approved</span>
+                                    {% elif req.status == 'rejected' %}
+                                    <span class="badge"
+                                        style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 0.4rem 0.8rem; border-radius: 8px;">Rejected</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p style="color:var(--text-muted); text-align:center;">No pending requests.</p>
+                {% endif %}
+            </div>
+
+            <!-- Gallery Section -->
+            <div class="glass" style="padding: 2.5rem; border-radius: 28px; margin-bottom: 3rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem;">
+                    <h3 style="display:flex; align-items:center; gap:0.8rem;"><i class="fas fa-images"
+                            style="color:var(--primary);"></i> Event Gallery</h3>
+                    <label class="btn btn-primary"
+                        style="padding: 0.6rem 1.5rem; border-radius: 12px; cursor: pointer;">
+                        <i class="fas fa-plus"></i> Upload Photos <input type="file" name="gallery" multiple
+                            style="display:none;" onchange="updateGalleryPreview(this)">
+                    </label>
+                </div>
+
+                <div id="galleryGrid"
+                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem;">
+                    {% for img in club.gallery %}
+                    <div class="gallery-item-wrapper"
+                        style="position: relative; aspect-ratio: 1/1; border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                        <img src="/static/uploads/clubs/{{ club.id }}/gallery/{{ img }}"
+                            style="width:100%; height:100%; object-fit:cover;">
+                        <button type="button" onclick="removeGalleryImage('{{ img }}')"
+                            style="position:absolute; top:8px; right:8px; background:rgba(239, 68, 68, 0.9); border:none; color:white; width:28px; height:28px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center;">&times;</button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div
+                style="display: flex; justify-content: flex-end; gap: 1.5rem; background: rgba(0,0,0,0.2); padding: 1.5rem 2.5rem; border-radius: 20px;">
+                <button type="button" class="btn btn-outline" onclick="location.reload()"
+                    style="padding: 0.8rem 2rem;">Discard Changes</button>
+                <button type="submit" class="btn btn-primary"
+                    style="padding: 0.8rem 3rem; border-radius: 12px;">Save Profile Updates</button>
+            </div>
+        </form>
+    </main>
+</div>
+
+<div id="requestBearerModal"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; padding:2rem;">
+    <div class="card glass" style="width: 100%; max-width: 500px; padding: 3rem; border-radius: 32px;">
+        <h3 style="margin-bottom: 1.5rem; text-align: center;">Request New Office Bearer</h3>
+        <p style="color: var(--text-muted); text-align: center; margin-bottom: 2rem;">System Admin approval required
+            before member is added.</p>
+        <form id="requestBearerForm">
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted);">Member
+                    Name</label>
+                <input type="text" name="name" class="glass"
+                    style="width:100%; padding:0.8rem; border-radius:10px; color:#fff;" required>
+            </div>
+            <div style="margin-bottom: 2rem;">
+                <label style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted);">Role /
+                    Designation</label>
+                <input type="text" name="role" class="glass"
+                    style="width:100%; padding:0.8rem; border-radius:10px; color:#fff;" required>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <button type="button" class="btn btn-outline" onclick="toggleModal('requestBearerModal', false)"
+                    style="flex:1;">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="flex:2;">Submit Request</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function toggleModal(id, show) {
+        document.getElementById(id).style.display = show ? 'flex' : 'none';
+        document.body.style.overflow = show ? 'hidden' : 'auto';
+    }
+
+    function previewImage(input, previewId) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => document.getElementById(previewId).src = e.target.result;
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function previewBearer(input, previewId) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => document.getElementById(previewId).src = e.target.result;
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function updateGalleryPreview(input) {
+        if (!input.files || input.files.length === 0) return;
+        const grid = document.getElementById('galleryGrid');
+        for (let i = 0; i < input.files.length; i++) {
+            const file = input.files[i];
+            const reader = new FileReader();
+            reader.onload = e => {
+                const div = document.createElement('div');
+                div.className = 'gallery-item-wrapper';
+                div.style = 'position: relative; aspect-ratio: 1/1; border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);';
+                div.innerHTML = `
+                    <img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">
+                    <span style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.6); color:#fff; font-size:0.6rem; text-align:center; padding:2px;">New (Save to keep)</span>
+                `;
+                grid.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    document.getElementById('profileForm').onsubmit = async (ev) => {
+        ev.preventDefault();
+        const btn = ev.target.querySelector('button[type="submit"]');
+        btn.disabled = true; btn.innerText = 'Saving...';
+        
+        // Ensure accurate photo mappings for mentors
+        const mentorCards = ev.target.querySelectorAll('.mentor-card');
+        mentorCards.forEach((card, index) => {
+            const fileInput = card.querySelector('input[type="file"]');
+            if (fileInput) fileInput.name = 'mentor_photo_' + index;
+        });
+
+        // Ensure accurate photo mappings for bearers
+        const bearerCards = ev.target.querySelectorAll('.bearer-card');
+        bearerCards.forEach((card, index) => {
+            const fileInput = card.querySelector('input[type="file"]');
+            if (fileInput) fileInput.name = 'bearer_photo_' + index;
+        });
+
+        const formData = new FormData(ev.target);
+        formData.append('id', '{{ club.id }}');
+
+        const csrf = document.querySelector('meta[name="csrf-token"]').content;
+        const res = await fetch('/api/clubs/update', { method: 'POST', headers: { 'X-CSRFToken': csrf }, body: formData });
+        const data = await res.json();
+
+        if (data.success) {
+            alert('Club settings updated successfully!');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            alert('Update failed');
+            btn.disabled = false; btn.innerText = 'Save Profile Updates';
+        }
+    };
+
+    if (document.getElementById('requestBearerForm')) {
+        document.getElementById('requestBearerForm').onsubmit = async (ev) => {
+            ev.preventDefault();
+            const btn = ev.target.querySelector('button[type="submit"]');
+            btn.disabled = true; btn.innerText = 'Submitting...';
+
+            const formData = new FormData(ev.target);
+            formData.append('club_id', '{{ club.id }}');
+
+            const csrf = document.querySelector('meta[name="csrf-token"]').content;
+            const res = await fetch('/api/office_bearers/request', { method: 'POST', headers: { 'X-CSRFToken': csrf }, body: formData });
+            const data = await res.json();
+
+            if (data.success) {
+                alert('Request submitted successfully!');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                alert(data.message || 'Request failed');
+                btn.disabled = false; btn.innerText = 'Submit Request';
+            }
+        };
+    }
+
+    async function removeGalleryImage(imageName) {
+        if (!confirm("Remove this image?")) return;
+        const formData = new FormData();
+        formData.append('id', '{{ club.id }}');
+        formData.append('remove_gallery_image', imageName);
+        const csrf = document.querySelector('meta[name="csrf-token"]').content;
+        const res = await fetch('/api/clubs/update', { method: 'POST', headers: { 'X-CSRFToken': csrf }, body: formData });
+        if (res.ok) location.reload();
+    }
+
+    function addBearer() {
+        const list = document.getElementById('bearersList');
+        const idx = 'new_' + Date.now();
+        const div = document.createElement('div');
+        div.className = 'bearer-card glass';
+        div.style = 'padding:1.5rem; border-radius:20px; position:relative; background:rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);';
+        div.innerHTML = `
+            <button type="button" onclick="this.parentElement.remove()" style="position:absolute; top:1rem; right:1rem; background:none; border:none; color:#ff4444; cursor:pointer;"><i class="fas fa-trash"></i></button>
+            <div style="display:flex; flex-direction:column; gap:1.2rem;">
+                <div style="display:flex; gap:1.2rem; align-items:center;">
+                    <div style="width:60px; height:60px; border-radius:50%; background:rgba(255,255,255,0.05); overflow:hidden; border:2px solid var(--primary);">
+                        <img id="bearer-preview-${idx}" src="https://ui-avatars.com/api/?name=New&background=6366f1&color=fff" style="width:100%; height:100%; object-fit:cover;">
+                    </div>
+                    <label class="btn btn-outline" style="font-size:0.65rem; padding:0.3rem 0.6rem; cursor:pointer;">
+                        Add Photo <input type="file" name="bearer_photos" style="display:none;" onchange="previewBearer(this, 'bearer-preview-${idx}')">
+                    </label>
+                    <input type="hidden" name="existing_bearer_photos" value="">
+                </div>
+                <div style="display:grid; gap:0.8rem;">
+                    <input type="text" name="bearer_names" placeholder="Name" required style="font-weight:600;">
+                    <input type="text" name="bearer_roles" placeholder="Role" required>
+                    <input type="text" name="bearer_phones" placeholder="Phone" required>
+                    <select name="bearer_years" required style="padding:0.8rem; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; width:100%;">
+                        <option value="" disabled selected>Year of Study</option>
+                        <option value="1st Year">1st Year</option>
+                        <option value="2nd Year">2nd Year</option>
+                        <option value="3rd Year">3rd Year</option>
+                        <option value="4th Year">4th Year</option>
+                    </select>
+                    <input type="text" name="bearer_depts" placeholder="Department / Branch" required>
+                </div>
+            </div>
+        `;
+        list.appendChild(div);
+    }
+
+    function addMentor() {
+        const list = document.getElementById('mentorsList');
+        const idx = 'new_' + Date.now();
+        const div = document.createElement('div');
+        div.className = 'mentor-card glass';
+        div.style = 'padding:1.5rem; border-radius:20px; position:relative; background:rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);';
+        div.innerHTML = `
+            <button type="button" onclick="this.parentElement.remove()" style="position:absolute; top:1rem; right:1rem; background:none; border:none; color:#ff4444; cursor:pointer;"><i class="fas fa-trash"></i></button>
+            <div style="display:flex; flex-direction:column; gap:1.2rem;">
+                <div style="display:flex; gap:1.2rem; align-items:center;">
+                    <div style="width:60px; height:60px; border-radius:50%; background:rgba(255,255,255,0.05); overflow:hidden; border:2px solid var(--primary);">
+                        <img id="mentor-preview-${idx}" src="https://ui-avatars.com/api/?name=New&background=6366f1&color=fff" style="width:100%; height:100%; object-fit:cover;">
+                    </div>
+                    <label class="btn btn-outline" style="font-size:0.65rem; padding:0.3rem 0.6rem; cursor:pointer;">
+                        Add Photo <input type="file" name="mentor_photos" style="display:none;" onchange="previewBearer(this, 'mentor-preview-${idx}')">
+                    </label>
+                    <input type="hidden" name="existing_mentor_photos" value="">
+                </div>
+                <div style="display:grid; gap:0.8rem;">
+                    <input type="text" name="mentor_names" placeholder="Name" required style="font-weight:600;">
+                    <input type="text" name="mentor_roles" placeholder="Designation (e.g. Main Mentor)" required>
+                </div>
+            </div>
+        `;
+        list.appendChild(div);
+    }
+</script>
+{% endblock %}

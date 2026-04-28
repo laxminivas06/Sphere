@@ -1,0 +1,81 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+  :root { --p-green: #10b981; --p-gold: #f59e0b; --p-indigo: #6366f1; }
+  .hr-main { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+  .hr-controls { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .hr-search { flex: 1; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); padding: .75rem 1rem; border-radius: 12px; color: #fff; outline: none; }
+  .hr-select { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); padding: .75rem 1rem; border-radius: 12px; color: #fff; outline: none; }
+  .team-card { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+  .btn-sm { padding: .4rem .8rem; border-radius: 8px; font-size: .8rem; cursor: pointer; border: none; font-weight: 600; }
+  .btn-green { background: rgba(16,185,129,.15); color: var(--p-green); border: 1px solid rgba(16,185,129,.3); }
+  .btn-gold { background: rgba(245,158,11,.15); color: var(--p-gold); border: 1px solid rgba(245,158,11,.3); }
+</style>
+
+<div class="hr-main">
+  <a href="/em/hackathon/{{ event.id }}/hub" style="color:rgba(255,255,255,.5);text-decoration:none;display:inline-block;margin-bottom:1rem;"><i class="fas fa-arrow-left"></i> Back to Hub</a>
+  <h2>Team Registrations - {{ event.title }}</h2>
+
+  <div class="hr-controls">
+    <input type="text" id="searchQ" class="hr-search" placeholder="Search team name, ID or participant..." oninput="filter()">
+    <select id="payFilter" class="hr-select" onchange="filter()">
+      <option value="">All Payments</option>
+      <option value="paid">Paid</option>
+      <option value="pending">Pending</option>
+      <option value="free">Free</option>
+    </select>
+    <select id="chkFilter" class="hr-select" onchange="filter()">
+      <option value="">All Attendance</option>
+      <option value="checked">Checked In</option>
+      <option value="not">Not Checked In</option>
+    </select>
+  </div>
+
+  <div id="list">
+    {% for team in teams %}
+    <div class="team-card" data-search="{{ team.team_name|lower }} {{ team.team_id|lower }} {% for m in team.members %}{{ m.name|lower }} {{ m.roll_number|lower }}{% endfor %}" data-pay="{{ 'paid' if team.payment_status == 'paid' else ('free' if team.payment_status == 'free' else 'pending') }}" data-chk="{{ 'checked' if team.checked_in else 'not' }}">
+      <div style="flex:1;">
+        <h3 style="margin:0 0 .5rem 0;">{{ team.team_name }} <span style="font-size:.8rem;color:rgba(255,255,255,.5);">#{{ team.team_id }}</span></h3>
+        <p style="margin:0;font-size:.85rem;color:rgba(255,255,255,.7);">
+          Leader: {{ (team.members|selectattr('is_leader')|first).name }} | Total Members: {{ team.members|length }}
+        </p>
+        <p style="margin:.3rem 0 0 0;font-size:.85rem;">
+          Payment: <strong style="color:{{ '#10b981' if team.payment_status in ['paid','free'] else '#f59e0b' }}">{{ team.payment_status|upper }}</strong>
+          &middot; Attendance: <strong>{{ 'Checked In' if team.checked_in else 'Pending' }}</strong>
+          &middot; Round: <strong>{{ team.current_round|default(0) + 1 }}</strong>
+        </p>
+      </div>
+      <div style="display:flex;gap:.5rem;align-items:center;">
+        <button class="btn-sm btn-green" onclick="promoteTeam('{{ team.team_id }}', {{ team.current_round|default(0) + 1 }})"><i class="fas fa-arrow-up"></i> Promote</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+function filter() {
+  const q = document.getElementById('searchQ').value.toLowerCase();
+  const p = document.getElementById('payFilter').value;
+  const c = document.getElementById('chkFilter').value;
+  document.querySelectorAll('.team-card').forEach(el => {
+    const mq = !q || el.dataset.search.includes(q);
+    const mp = !p || el.dataset.pay === p;
+    const mc = !c || el.dataset.chk === c;
+    el.style.display = mq && mp && mc ? '' : 'none';
+  });
+}
+
+async function promoteTeam(tid, nextRound) {
+  if(!confirm(`Promote team to Round ${nextRound + 1}?`)) return;
+  const r = await fetch(`/em/api/hackathon/team/${tid}/promote`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({round_index: nextRound})
+  });
+  const d = await r.json();
+  if(d.success) location.reload();
+  else alert(d.message);
+}
+</script>
+{% endblock %}

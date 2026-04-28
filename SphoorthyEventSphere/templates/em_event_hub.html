@@ -1,0 +1,646 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+  {% set cat = (event.event_category or '') | lower %}
+  {% if cat == 'hackathon' %}
+    {% set theme_color = "#6366f1" %}{# Indigo #}
+    {% set theme_rgb   = "99, 102, 241" %}
+    {% set accent_color = "#06b6d4" %}{# Cyan #}
+    {% set accent_rgb   = "6, 182, 212" %}
+    {% set hub_label = "Hackathon Hub" %}
+    {% set hub_icon = "fa-terminal" %}
+  {% elif 'tech' in cat or cat == 'tech_fest' %}
+    {% set theme_color = "#f59e0b" %}{# Amber #}
+    {% set theme_rgb   = "245, 158, 11" %}
+    {% set accent_color = "#ec4899" %}{# Pink #}
+    {% set accent_rgb   = "236, 72, 153" %}
+    {% set hub_label = "Techfest Hub" %}
+    {% set hub_icon = "fa-rocket" %}
+  {% else %}
+    {% set theme_color = "#10b981" %}{# Emerald #}
+    {% set theme_rgb   = "16, 185, 129" %}
+    {% set accent_color = "#14b8a6" %}{# Teal #}
+    {% set accent_rgb   = "20, 184, 166" %}
+    {% set hub_label = "Event Hub" %}
+    {% set hub_icon = "fa-star" %}
+  {% endif %}
+
+  :root {
+    --eu-purple: #8b5cf6;
+    --eu-indigo: {{ theme_color }};
+    --eu-teal: {{ accent_color }};
+    --eu-pink: #ec4899;
+    --eu-amber: #f59e0b;
+    --eu-green: #10b981;
+    --hub-theme: {{ theme_color }};
+    --hub-accent: {{ accent_color }};
+  }
+
+  /* Layout */
+  .eh-wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+  }
+
+  /* Back nav */
+  .eh-back {
+    display: inline-flex;
+    align-items: center;
+    gap: .6rem;
+    color: rgba(255, 255, 255, .5);
+    font-size: .82rem;
+    text-decoration: none;
+    margin-bottom: 2rem;
+    padding: .5rem .9rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .07);
+    transition: .2s;
+  }
+
+  .eh-back:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, .05);
+  }
+
+  /* Hero */
+  .eh-hero {
+    background: linear-gradient(135deg, rgba({{ theme_rgb }}, .12) 0%, rgba({{ theme_rgb }}, .08) 50%, rgba({{ accent_rgb }}, .06) 100%);
+    border: 1px solid rgba({{ theme_rgb }}, .2);
+    border-radius: 28px;
+    padding: 2.5rem;
+    margin-bottom: 2.5rem;
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .eh-hero-banner {
+    width: 90px;
+    height: 90px;
+    border-radius: 18px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  .eh-hero-banner-placeholder {
+    width: 90px;
+    height: 90px;
+    border-radius: 18px;
+    background: rgba(99, 102, 241, .2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    flex-shrink: 0;
+  }
+
+  .eh-hero-title {
+    font-size: 1.9rem;
+    font-weight: 800;
+    margin-bottom: .4rem;
+    background: linear-gradient(135deg, #fff, rgba(255, 255, 255, .7));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .eh-hero-meta {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    font-size: .82rem;
+    color: rgba(255, 255, 255, .5);
+  }
+
+  .eh-hero-meta span {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+  }
+
+  /* Stats row */
+  .eh-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .eh-stat {
+    background: rgba(255, 255, 255, .03);
+    border: 1px solid rgba(255, 255, 255, .07);
+    border-radius: 16px;
+    padding: 1.1rem 1.25rem;
+    text-align: center;
+  }
+
+  .eh-stat-val {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  .eh-stat-lbl {
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: rgba(255, 255, 255, .45);
+    margin-top: .25rem;
+  }
+
+  /* Module grid */
+  .eh-modules {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .eh-module {
+    background: rgba(255, 255, 255, .03);
+    border: 1px solid rgba(255, 255, 255, .07);
+    border-radius: 22px;
+    padding: 1.75rem;
+    text-decoration: none;
+    color: inherit;
+    transition: all .25s;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .eh-module::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    transform: translate(30%, -30%);
+    opacity: .08;
+  }
+
+  .eh-module:hover {
+    border-color: var(--mod-color, rgba(99, 102, 241, .4));
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .25);
+  }
+
+  .eh-module-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+  }
+
+  .eh-module-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .eh-module-desc {
+    font-size: .8rem;
+    color: rgba(255, 255, 255, .45);
+    line-height: 1.6;
+  }
+
+  .eh-module-arrow {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .78rem;
+    font-weight: 600;
+    opacity: .6;
+    transition: opacity .2s;
+  }
+
+  .eh-module:hover .eh-module-arrow {
+    opacity: 1;
+  }
+
+  /* Badge */
+  .eh-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .25rem .65rem;
+    border-radius: 8px;
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+
+  /* Responsive */
+  @media(max-width:600px) {
+    .eh-wrap {
+      padding: 1.25rem 1rem;
+    }
+
+    .eh-hero {
+      padding: 1.5rem;
+    }
+
+    .eh-hero-title {
+      font-size: 1.4rem;
+    }
+
+    .eh-modules {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="eh-wrap">
+  <!-- Back -->
+  {% if user.role in ('event_manager', 'event_admin', 'super_admin') %}
+  {% if user.role != 'event_admin' %}
+  <a href="/em/dashboard" class="eh-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+  {% endif %}
+  {% else %}
+  <a href="/admin" class="eh-back"><i class="fas fa-arrow-left"></i> Back to Club Dashboard</a>
+  {% endif %}
+
+  {% set cat = (event.event_category or '') | lower %}
+  {% if cat == 'hackathon' %}
+    {% set hub_label = "Hackathon Hub" %}
+  {% elif 'tech' in cat or cat == 'tech_fest' %}
+    {% set hub_label = "Techfest Hub" %}
+  {% else %}
+    {% set hub_label = "Event Hub" %}
+  {% endif %}
+
+  <!-- Hero -->
+  <div class="eh-hero">
+    {% if event.banner %}
+    <img src="/static/uploads/em/banners/{{ event.banner }}" class="eh-hero-banner" alt="Banner">
+    {% else %}
+    <div class="eh-hero-banner-placeholder">🎭</div>
+    {% endif %}
+    <div style="flex:1;">
+      <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:.5rem;">
+        <span class="eh-badge"
+          style="background:rgba(99,102,241,.15);color:#818cf8;border:1px solid rgba(99,102,241,.25);">
+          <i class="fas fa-star"></i> {{ hub_label }}
+        </span>
+        {% if event.event_category %}
+        <span class="eh-badge"
+          style="background:rgba(139,92,246,.12);color:#a78bfa;border:1px solid rgba(139,92,246,.25);">
+          <i class="fas fa-tag"></i> {{ event.event_category | replace('_',' ') | upper }}
+        </span>
+        {% endif %}
+        {% if event.event_type == 'paid' %}
+        <span class="eh-badge"
+          style="background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.2);">₹{{
+          event.ticket_price }}</span>
+        {% else %}
+        <span class="eh-badge"
+          style="background:rgba(20,184,166,.12);color:#14b8a6;border:1px solid rgba(20,184,166,.2);">Free</span>
+        {% endif %}
+        <span class="eh-badge"
+          style="background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.2);">{{ event.status |
+          upper }}</span>
+      </div>
+      <h1 class="eh-hero-title">{{ event.title }}</h1>
+      <div class="eh-hero-meta">
+        {% if event.date %}<span><i class="fas fa-calendar-alt"></i> {{ event.date }}</span>{% endif %}
+        {% if event.time %}<span><i class="fas fa-clock"></i> {{ event.time }}</span>{% endif %}
+        {% if event.venue %}<span><i class="fas fa-map-marker-alt"></i> {{ event.venue }}</span>{% endif %}
+        {% if event.organized_by %}<span><i class="fas fa-building"></i> {{ event.organized_by }}</span>{% endif %}
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.5rem;align-items:flex-end;">
+      <a href="/em/events/{{ event.id }}" target="_blank" class="eh-badge"
+        style="background:rgba(255,255,255,.06);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.1);text-decoration:none;padding:.4rem .8rem;">
+        <i class="fas fa-external-link-alt"></i> Public Page
+      </a>
+      {% if event.status == 'active' %}
+      <button onclick="completeEvent('{{ event.id }}', '{{ event.title }}')" class="eh-badge"
+        style="background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.3);cursor:pointer;padding:.4rem .8rem;">
+        <i class="fas fa-check-double"></i> Complete Event
+      </button>
+      {% endif %}
+      <a href="/api/logout" class="eh-badge"
+        style="background:rgba(239,68,68,.08);color:#f87171;border:1px solid rgba(239,68,68,.2);text-decoration:none;padding:.4rem .8rem;">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </a>
+    </div>
+  </div>
+
+  <script>
+    async function completeEvent(eid, title) {
+      if(!confirm(`Are you sure you want to mark "${title}" as completed? This action cannot be undone.`)) return;
+      try {
+        const r = await fetch(`/em/api/events/complete/${eid}`, {
+          method: 'POST',
+          headers: {'X-CSRFToken': '{{ csrf_token() }}'}
+        });
+        const d = await r.json();
+        if(d.success) {
+          alert('Event marked as completed.');
+          location.reload();
+        } else {
+          alert(d.message || 'Failed to complete event');
+        }
+      } catch(e) {
+        alert('Error completing event');
+      }
+    }
+  </script>
+
+  <!-- Live Stats -->
+  <div class="eh-stats" id="liveStats">
+    <div class="eh-stat" style="border-color:rgba(99,102,241,.2);">
+      <div class="eh-stat-val" style="color:var(--eu-indigo);" id="st-regs">—</div>
+      <div class="eh-stat-lbl">Registrations</div>
+    </div>
+    <div class="eh-stat" style="border-color:rgba(16,185,129,.2);">
+      <div class="eh-stat-val" style="color:var(--eu-green);" id="st-checkin">—</div>
+      <div class="eh-stat-lbl">Checked In</div>
+    </div>
+    <div class="eh-stat" style="border-color:rgba(245,158,11,.2);">
+      <div class="eh-stat-val" style="color:var(--eu-amber);" id="st-revenue">—</div>
+      <div class="eh-stat-lbl">Revenue</div>
+    </div>
+    <div class="eh-stat" style="border-color:rgba(148,163,184,.2);">
+      <div class="eh-stat-val" style="color:#94a3b8;" id="st-free">—</div>
+      <div class="eh-stat-lbl">Free Passes</div>
+    </div>
+  </div>
+
+  <!-- Module Cards -->
+  <h2
+    style="font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.35);margin-bottom:1.25rem;">
+    Management Modules</h2>
+  <div class="eh-modules">
+
+    <!-- Registrations -->
+    <a href="/em/event/{{ event.id }}/registrations" class="eh-module" style="--mod-color:rgba(6,182,212,.4);">
+      <div
+        style="position:absolute;top:0;right:0;width:80px;height:80px;border-radius:50%;transform:translate(30%,-30%);background:#06b6d4;opacity:.08;">
+      </div>
+      <div class="eh-module-icon" style="background:rgba(6,182,212,.12);color:#06b6d4;">
+        <i class="fas fa-users"></i>
+      </div>
+      <div>
+        <div class="eh-module-title">Registrations</div>
+        <div class="eh-module-desc">View all registered participants, search by name/roll, and download PDF tickets.</div>
+      </div>
+      <div class="eh-module-arrow" style="color:#06b6d4;">
+        View Registrations <i class="fas fa-arrow-right"></i>
+      </div>
+    </a>
+
+    <!-- Analytics -->
+    <a href="/em/event/{{ event.id }}/analytics" class="eh-module" style="--mod-color:rgba(139,92,246,.4);">
+      <div
+        style="position:absolute;top:0;right:0;width:80px;height:80px;border-radius:50%;transform:translate(30%,-30%);background:#8b5cf6;opacity:.08;">
+      </div>
+      <div class="eh-module-icon" style="background:rgba(139,92,246,.12);color:#8b5cf6;">
+        <i class="fas fa-chart-pie"></i>
+      </div>
+      <div>
+        <div class="eh-module-title">Analytics</div>
+        <div class="eh-module-desc">Department & year-wise distribution charts, revenue breakdown, attendance rate, and
+          real-time insights.</div>
+      </div>
+      <div class="eh-module-arrow" style="color:#8b5cf6;">
+        View Analytics <i class="fas fa-arrow-right"></i>
+      </div>
+    </a>
+
+    <!-- Bulk Email -->
+    <a href="/em/event/{{ event.id }}/bulk-email" class="eh-module" style="--mod-color:rgba(236,72,153,.4);">
+      <div
+        style="position:absolute;top:0;right:0;width:80px;height:80px;border-radius:50%;transform:translate(30%,-30%);background:#ec4899;opacity:.08;">
+      </div>
+      <div class="eh-module-icon" style="background:rgba(236,72,153,.12);color:#ec4899;">
+        <i class="fas fa-envelope-open-text"></i>
+      </div>
+      <div>
+        <div class="eh-module-title">Bulk Email</div>
+        <div class="eh-module-desc">Send personalized reminders or re-send event passes (QR + PDF) to all registered
+          participants.</div>
+      </div>
+      <div class="eh-module-arrow" style="color:#ec4899;">
+        Send Emails <i class="fas fa-arrow-right"></i>
+      </div>
+    </a>
+
+    <!-- QR Scanner -->
+    <a href="/em/event/{{ event.id }}/scanner" class="eh-module" style="--mod-color:rgba(16,185,129,.4);">
+      <div
+        style="position:absolute;top:0;right:0;width:80px;height:80px;border-radius:50%;transform:translate(30%,-30%);background:#10b981;opacity:.08;">
+      </div>
+      <div class="eh-module-icon" style="background:rgba(16,185,129,.12);color:#10b981;">
+        <i class="fas fa-qrcode"></i>
+      </div>
+      <div>
+        <div class="eh-module-title">QR Scanner</div>
+        <div class="eh-module-desc">Launch the entry scanner pre-loaded for this event. Scan attendee QR codes to grant
+          venue access.</div>
+      </div>
+      <div class="eh-module-arrow" style="color:#10b981;">
+        Open Scanner <i class="fas fa-arrow-right"></i>
+      </div>
+    </a>
+
+    <!-- Export CSV -->
+    <a href="/em/api/club/event/{{ event.id }}/export" class="eh-module" style="--mod-color:rgba(148,163,184,.4);">
+      <div
+        style="position:absolute;top:0;right:0;width:80px;height:80px;border-radius:50%;transform:translate(30%,-30%);background:#94a3b8;opacity:.08;">
+      </div>
+      <div class="eh-module-icon" style="background:rgba(148,163,184,.08);color:#94a3b8;">
+        <i class="fas fa-file-csv"></i>
+      </div>
+      <div>
+        <div class="eh-module-title">Export CSV</div>
+        <div class="eh-module-desc">Download a full spreadsheet of all registrations with payment status, check-in time,
+          department, and more.</div>
+      </div>
+      <div class="eh-module-arrow" style="color:#94a3b8;">
+        Download CSV <i class="fas fa-arrow-right"></i>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- ─── Settings Panel ──────────────────────────────────────────────────── -->
+  <style>
+    .eh-settings-toggle { display: flex; align-items: center; gap: .6rem; cursor: pointer; color: rgba(255,255,255,.45); font-size: .82rem; padding: .6rem 1rem; border-radius: 10px; border: 1px solid rgba(255,255,255,.07); width: fit-content; margin-bottom: 1.25rem; transition: .2s; background: rgba(255,255,255,.02); user-select: none; }
+    .eh-settings-toggle:hover { color: #fff; border-color: rgba(255,255,255,.15); }
+    .eh-settings-panel { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 1.75rem; display: none; margin-bottom: 2rem; }
+    .eh-settings-panel.open { display: block; }
+    .toggle-row { display: flex; align-items: flex-start; justify-content: space-between; padding: .85rem 0; border-bottom: 1px solid rgba(255,255,255,.06); gap: 1rem; }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-label { font-size: .88rem; font-weight: 600; }
+    .toggle-sub { font-size: .75rem; color: rgba(255,255,255,.4); margin-top: .25rem; line-height: 1.55; }
+    .toggle-switch { position: relative; width: 44px; height: 24px; cursor: pointer; flex-shrink: 0; margin-top: .15rem; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; inset: 0; background: rgba(255,255,255,.12); border-radius: 12px; transition: .3s; }
+    .toggle-slider:before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .3s; }
+    .toggle-switch input:checked + .toggle-slider { background: #10b981; }
+    .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
+    
+    .setting-group { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,.1); }
+    .setting-field { margin-bottom: 1.25rem; }
+    .setting-field label { display: block; font-size: .75rem; color: rgba(255,255,255,.5); margin-bottom: .5rem; text-transform: uppercase; letter-spacing: .05em; }
+    .setting-field input { width: 100%; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: .75rem 1rem; color: #fff; font-size: .9rem; transition: .2s; }
+    .setting-field input:focus { border-color: var(--eu-indigo); outline: none; background: rgba(255,255,255,.08); }
+    .setting-btn { background: var(--eu-indigo); color: #fff; border: none; padding: .75rem 1.5rem; border-radius: 10px; font-weight: 700; font-size: .9rem; cursor: pointer; transition: .2s; width: 100%; }
+    .setting-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  </style>
+
+  <div class="eh-settings-toggle" onclick="toggleSettings()">
+    <i class="fas fa-cog"></i> Event App & Hub Settings
+    <i class="fas fa-chevron-down" id="settingsChevron" style="margin-left:.5rem;transition:.25s;"></i>
+  </div>
+  <div class="eh-settings-panel" id="settingsPanel">
+    <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3);margin-bottom:1.25rem;">General Controls</div>
+
+    <div class="toggle-row">
+      <div style="flex:1;">
+        <div class="toggle-label">🌐 Allow External Students</div>
+        <div class="toggle-sub">When enabled, students from other colleges can register for this event.</div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="toggleExternal" {% if event.allow_external %}checked{% endif %} onchange="updateEventSetting('allow_external', this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    {% if user.role in ('event_manager', 'event_admin', 'super_admin') %}
+    <div class="setting-group">
+      <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3);margin-bottom:1.25rem;">Event App Settings (Gateway & Email)</div>
+      
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:1.5rem;">
+        <div>
+          <div class="setting-field">
+            <label>Razorpay Key ID</label>
+            <input type="text" id="eh-rzp-id" value="{{ settings.razorpay_key_id or '' }}" placeholder="rzp_live_...">
+          </div>
+          <div class="setting-field">
+            <label>Razorpay Key Secret</label>
+            <input type="password" id="eh-rzp-secret" value="{{ settings.razorpay_key_secret or '' }}" placeholder="••••••••">
+          </div>
+        </div>
+        <div>
+          <div class="setting-field">
+            <label>SMTP User (Email)</label>
+            <input type="text" id="eh-smtp-user" value="{{ settings.smtp_user or '' }}" placeholder="noreply@college.edu">
+          </div>
+          <div class="setting-field">
+            <label>SMTP Password</label>
+            <input type="password" id="eh-smtp-pass" value="{{ settings.smtp_pass or '' }}" placeholder="••••••••">
+          </div>
+        </div>
+      </div>
+      <button class="setting-btn" onclick="saveHubSettings()">Save App Settings</button>
+    </div>
+    {% endif %}
+  </div>
+
+  <div id="settingsMsg" style="display:none;padding:.8rem 1rem;border-radius:12px;font-size:.84rem;margin-bottom:2rem;"></div>
+</div>
+
+<script>
+  function toggleSettings() {
+    const panel = document.getElementById('settingsPanel');
+    const chevron = document.getElementById('settingsChevron');
+    panel.classList.toggle('open');
+    chevron.style.transform = panel.classList.contains('open') ? 'rotate(180deg)' : '';
+  }
+
+  async function updateEventSetting(key, value) {
+    const msg = document.getElementById('settingsMsg');
+    msg.style.display = 'none';
+    try {
+      const r = await fetch('/em/api/event/{{ event.id }}/update-setting', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ [key]: value })
+      });
+      const d = await r.json();
+      if (d.success) {
+        msg.style.display = 'block';
+        msg.style.background = 'rgba(16,185,129,.1)';
+        msg.style.border = '1px solid rgba(16,185,129,.25)';
+        msg.style.color = '#10b981';
+        msg.textContent = '✅ Setting updated successfully.';
+        setTimeout(() => msg.style.display = 'none', 3000);
+      } else {
+        throw new Error(d.message || 'Update failed');
+      }
+    } catch(e) {
+      msg.style.display = 'block';
+      msg.style.background = 'rgba(239,68,68,.1)';
+      msg.style.border = '1px solid rgba(239,68,68,.25)';
+      msg.style.color = '#f87171';
+      msg.textContent = '❌ ' + e.message;
+      location.reload();
+    }
+  }
+
+  async function saveHubSettings() {
+    const msg = document.getElementById('settingsMsg');
+    msg.style.display = 'none';
+    const payload = {
+      razorpay_key_id:     document.getElementById('eh-rzp-id').value.trim(),
+      razorpay_key_secret: document.getElementById('eh-rzp-secret').value.trim(),
+      smtp_user:           document.getElementById('eh-smtp-user').value.trim(),
+      smtp_pass:           document.getElementById('eh-smtp-pass').value.trim()
+    };
+    try {
+      const r = await fetch('/em/api/settings', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(payload)
+      });
+      const d = await r.json();
+      if (d.success) {
+        msg.style.display = 'block';
+        msg.style.background = 'rgba(16,185,129,.1)';
+        msg.style.border = '1px solid rgba(16,185,129,.25)';
+        msg.style.color = '#10b981';
+        msg.textContent = '✅ App settings saved successfully.';
+        setTimeout(() => msg.style.display = 'none', 3000);
+      } else {
+        throw new Error(d.message || 'Save failed');
+      }
+    } catch(e) {
+      msg.style.display = 'block';
+      msg.style.background = 'rgba(239,68,68,.1)';
+      msg.style.border = '1px solid rgba(239,68,68,.25)';
+      msg.style.color = '#f87171';
+      msg.textContent = '❌ ' + e.message;
+    }
+  }
+
+  (async () => {
+    try {
+      const r = await fetch('/em/api/club/event/{{ event.id }}/analytics');
+      const d = await r.json();
+      if (!d.success) return;
+      document.getElementById('st-regs').textContent = d.total;
+      document.getElementById('st-checkin').textContent = d.checked_in;
+      document.getElementById('st-revenue').textContent = '₹' + d.revenue;
+      document.getElementById('st-free').textContent = d.free || 0;
+    } catch (e) { }
+  })();
+</script>
+{% endblock %}

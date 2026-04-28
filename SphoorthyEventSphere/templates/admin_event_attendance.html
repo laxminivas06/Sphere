@@ -1,0 +1,134 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container" style="max-width: 1200px; padding-top: 2rem; padding-bottom: 5rem;">
+    <header style="margin-bottom: 3rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Attendance <span style="color: var(--primary)">Log</span></h1>
+            <p style="color: var(--text-muted)">Tracking participation for <strong>{{ event.title }}</strong></p>
+        </div>
+        <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
+            <button onclick="forwardAttendance()" class="btn btn-primary" style="background: var(--success); border:none;">
+                <i class="fas fa-share-square"></i> Forward to Depts
+            </button>
+            <a href="/scanner" class="btn btn-primary"><i class="fas fa-qrcode"></i> Open Scanner</a>
+            <a href="/admin" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Dashboard</a>
+        </div>
+    </header>
+
+    {% if grouped_attendance %}
+        {% for dept, students in grouped_attendance.items() %}
+        <div style="margin-bottom: 4rem;">
+            <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem;">
+                <h3 style="white-space: nowrap; text-transform: uppercase; letter-spacing: 0.15em; color: var(--primary); font-size: 1.1rem; border-left: 4px solid var(--primary); padding-left: 1rem;">
+                    {{ dept }} <span style="color: var(--text-muted); font-size: 0.9rem; font-weight: normal; margin-left: 0.5rem;">({{ students|length }} Students)</span>
+                </h3>
+                <div style="height: 1px; flex: 1; background: linear-gradient(to right, rgba(139, 92, 246, 0.3), transparent);"></div>
+            </div>
+
+            <div class="card glass" style="border-radius: 20px; overflow-x: auto; border: 1px solid var(--glass-border);">
+                <table style="width: 100%; border-collapse: collapse; color: #fff; min-width: 600px;">
+                    <thead>
+                        <tr style="background: rgba(255,255,255,0.03); text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted);">
+                            <th style="padding: 1.25rem;">Student Info</th>
+                            <th style="padding: 1.25rem;">Roll Number</th>
+                            <th style="padding: 1.25rem;">Check-in Details</th>
+                            <th style="padding: 1.25rem; text-align: center;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in students %}
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+                            <td style="padding: 1.25rem;">
+                                <div style="font-weight: 600; color: #fff;">{{ r.name }}</div>
+                            </td>
+                            <td style="padding: 1.25rem; font-family: monospace; color: var(--text-muted);">{{ r.roll_number }}</td>
+                            <td style="padding: 1.25rem;">
+                                {% if r.attended %}
+                                    <div style="color: #10b981; font-weight: 600; font-size: 0.9rem;"><i class="fas fa-clock" style="margin-right: 0.4rem;"></i> {{ r.attended_at or 'Verified' }}</div>
+                                {% else %}
+                                    <span style="color: var(--text-muted); opacity: 0.4; font-size: 0.9rem;">— Not Recorded —</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 1.25rem; text-align: center;">
+                                {% if r.attended %}
+                                <span class="badge badge-success">Present</span>
+                                {% else %}
+                                <span class="badge" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">Absent</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="card glass" style="padding: 8rem 2rem; text-align: center; border-radius: 32px;">
+        <div style="width: 100px; height: 100px; background: rgba(255,255,255,0.03); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 2rem;">
+            <i class="fas fa-clipboard-user" style="font-size: 3rem; color: var(--text-muted); opacity: 0.5;"></i>
+        </div>
+        <h2 style="color: var(--text-muted); font-weight: 400;">No attendance records found.</h2>
+        <p style="color: var(--text-muted); margin-top: 1rem; opacity: 0.6;">Verified students will appear here after they scan their QR codes.</p>
+    </div>
+    {% endif %}
+</div>
+
+
+
+    async function forwardAttendance() {
+        if (!confirm("Forward summarized attendance report to all configured department heads?")) return;
+        
+        const btn = document.querySelector('button[onclick="forwardAttendance()"]');
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+        try {
+            const res = await fetch(`/api/forward-attendance/{{ club.id }}/{{ event.id }}`, { method: 'POST' });
+            const data = await res.json();
+            
+            if (data.success) {
+                showToast(data.message, 'success');
+            } else {
+                showToast(data.message || 'Forwarding failed', 'error');
+            }
+        } catch (e) {
+            showToast('Network error during dispatch', 'error');
+        } finally {
+            btn.disabled = false; btn.innerHTML = originalHtml;
+        }
+    }
+</script>
+
+<style>
+.badge {
+    padding: 0.4rem 1rem;
+    border-radius: 50px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.badge-success { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+
+.dept-row input {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    padding: 0.7rem;
+    border-radius: 8px;
+}
+.dept-row input:focus {
+    border-color: var(--primary);
+    outline: none;
+    background: rgba(0,0,0,0.3);
+}
+
+@media (max-width: 768px) {
+    header { text-align: center; justify-content: center; }
+    h1 { font-size: 2rem !important; }
+    .btn { width: 100%; justify-content: center; }
+}
+</style>
+{% endblock %}

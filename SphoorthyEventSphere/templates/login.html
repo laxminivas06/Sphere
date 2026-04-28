@@ -1,0 +1,123 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<main class="section" style="display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 68px);">
+    <div class="form-card reveal active" style="width: 100%; max-width: 440px;">
+        <div class="form-header" style="text-align: center;">
+            <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem;">
+                <i class="fas fa-lock" style="font-size: 1.5rem; color: #fff;"></i>
+            </div>
+            <h2>Institutional Login</h2>
+            <p>Access your student portal or management dashboard</p>
+        </div>
+        
+        <div class="form-body">
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Username / Roll Number</label>
+                    <input type="text" id="roll" placeholder="e.g. 21N61A0501" required autocomplete="username">
+                </div>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label id="dobLabel">Password</label>
+                    <input type="password" id="dob" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+                
+                <button type="submit" class="btn btn-navy" style="width: 100%; height: 50px; margin-top: 2rem; justify-content: center;">
+                    Sign In to Portal <i class="fas fa-arrow-right" style="margin-left: 0.5rem;"></i>
+                </button>
+            </form>
+            
+            <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light); text-align: center;">
+                <button type="button" class="btn btn-outline" style="font-size: 0.75rem; color: var(--text-muted); border-color: var(--border-mid); padding: 0.4rem 1rem;" onclick="showLoginHelp()">
+                    <i class="fas fa-question-circle"></i> Need login assistance?
+                </button>
+            </div>
+
+            <div class="alert alert-info" style="margin-top: 1.5rem; background: var(--surface-2); border-color: transparent;">
+                <p style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+                    <strong>External Participants:</strong><br>
+                    You do not need an account. Use direct registration links for participation.
+                </p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+function showLoginHelp() {
+    Swal.fire({
+        title: 'Login Information',
+        html: `
+            <div style="text-align: left; font-size: 0.9rem; line-height: 1.6;">
+                <p><strong>Students:</strong><br>
+                • <b>User:</b> Your Roll Number (e.g. 21N61A0501)<br>
+                • <b>Pass:</b> Your Date of Birth (DDMMYYYY format, 8 digits)</p>
+                <hr style="margin: 1rem 0; border: none; border-top: 1px solid #eee;">
+                <p><strong>Staff & Admins:</strong><br>
+                Please use your registered email and assigned password.</p>
+            </div>
+        `,
+        icon: 'info',
+        confirmButtonColor: '#2d3dba'
+    });
+}
+
+document.getElementById('roll').addEventListener('input', function() {
+    const val = this.value;
+    const trimmedVal = val.trim();
+    if (/^\d/.test(trimmedVal)) {
+        this.value = val.toUpperCase();
+    }
+});
+
+document.getElementById('loginForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const roll_number = document.getElementById('roll').value.trim();
+    const dob = document.getElementById('dob').value;
+    
+    // Show loading
+    const btn = e.target.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+
+    try {
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({roll_number, dob})
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+            const role = data.user?.role || '';
+            if (role === 'evaluator') {
+                window.location.href = '/em/evaluator/dashboard';
+            } else if (role === 'super_admin' || role === 'event_manager' || role === 'event_admin' || role.endsWith('_admin')) {
+                window.location.href = '/admin';
+            } else {
+                window.location.href = '/';
+            }
+        } else {
+            Swal.fire({
+                title: 'Access Denied',
+                text: data.message || 'Invalid credentials. Please check your roll number or password.',
+                icon: 'error',
+                confirmButtonColor: '#2d3dba'
+            });
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    } catch (err) {
+        console.error("Login Error:", err);
+        Swal.fire('Network Error', 'Could not reach server. Please try again.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+</script>
+{% endblock %}

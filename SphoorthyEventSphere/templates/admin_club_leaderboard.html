@@ -1,0 +1,97 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+<div class="dashboard-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+                <div style="margin-bottom: 2rem;">
+            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏠 Main Menu ⏺️</p>
+        </div>
+
+        <a class="nav-item" href="/admin/club/{{ club.id }}">
+            <i class="fas fa-th-large"></i> <span>Overview</span>
+        </a>
+        <a class="nav-item" href="/admin/events/{{ club.id }}">
+            <i class="fas fa-calendar-alt"></i> <span>Event Registry</span>
+        </a>
+        <a class="nav-item" href="/admin/bulk-email/{{ club.id }}">
+            <i class="fas fa-paper-plane"></i> <span>Communications</span>
+        </a>
+        <a class="nav-item" href="/admin/finance/{{ club.id }}">
+            <i class="fas fa-wallet"></i> <span>Finance Hub</span>
+        </a>
+        <a class="nav-item" href="/admin/club/{{ club.id }}#eventhub">
+            <i class="fas fa-ticket-alt"></i> <span>Event Hub</span>
+        </a>
+        <a class="nav-item" href="/admin/identity/{{ club.id }}">
+            <i class="fas fa-id-card"></i> <span>Club Identity</span>
+        </a>
+        <a class="nav-item active" href="/admin/leaderboard/{{ club.id }}">
+            <i class="fas fa-trophy"></i> <span>Top Attendees</span>
+        </a>
+        <a class="nav-item" href="/admin/elections/{{ club.id }}">
+            <i class="fas fa-vote-yea"></i> <span>Elections Zone</span>
+        </a>
+        <a class="nav-item" href="/admin/reports/{{ club.id }}">
+            <i class="fas fa-archive"></i> <span>Academic Year Reports</span>
+        </a>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header style="margin-bottom: 3rem;">
+            <h1>{{ club.name }} <span style="color: var(--primary)">Leaderboard</span></h1>
+            <p style="color: var(--text-muted)">Top 20 most active members and highest spenders in your club.</p>
+        </header>
+
+        <div class="glass" style="padding: 2rem; border-radius: 28px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: separate; border-spacing: 0 0.75rem;">
+                    <thead>
+                        <tr style="text-align: left; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em;">
+                            <th style="width: 80px; text-align: center; padding: 1rem;">Rank</th>
+                            <th style="padding: 1rem;">Student Details</th>
+                            <th style="padding: 1rem;">Department</th>
+                            <th style="text-align: right; padding: 1rem;">Total Spent</th>
+                            <th style="text-align: right; padding: 1rem;">Events Attended</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in students %}
+                        <tr style="transition: transform 0.2s; background: rgba(255,255,255,0.02); border-radius: 16px;">
+                            <td style="text-align: center; padding: 1.25rem; border-radius: 16px 0 0 16px;">
+                                <div style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; font-weight: 800; font-size: 1.1rem; {% if loop.index == 1 %}background: linear-gradient(135deg, #FFD700 0%, #D4AF37 100%); color: #000; box-shadow: 0 0 20px rgba(255,215,0,0.3);{% elif loop.index == 2 %}background: linear-gradient(135deg, #E0E0E0 0%, #BDBDBD 100%); color: #000;{% elif loop.index == 3 %}background: linear-gradient(135deg, #CD7F32 0%, #A0522D 100%); color: #fff;{% else %}background: rgba(255,255,255,0.05); color: #fff;{% endif %}">
+                                    {{ loop.index }}
+                                </div>
+                            </td>
+                            <td style="padding: 1.25rem;">
+                                <div style="font-weight: 700; font-size: 1.1rem; color: #fff;">{{ student.name }}</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); font-family: monospace; margin-top: 0.2rem;">{{ student.roll_number }}</div>
+                            </td>
+                            <td style="padding: 1.25rem;">
+                                <div style="color: #e2e8f0; font-weight: 500;">{{ student.department }}</div>
+                            </td>
+                            <td style="text-align: right; padding: 1.25rem;">
+                                <div style="font-weight: 700; font-size: 1.1rem; color: {% if student.amount_spent > 0 %}#f59e0b{% else %}var(--text-muted){% endif %};">₹{{ student.amount_spent }}</div>
+                            </td>
+                            <td style="text-align: right; padding: 1.25rem; border-radius: 0 16px 16px 0;">
+                                <div style="font-size: 1.8rem; font-weight: 900; color: var(--success);">{{ student.events_attended }}</div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 4rem; color: var(--text-muted); background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px dashed rgba(255,255,255,0.1);">
+                                <i class="fas fa-users-slash" style="font-size: 3rem; margin-bottom: 1rem; display: block; opacity: 0.3;"></i>
+                                No attendance data available yet for this club.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

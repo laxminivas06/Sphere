@@ -1,0 +1,23 @@
+[
+    {
+        "ticket_id": "TKT-795D2017",
+        "event_id": "2cbdc34d-459c-48a7-9f02-5d7a28422f90",
+        "user_id": "23N81A62B0",
+        "user_name": "Laxmi Nivas",
+        "user_email": "morishettylaxminivas@gmail.com",
+        "user_phone": "09059160424",
+        "user_dept": "AIML",
+        "user_year": "4th",
+        "user_roll": "23N81A62B0",
+        "college_name": "Sphoorthy Engineering College",
+        "payment_status": "free",
+        "payment_id": null,
+        "order_id": null,
+        "amount": 0,
+        "payment_method": "free",
+        "qr_data": "EM|2cbdc34d-459c-48a7-9f02-5d7a28422f90|TKT-795D2017|23N81A62B0|free",
+        "checked_in": false,
+        "checked_in_at": null,
+        "created_at": "2026-04-27T21:32:28.997585"
+    }
+]

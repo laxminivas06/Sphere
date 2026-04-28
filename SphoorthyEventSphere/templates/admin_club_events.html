@@ -1,0 +1,705 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+<div class="dashboard-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+                <div style="margin-bottom: 2rem;">
+            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏠 Main Menu ⏺️</p>
+        </div>
+
+        <a class="nav-item" href="/admin/club/{{ club.id }}">
+            <i class="fas fa-th-large"></i> <span>Overview</span>
+        </a>
+        <a class="nav-item active" href="/admin/events/{{ club.id }}">
+            <i class="fas fa-calendar-alt"></i> <span>Event Registry</span>
+        </a>
+        <a class="nav-item" href="/admin/bulk-email/{{ club.id }}">
+            <i class="fas fa-paper-plane"></i> <span>Communications</span>
+        </a>
+        <a class="nav-item" href="/admin/finance/{{ club.id }}">
+            <i class="fas fa-wallet"></i> <span>Finance Hub</span>
+        </a>
+        <a class="nav-item" href="/admin/club/{{ club.id }}#eventhub">
+            <i class="fas fa-ticket-alt"></i> <span>Event Hub</span>
+        </a>
+        <a class="nav-item" href="/admin/identity/{{ club.id }}">
+            <i class="fas fa-id-card"></i> <span>Club Identity</span>
+        </a>
+        <a class="nav-item" href="/admin/leaderboard/{{ club.id }}">
+            <i class="fas fa-trophy"></i> <span>Top Attendees</span>
+        </a>
+        <a class="nav-item" href="/admin/elections/{{ club.id }}">
+            <i class="fas fa-vote-yea"></i> <span>Elections Zone</span>
+        </a>
+        <a class="nav-item" href="/admin/reports/{{ club.id }}">
+            <i class="fas fa-archive"></i> <span>Academic Year Reports</span>
+        </a>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header style="margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 style="font-size: 2rem;">Event <span style="color: var(--primary)">Registry</span></h2>
+                <p style="color: var(--text-muted)">Manage your event lifecycle from proposal to reporting.</p>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <button onclick="createNewPermission()" class="btn btn-primary"
+                    style="border-radius: 12px; padding: 0.8rem 1.5rem;">
+                    <i class="fas fa-plus"></i> New Event
+                </button>
+                <button class="btn btn-outline" onclick="location.reload()"><i class="fas fa-sync"></i>
+                    Refresh</button>
+            </div>
+        </header>
+
+        <div class="event-registry-grid"
+            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.5rem;">
+            {% for e in events | sort(attribute='timestamp', reverse=True) %}
+            {% if not e.deleted %}
+            {% set event_slug = e.title | slugify %}
+            <div class="event-grid-card"
+                style="padding: 1.75rem; display: flex; flex-direction: column; gap: 1.5rem; position: relative;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div style="display:flex; gap:1.25rem; align-items:center;">
+                        {% if e.poster %}
+                        <img src="/static/uploads/clubs/{{ club.id }}/events/{{ event_slug }}/posters/{{ e.poster }}"
+                            alt="Poster"
+                            style="width:60px;height:60px;object-fit:cover;border-radius:14px; border: 1px solid rgba(255,255,255,0.1);">
+                        {% else %}
+                        <div
+                            style="width:60px;height:60px;border-radius:14px;background:rgba(255,193,7,0.1);display:flex;align-items:center;justify-content:center; color: #ffc107;">
+                            <i class="fas fa-calendar" style="font-size: 1.5rem;"></i>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <h3 style="margin:0; font-size:1.1rem; color:#fff; font-weight: 700;">
+                                {{ e.title }}
+                                {% if e.get('collaborating_clubs', []) %}
+                                <span class="badge"
+                                    style="font-size: 0.55rem; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; vertical-align: middle; margin-left: 0.4rem;">Collaborated
+                                    Event</span>
+                                {% endif %}
+                            </h3>
+                            <p style="margin:0.25rem 0 0 0; font-size:0.8rem; color:var(--text-muted);"><i
+                                    class="fas fa-calendar-day"></i> {{ e.date }}</p>
+
+                            {% if e.club_id %}
+                            {% set org_club = namespace(name='') %}
+                            {% for c in all_clubs %}
+                            {% if c.id == e.club_id %}{% set org_club.name = c.name %}{% endif %}
+                            {% endfor %}
+                            {% if org_club.name %}
+                            <p style="margin:0.25rem 0 0 0; font-size:0.75rem; color:var(--text-muted);">Organized
+                                by: <b style="color:#e2e8f0;">{{ org_club.name }}</b></p>
+                            {% endif %}
+                            {% endif %}
+
+                            {% if e.get('collaborating_clubs', []) %}
+                            {% set collabs = namespace(names=[]) %}
+                            {% for c in all_clubs %}
+                            {% if c.id in e.collaborating_clubs %}
+                            {% set _ = collabs.names.append(c.name) %}
+                            {% endif %}
+                            {% endfor %}
+                            {% if collabs.names %}
+                            <p style="margin:0.25rem 0 0 0; font-size:0.75rem; color:var(--text-muted);">In
+                                Collaboration with: <b style="color:#e2e8f0;">{{ collabs.names | join(', ') }}</b>
+                            </p>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <span class="badge"
+                        style="background: rgba(139, 92, 246, 0.1); color: var(--primary); font-size: 0.65rem; padding: 0.4rem 0.8rem; border-radius: 8px;">
+                        {% if e.report_approved %}Completed
+                        {% elif e.report %}Report Sent
+                        {% elif e.event_finished %}Finished
+                        {% elif e.approved %}Live
+                        {% elif e.event_status == 'pending' %}Under Review
+                        {% else %}Draft{% endif %}
+                    </span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    <a href="/events/permission_letter/{{ club.id }}/{{ e.id }}" target="_blank"
+                        class="btn btn-outline" style="font-size:0.75rem; padding:0.6rem; justify-content: center;">
+                        <i class="fas fa-file-invoice"></i> Letter
+                    </a>
+                    {% if not e.report_approved %}
+                    <a href="/events/permission_letter/{{ club.id }}/{{ e.id }}" class="btn btn-outline"
+                        style="font-size:0.75rem; padding:0.6rem; color:var(--warning); border-color: rgba(245, 158, 11, 0.3); justify-content: center;">
+                        <i class="fas fa-edit"></i> Edit Letter
+                    </a>
+                    {% endif %}
+
+                    {% if not e.event_finished %}
+                    <button onclick='openEditModal({{ e | tojson | forceescape }})' class="btn btn-outline"
+                        style="font-size:0.75rem; padding:0.6rem; color:var(--info); border-color: rgba(6, 182, 212, 0.3); justify-content: center;">
+                        <i class="fas fa-cog"></i> Edit Details
+                    </button>
+                    {% endif %}
+
+                    <a href="/admin/event/registrations/{{ club.id }}/{{ e.id }}" class="btn btn-outline"
+                        style="font-size:0.75rem; padding:0.6rem; justify-content: center;">
+                        <i class="fas fa-users"></i> Registrations
+                    </a>
+                    <a href="/admin/event/attendance/{{ club.id }}/{{ e.id }}" class="btn btn-outline"
+                        style="font-size:0.75rem; padding:0.6rem; justify-content: center;">
+                        <i class="fas fa-user-check"></i> Attendance
+                    </a>
+
+                    {% if e.approved and not e.event_finished %}
+                    <button onclick="finishEvent('{{ e.id }}')" class="btn btn-outline"
+                        style="font-size:0.75rem; padding:0.6rem; color: #10b981; border-color: rgba(16, 185, 129, 0.3); grid-column: span 2;">
+                        <i class="fas fa-check-double"></i> Mark as Completed
+                    </button>
+                    {% endif %}
+
+                    {% if e.event_finished and not e.report_approved %}
+                    <a href="/admin/generate-report/{{ club.id }}/{{ e.id }}" class="btn btn-primary"
+                        style="font-size:0.75rem; padding:0.6rem; background: #6366f1; border: none; grid-column: span 2; margin-bottom: 0.1rem; justify-content: center;">
+                        <i class="fas fa-magic"></i> Generate Report Automatically
+                    </a>
+                    <button onclick="uploadReport('{{ e.id }}')" class="btn btn-primary"
+                        style="font-size:0.75rem; padding:0.6rem; background: #f59e0b; border: none; grid-column: span 2;">
+                        <i class="fas fa-upload"></i> Upload Final Report
+                    </button>
+                    {% endif %}
+
+                    {% if e.report %}
+                    <button
+                        onclick="openReportPreview('{{ club.id }}', '{{ e.id }}', '{{ event_slug }}', '{{ e.report }}')"
+                        class="btn btn-outline"
+                        style="font-size:0.75rem; padding:0.6rem; grid-column: span 2; border-color: var(--info); color: var(--info);">
+                        <i class="fas fa-eye"></i> View Submitted Report
+                    </button>
+                    {% endif %}
+
+                    <button onclick="deleteEvent('{{ e.id }}')" class="btn btn-outline"
+                        style="font-size:0.75rem; padding:0.6rem; color: #ef4444; border-color: rgba(239, 68, 68, 0.3); grid-column: span 2;">
+                        <i class="fas fa-history"></i> Move to History (Delete)
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </main>
+</div>
+
+<!-- ============ MODALS ============ -->
+<div id="reportUploadModal"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; padding:2rem;">
+    <div class="card glass"
+        style="width: 100%; max-width: 500px; padding: 3rem; text-align: center; border-radius: 32px;">
+        <i class="fas fa-file-pdf" style="font-size: 3rem; color: #f59e0b; margin-bottom: 1.5rem;"></i>
+        <h3>Submit Event Report</h3>
+        <p style="color: var(--text-muted); margin-bottom: 2.5rem; font-size:0.9rem;">Upload the finalized PDF report
+            for Super Admin verification.</p>
+
+        <form id="reportUploadForm">
+            <input type="hidden" id="reportEventId">
+            <div style="margin-bottom: 2.5rem;">
+                <label class="btn btn-outline"
+                    style="width: 100%; cursor: pointer; padding: 2rem; border-style: dashed; border-width: 2px; border-radius: 16px;">
+                    <i class="fas fa-cloud-upload-alt"
+                        style="font-size: 1.5rem; margin-bottom:0.5rem; display:block;"></i>
+                    <span id="reportFileName" style="font-size: 0.85rem;">Click to Select PDF</span>
+                    <input type="file" id="reportFile" accept=".pdf" style="display:none;"
+                        onchange="document.getElementById('reportFileName').innerText = this.files[0].name" required>
+                </label>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <button type="button" class="btn btn-outline" onclick="toggleModal('reportUploadModal', false)"
+                    style="flex:1;">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="flex:2; border-radius:12px;">Submit Report</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="reportPreviewModal"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; flex-direction: column; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3 id="reportPreviewTitle" style="color: #fff; margin:0;">Event Report Preview</h3>
+        <div style="display: flex; gap: 1rem;">
+            <a id="reportDownloadBtn" href="#" download class="btn btn-outline"
+                style="color: #fff; border-color: rgba(255,255,255,0.3); border-radius: 8px;">
+                <i class="fas fa-download"></i> Download
+            </a>
+            <button class="btn btn-outline" onclick="toggleModal('reportPreviewModal', false)"
+                style="color: #fff; border-color: rgba(255,255,255,0.3); border-radius: 8px;">✕</button>
+        </div>
+    </div>
+    <div id="reportPreviewContent" style="flex: 1; background: #fff; border-radius: 16px; overflow: hidden;">
+    </div>
+</div>
+
+<!-- Create Event Modal -->
+<div id="createEventModal"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; padding:2rem; overflow-y: auto;">
+    <div class="card glass" style="width: 100%; max-width: 700px; padding: 2.5rem; border-radius: 32px; margin: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2>Register <span style="color: var(--primary)">New Event</span></h2>
+            <button onclick="toggleModal('createEventModal', false)"
+                style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+        <form id="createEventForm">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-bottom: 1.2rem;">
+                <div class="form-group">
+                    <label
+                        style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted);">Event
+                        Title</label>
+                    <input type="text" name="title" class="glass"
+                        style="width:100%; padding:0.8rem; border-radius:10px; color:#fff;" required
+                        placeholder="e.g. Tech Symposium">
+                </div>
+                <div class="form-group">
+                    <label
+                        style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted);">Event
+                        Poster</label>
+                    <input type="file" name="poster" accept="image/*" class="glass"
+                        style="width:100%; padding:0.8rem; border-radius:10px; color:#fff;">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-bottom: 1.2rem;">
+                <div class="form-group">
+                    <label
+                        style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted);">Venue</label>
+                    <input type="text" name="venue" class="glass"
+                        style="width:100%; padding:0.8rem; border-radius:10px; color:#fff;" required
+                        placeholder="e.g. Main Auditorium">
+                </div>
+                <div class="form-group" style="display: flex; gap: 1rem;">
+                    <div style="flex: 1;">
+                        <label
+                            style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted);">Date</label>
+                        <input type="date" name="date" class="glass"
+                            style="width:100%; padding:0.8rem; border-radius:10px; color:#fff;" required>
+                    </div>
+                    <div style="flex: 1;">
+                        <label
+                            style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted);">Time</label>
+                        <input type="time" name="time" class="glass"
+                            style="width:100%; padding:0.8rem; border-radius:10px; color:#fff;" required>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-bottom: 1.2rem;">
+                <div class="form-group">
+                    <label
+                        style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted);">Payment
+                        Type</label>
+                    <select name="payment_type" class="glass"
+                        style="width:100%; padding:0.8rem; border-radius:10px; color:#fff;"
+                        onchange="toggleFormPayment(this.value)">
+                        <option value="free">Free Registration</option>
+                        <option value="paid">Paid Event</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label
+                        style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted);">Event
+                        Type</label>
+                    <select name="event_type" class="glass"
+                        style="width:100%; padding:0.8rem; border-radius:10px; color:#fff;">
+                        <option value="individual">Individual</option>
+                        <option value="team">Team Event</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Paid Fields -->
+            <div id="formPaymentFields"
+                style="display: none; background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 15px; margin-bottom: 1.5rem;">
+                <div class="form-group">
+                    <label
+                        style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--info);">Registration
+                        Fee (₹)</label>
+                    <input type="number" name="fee" class="glass"
+                        style="width:100%; padding:0.8rem; border-radius:10px; color:#fff;" placeholder="e.g. 150">
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.5rem; display: block;">
+                        <i class="fas fa-info-circle"></i> Payments will be collected through the institutional Razorpay gateway.
+                    </small>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 1.2rem;">
+                <label style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted);">Event
+                    Description (Matter)</label>
+                <textarea name="description" class="glass"
+                    style="width:100%; padding:0.8rem; border-radius:10px; color:#fff; min-height:100px; border:1px solid rgba(255,255,255,0.1);"
+                    placeholder="Describe your event highlights..."></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted);">Collaborating Clubs</label>
+                <div id="createCollabContainer" class="glass" style="padding: 0.5rem; border-radius: 12px; min-height: 50px; display: flex; flex-wrap: wrap; gap: 0.5rem; border: 1px solid rgba(255,255,255,0.1);">
+                    <!-- Selected tags go here -->
+                </div>
+                <select id="createCollabSelect" class="glass" style="width:100%; padding:0.8rem; border-radius:10px; color:#fff; margin-top: 0.5rem;" onchange="addCollabTag('create', this)">
+                    <option value="">-- Add a Collaborating Club --</option>
+                    {% for c in all_clubs %}
+                    {% if c.id != club.id %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+                <div id="createCollabInputs"></div>
+            </div>
+
+            <button type="submit" class="btn btn-primary"
+                style="width: 100%; padding: 1rem; border-radius: 14px; font-weight: 600; font-size: 1.1rem; letter-spacing: 0.02rem;">
+                <i class="fas fa-rocket"></i> Register Event
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Event Modal -->
+<div id="editEventModal"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; padding:2rem; overflow-y: auto;">
+    <div class="card glass" style="width: 100%; max-width: 700px; padding: 2.5rem; border-radius: 32px; margin: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2>Edit <span style="color: var(--primary)">Event Details</span></h2>
+            <button onclick="toggleModal('editEventModal', false)"
+                style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+
+        <form id="editEventForm">
+            <input type="hidden" name="club_id" value="{{ club.id }}">
+            <input type="hidden" name="event_id" id="editEventId">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-bottom: 1.2rem;">
+                <div class="form-group">
+                    <label
+                        style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted);">Event
+                        Title</label>
+                    <input type="text" name="title" id="editTitle" class="glass"
+                        style="width:100%; padding:0.8rem; border-radius:10px; color:#fff;" required>
+                </div>
+                <div class="form-group">
+                    <label
+                        style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted);">Change
+                        Poster (Optional)</label>
+                    <input type="file" name="poster" accept="image/*" class="glass"
+                        style="width:100%; padding:0.8rem; border-radius:10px; color:#fff;">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-bottom: 1.2rem;">
+                <div class="form-group">
+                    <label
+                        style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted);">Venue</label>
+                    <input type="text" name="venue" id="editVenue" class="glass"
+                        style="width:100%; padding:0.8rem; border-radius:10px; color:#fff;" required>
+                </div>
+                <div class="form-group" style="display: flex; gap: 1rem;">
+                    <div style="flex: 1;">
+                        <label
+                            style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted);">Date</label>
+                        <input type="date" name="date" id="editDate" class="glass"
+                            style="width:100%; padding:0.8rem; border-radius:10px; color:#fff;" required>
+                    </div>
+                    <div style="flex: 1;">
+                        <label
+                            style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted);">Time</label>
+                        <input type="time" name="time" id="editTime" class="glass"
+                            style="width:100%; padding:0.8rem; border-radius:10px; color:#fff;" required>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-bottom: 1.2rem;">
+                <div class="form-group">
+                    <label
+                        style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted);">Payment
+                        Type</label>
+                    <select name="payment_type" id="editPaymentType" class="glass"
+                        style="width:100%; padding:0.8rem; border-radius:10px; color:#fff;"
+                        onchange="toggleEditPayment(this.value)">
+                        <option value="free">Free Registration</option>
+                        <option value="paid">Paid Event</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label
+                        style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted);">Event
+                        Type</label>
+                    <select name="event_type" id="editEventType" class="glass"
+                        style="width:100%; padding:0.8rem; border-radius:10px; color:#fff;">
+                        <option value="individual">Individual</option>
+                        <option value="team">Team Event</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Paid Fields (Edit Modal) -->
+            <div id="editPaymentFields"
+                style="display: none; background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 15px; margin-bottom: 1.5rem;">
+                <div class="form-group">
+                    <label
+                        style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--info);">Registration
+                        Fee (₹)</label>
+                    <input type="number" name="fee" id="editFee" class="glass"
+                        style="width:100%; padding:0.8rem; border-radius:10px; color:#fff;">
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.5rem; display: block;">
+                        <i class="fas fa-info-circle"></i> Payments will be collected through the institutional Razorpay gateway.
+                    </small>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.2rem;">
+                <label style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted);">Event
+                    Description (Matter)</label>
+                <textarea name="description" id="editDescription" class="glass"
+                    style="width:100%; padding:0.8rem; border-radius:10px; color:#fff; min-height:100px; border:1px solid rgba(255,255,255,0.1);"></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted);">Collaborating Clubs</label>
+                <div id="editCollabContainer" class="glass" style="padding: 0.5rem; border-radius: 12px; min-height: 50px; display: flex; flex-wrap: wrap; gap: 0.5rem; border: 1px solid rgba(255,255,255,0.1);">
+                    <!-- Selected tags go here -->
+                </div>
+                <select id="editCollabSelect" class="glass" style="width:100%; padding:0.8rem; border-radius:10px; color:#fff; margin-top: 0.5rem;" onchange="addCollabTag('edit', this)">
+                    <option value="">-- Add a Collaborating Club --</option>
+                    {% for c in all_clubs %}
+                    {% if c.id != club.id %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+                <div id="editCollabInputs"></div>
+            </div>
+
+            <button type="submit" class="btn btn-primary"
+                style="width: 100%; padding: 1rem; border-radius: 14px; font-weight: 600; font-size: 1.1rem; letter-spacing: 0.02rem;">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function toggleModal(id, show) {
+        document.getElementById(id).style.display = show ? 'flex' : 'none';
+        document.body.style.overflow = show ? 'hidden' : 'auto';
+    }
+
+    function toggleFormPayment(type) {
+        document.getElementById('formPaymentFields').style.display = type === 'paid' ? 'block' : 'none';
+    }
+
+    function toggleEditPayment(val) {
+        document.getElementById('editPaymentFields').style.display = (val === 'paid') ? 'block' : 'none';
+    }
+
+    const clubsData = {
+        {% for c in all_clubs %}
+        "{{ c.id }}": "{{ c.name }}",
+        {% endfor %}
+    };
+
+    function addCollabTag(type, select) {
+        const val = select.value;
+        if (!val) return;
+        
+        const name = clubsData[val];
+        const containerId = type === 'create' ? 'createCollabContainer' : 'editCollabContainer';
+        const inputContainerId = type === 'create' ? 'createCollabInputs' : 'editCollabInputs';
+        const container = document.getElementById(containerId);
+        const inputContainer = document.getElementById(inputContainerId);
+        
+        if (inputContainer.querySelector(`input[value="${val}"]`)) {
+            select.value = '';
+            return;
+        }
+        
+        const tag = document.createElement('div');
+        tag.style = "background: var(--primary); color: #fff; padding: 0.3rem 0.8rem; border-radius: 8px; font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem;";
+        tag.innerHTML = `<span>${name}</span><i class="fas fa-times" style="cursor:pointer;" onclick="removeCollabTag('${type}', '${val}', this)"></i>`;
+        container.appendChild(tag);
+        
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'collaborating_clubs';
+        input.value = val;
+        inputContainer.appendChild(input);
+        
+        select.value = '';
+    }
+
+    function removeCollabTag(type, val, icon) {
+        const inputContainerId = type === 'create' ? 'createCollabInputs' : 'editCollabInputs';
+        const inputContainer = document.getElementById(inputContainerId);
+        const input = inputContainer.querySelector(`input[value="${val}"]`);
+        if (input) input.remove();
+        icon.parentElement.remove();
+    }
+
+    function openEditModal(e) {
+        document.getElementById('editEventId').value = e.id;
+        document.getElementById('editTitle').value = e.title;
+        document.getElementById('editVenue').value = e.venue;
+        document.getElementById('editDate').value = e.date;
+        document.getElementById('editTime').value = e.time;
+        document.getElementById('editPaymentType').value = e.payment_type;
+        document.getElementById('editEventType').value = e.registration_type || 'individual';
+        document.getElementById('editFee').value = e.fee || '';
+        document.getElementById('editDescription').value = e.description || '';
+        
+        toggleEditPayment(e.payment_type);
+        
+        const container = document.getElementById('editCollabContainer');
+        const inputContainer = document.getElementById('editCollabInputs');
+        container.innerHTML = '';
+        inputContainer.innerHTML = '';
+        
+        if (e.collaborating_clubs) {
+            e.collaborating_clubs.forEach(cid => {
+                const name = clubsData[cid];
+                if (!name) return;
+                
+                const tag = document.createElement('div');
+                tag.style = "background: var(--primary); color: #fff; padding: 0.3rem 0.8rem; border-radius: 8px; font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem;";
+                tag.innerHTML = `<span>${name}</span><i class="fas fa-times" style="cursor:pointer;" onclick="removeCollabTag('edit', '${cid}', this)"></i>`;
+                container.appendChild(tag);
+                
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'collaborating_clubs';
+                input.value = cid;
+                inputContainer.appendChild(input);
+            });
+        }
+        
+        toggleModal('editEventModal', true);
+    }
+
+    document.getElementById('editEventForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const csrf = document.querySelector('meta[name="csrf-token"]').content;
+
+        const res = await fetch('/api/events/update_details', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrf },
+            body: formData
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert('Event updated successfully!');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            alert('Error: ' + data.message);
+        }
+    };
+
+    async function finishEvent(id) {
+        if (!confirm("Is this event officially completed? This will enable final report submission.")) return;
+        const csrf = document.querySelector('meta[name="csrf-token"]').content;
+        const res = await fetch('/api/events/finish', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrf
+            },
+            body: JSON.stringify({ club_id: '{{ club.id }}', event_id: id })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert('Event status updated to Finished.');
+            setTimeout(() => location.reload(), 1000);
+        }
+    }
+
+    async function deleteEvent(id) {
+        if (!confirm("Move this event to past history? This will hide it from the public portal but keep all backend data for backup.")) return;
+        const csrf = document.querySelector('meta[name="csrf-token"]').content;
+        const res = await fetch(`/api/events/delete/{{ club.id }}/${id}`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrf }
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert('Event moved to history.');
+            setTimeout(() => location.reload(), 1000);
+        }
+    }
+
+    function uploadReport(id) {
+        document.getElementById('reportEventId').value = id;
+        toggleModal('reportUploadModal', true);
+    }
+
+    document.getElementById('reportUploadForm').onsubmit = async (ev) => {
+        ev.preventDefault();
+        const btn = ev.target.querySelector('button[type="submit"]');
+        btn.disabled = true; btn.innerText = 'Submitting...';
+
+        const formData = new FormData();
+        formData.append('club_id', '{{ club.id }}');
+        formData.append('event_id', document.getElementById('reportEventId').value);
+        formData.append('report', document.getElementById('reportFile').files[0]);
+
+        const csrf = document.querySelector('meta[name="csrf-token"]').content;
+        const res = await fetch('/api/events/upload_report', { method: 'POST', headers: { 'X-CSRFToken': csrf }, body: formData });
+        const data = await res.json();
+        if (data.success) {
+            alert('Report submitted for approval.');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            alert(data.message || 'Submission failed');
+            btn.disabled = false; btn.innerText = 'Submit Report';
+        }
+    };
+
+    function openReportPreview(clubId, eventId, slug, filename) {
+        const title = document.getElementById('reportPreviewTitle');
+        const content = document.getElementById('reportPreviewContent');
+        const download = document.getElementById('reportDownloadBtn');
+        const url = `/static/uploads/clubs/${clubId}/events/${slug}/reports/${filename}`;
+
+        title.innerText = "Submitted Report: " + filename;
+        download.href = url;
+        content.innerHTML = `<iframe src="${url}" style="width:100%; height:100%; border:none;"></iframe>`;
+        toggleModal('reportPreviewModal', true);
+    }
+
+    function createNewPermission() {
+        toggleModal('createEventModal', true);
+    }
+
+    document.getElementById('createEventForm').onsubmit = async (ev) => {
+        ev.preventDefault();
+        const btn = ev.target.querySelector('button[type="submit"]');
+        btn.disabled = true; btn.innerText = 'Initializing Event...';
+
+        const formData = new FormData(ev.target);
+        formData.append('club_id', '{{ club.id }}');
+
+        try {
+            const csrf = document.querySelector('meta[name="csrf-token"]').content;
+            const res = await fetch('/api/events/create_permission', { method: 'POST', headers: { 'X-CSRFToken': csrf }, body: formData });
+            const json = await res.json();
+            if (json.success) {
+                alert('Event created! Redirecting to permission letter...');
+                setTimeout(() => {
+                    window.location.href = `/events/permission_letter/{{ club.id }}/${json.event_id}`;
+                }, 1000);
+            } else {
+                alert(json.message || 'Error creating event');
+                btn.disabled = false; btn.innerText = 'Create Event & Generate Letter';
+            }
+        } catch (e) {
+            alert('Network error');
+            btn.disabled = false; btn.innerText = 'Create Event & Generate Letter';
+        }
+    };
+</script>
+{% endblock %}

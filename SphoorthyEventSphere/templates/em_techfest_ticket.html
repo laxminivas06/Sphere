@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Confirmation - {{ techfest.name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='techfest.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body class="techfest-body">
+    <div class="tf-container" style="max-width: 800px;">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h1 style="color: #10b981;">🎉 Registration Successful!</h1>
+            <p>Your registration for {{ techfest.name }} is confirmed.</p>
+        </div>
+
+        <div class="tf-glass-card" style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 2rem; align-items: center;">
+            <div>
+                <h2 style="margin-top: 0;">{{ registration.student_details.name }}</h2>
+                <p style="font-family: monospace; font-size: 1.2rem; color: var(--tf-primary);">{{ registration.reg_id }}</p>
+                
+                <div style="margin: 1.5rem 0; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 12px;">
+                    <h4 style="margin-top: 0; color: var(--tf-text-muted);">Selected Events:</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        {% for ev in registration.selected_events %}
+                        <li style="margin-bottom: 0.5rem; display: flex; justify-content: space-between;">
+                            <span>✨ {{ ev.name }}</span>
+                            <span style="font-size: 0.8rem; opacity: 0.7;">{{ ev.team_name if ev.team_name else 'Individual' }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div style="font-size: 0.9rem; color: var(--tf-text-muted);">
+                    <p><strong>College:</strong> {{ 'Spoorthy' if registration.student_details.is_spoorthy == 'yes' else registration.student_details.college_name }}</p>
+                    <p><strong>Dept:</strong> {{ registration.student_details.department }}</p>
+                    <p><strong>Email:</strong> {{ registration.student_details.email }}</p>
+                </div>
+            </div>
+
+                <div style="margin-top: 1.5rem; padding: 1.25rem; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 12px; text-align: left;">
+                    <h4 style="margin-top: 0; color: #818cf8; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-file-upload"></i> Document Submission
+                    </h4>
+                    <p style="font-size: 0.85rem; margin-bottom: 1rem; color: #a5b4fc;">Some of your selected events require PPTs or abstracts. Please upload them in the submission portal.</p>
+                    <a href="/em/techfest/{{ techfest.id }}/submit" class="tf-btn tf-btn-primary" style="width: 100%; text-decoration: none; display: inline-block; text-align: center; font-size: 0.9rem;">Go to Submission Portal</a>
+                </div>
+            </div>
+
+            <div style="text-align: center;">
+                <div id="qrcode" style="background: white; padding: 1rem; border-radius: 12px; display: inline-block;"></div>
+                <p style="margin-top: 1rem; font-size: 0.8rem; color: var(--tf-text-muted);">Show this QR code at the entry gate.</p>
+                <button onclick="window.print()" class="tf-btn tf-btn-outline" style="margin-top: 1rem; width: 100%;">Print Ticket</button>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 3rem;">
+            <a href="/techfest" class="tf-btn tf-btn-primary">Back to Home</a>
+        </div>
+    </div>
+
+    <script>
+        new QRCode(document.getElementById("qrcode"), {
+            text: "{{ registration.qr_data }}",
+            width: 200,
+            height: 200,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+    </script>
+</body>
+</html>

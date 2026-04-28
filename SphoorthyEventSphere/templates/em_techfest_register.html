@@ -1,0 +1,621 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<style>
+    /* ─── TECHFEST REGISTRATION THEME ───────────────────────────── */
+    .tf-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 4rem 1.25rem;
+    }
+
+    .tf-card {
+        background: var(--white);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-xl);
+        padding: 3rem;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .tf-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .tf-header h1 {
+        font-size: 2.75rem;
+        font-weight: 800;
+        color: var(--navy);
+        margin-bottom: 0.5rem;
+    }
+
+    .tf-header p {
+        color: var(--text-muted);
+        font-size: 1.1rem;
+    }
+
+    /* Step Indicators */
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 4rem;
+        position: relative;
+    }
+
+    .step-indicator::before {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--border-mid);
+        z-index: 1;
+    }
+
+    .step-dot {
+        width: 40px;
+        height: 40px;
+        background: var(--white);
+        border: 2px solid var(--border-mid);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: var(--text-muted);
+        z-index: 2;
+        transition: all 0.3s;
+    }
+
+    .step-dot.active {
+        background: var(--navy);
+        border-color: var(--navy);
+        color: #fff;
+        box-shadow: 0 0 0 4px rgba(15, 20, 64, 0.1);
+    }
+
+    .step-dot.completed {
+        background: #10b981;
+        border-color: #10b981;
+        color: #fff;
+    }
+
+    .tf-step-content {
+        display: none;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    .tf-step-content.active {
+        display: block;
+    }
+
+    /* Event Selection Cards */
+    .events-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin: 2rem 0;
+    }
+
+    .ev-card {
+        background: var(--surface-2);
+        border: 1.5px solid var(--border-mid);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+    }
+
+    .ev-card:hover {
+        border-color: var(--navy-mid);
+        transform: translateY(-2px);
+    }
+
+    .ev-card.selected {
+        border-color: var(--navy);
+        background: rgba(15, 20, 64, 0.03);
+        box-shadow: 0 0 0 2px var(--navy);
+    }
+
+    .ev-card.selected::after {
+        content: '\f058';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        color: var(--navy);
+        font-size: 1.25rem;
+    }
+
+    .ev-fee {
+        font-weight: 800;
+        color: #10b981;
+        font-size: 1.1rem;
+    }
+
+    .tf-summary {
+        background: var(--surface-2);
+        border-radius: var(--radius-lg);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    @media (max-width: 640px) {
+        .tf-card { padding: 2rem 1.5rem; }
+        .tf-header h1 { font-size: 2rem; }
+        .step-dot { width: 32px; height: 32px; font-size: 0.8rem; }
+    }
+</style>
+
+<div class="tf-container">
+    <div class="tf-header">
+        <div class="section-tag">Flagship Tech Fest</div>
+        <h1>{{ techfest.title }}</h1>
+        <p>{{ techfest.month }} {{ techfest.year }} &bull; Institutional Registration</p>
+    </div>
+
+    <div class="step-indicator">
+        <div class="step-dot active" id="dot-1">1</div>
+        <div class="step-dot" id="dot-2">2</div>
+        <div class="step-dot" id="dot-3">3</div>
+        <div class="step-dot" id="dot-4">4</div>
+        <div class="step-dot" id="dot-5">5</div>
+    </div>
+
+    <div class="tf-card">
+        <form id="tf-registration-form">
+            <!-- Step 1: Basic Info -->
+            <div class="tf-step-content active" id="step-1">
+                <h3 class="form-section-label" style="margin-top: 0;">Basic Information</h3>
+                
+                {% if not user %}
+                    {% if techfest.allow_external %}
+                    <div class="form-group">
+                        <label class="form-label">Affiliation *</label>
+                        <div class="grid-2" style="margin-top: 0.5rem;">
+                            <label class="btn btn-outline" style="justify-content: flex-start; gap: 0.75rem;">
+                                <input type="radio" name="is_spoorthy" value="yes" onchange="toggleSpoorthyUI()" style="width: 18px; height: 18px;"> Sphoorthy Student
+                            </label>
+                            <label class="btn btn-outline" style="justify-content: flex-start; gap: 0.75rem;">
+                                <input type="radio" name="is_spoorthy" value="no" checked onchange="toggleSpoorthyUI()" style="width: 18px; height: 18px;"> External Student
+                            </label>
+                        </div>
+                    </div>
+                    {% else %}
+                    <input type="hidden" name="is_spoorthy" value="yes">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> This Techfest is exclusive to <strong>Sphoorthy Engineering College</strong> students.
+                    </div>
+                    {% endif %}
+
+                    <div id="spoorthy-login-prompt" style="display: none; margin-bottom: 2rem; padding: 1.5rem; background: var(--surface-2); border-radius: var(--radius-lg); border: 1px solid var(--border-mid);">
+                        <p style="font-weight: 600; color: var(--navy); margin-bottom: 1rem;">Institutional verification required.</p>
+                        <a href="/login?next={{ request.path }}" class="btn btn-navy" style="width: 100%;">Login to Institutional Account</a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-success" style="background: rgba(16, 185, 129, 0.05); color: #065f46; border: 1px solid rgba(16, 185, 129, 0.2);">
+                        Welcome back, <strong>{{ user.name }}</strong>! Your profile is verified.
+                    </div>
+                    <input type="hidden" name="is_spoorthy" value="yes">
+                {% endif %}
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Full Name *</label>
+                        <input type="text" name="name" id="main-name" class="form-input" required value="{{ user.name if user else '' }}" {{ 'readonly' if user }}>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Gender *</label>
+                        <select name="gender" class="form-input" required>
+                            <option value="">Select Gender</option>
+                            <option value="Male" {{ 'selected' if user and user.gender == 'Male' else '' }}>Male</option>
+                            <option value="Female" {{ 'selected' if user and user.gender == 'Female' else '' }}>Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Email Address *</label>
+                        <input type="email" name="email" id="main-email" class="form-input" required value="{{ user.email if user else '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">WhatsApp Number *</label>
+                        <input type="tel" name="mobile" id="main-mobile" class="form-input" required value="{{ user.phone if user else '' }}">
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-navy" style="width: 100%; margin-top: 2rem;" onclick="nextStep(2)">Continue to Institution Details</button>
+            </div>
+
+            <!-- Step 2: College Info -->
+            <div class="tf-step-content" id="step-2">
+                <h3 class="form-section-label" style="margin-top: 0;">Institutional Details</h3>
+                
+                <div class="form-group">
+                    <label class="form-label">College Name *</label>
+                    <input type="text" name="college_name" id="college-name" class="form-input" required value="{{ 'Sphoorthy Engineering College' if user else '' }}" {{ 'readonly' if user }}>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">State *</label>
+                        <input type="text" name="college_state" id="college-state" class="form-input" required value="{{ 'Telangana' if user else '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">University *</label>
+                        <input type="text" name="university" id="college-university" class="form-input" required value="{{ 'JNTUH' if user else '' }}">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Education Level *</label>
+                        <select name="edu_type" id="edu-type" class="form-input" required onchange="updateDepts()">
+                            <option value="">Select Level</option>
+                            <option value="UG" {{ 'selected' if user and user.course == 'B.Tech' else '' }}>Undergraduate (UG)</option>
+                            <option value="PG" {{ 'selected' if user and user.course != 'B.Tech' and user.course else '' }}>Postgraduate (PG)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Department *</label>
+                        <select name="department" id="dept-select" class="form-input" required>
+                            <!-- Dynamically populated -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="step-actions">
+                    <button type="button" class="btn btn-outline" onclick="prevStep(1)">Back</button>
+                    <button type="button" class="btn btn-navy" onclick="nextStep(3)">Continue to Events</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Event Selection -->
+            <div class="tf-step-content" id="step-3">
+                <h3 class="form-section-label" style="margin-top: 0;">Select Events</h3>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Choose the events you wish to participate in. Some may require team details.</p>
+
+                <div class="events-grid">
+                    {% for ev in events %}
+                    <div class="ev-card" onclick="toggleEvent('{{ ev.id }}')" id="ev-card-{{ ev.id }}">
+                        <h4 style="margin-top: 0; color: var(--navy); font-weight: 700;">{{ ev.name }}</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">{{ ev.description[:100] }}...</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="ev-fee">{{ 'Free' if ev.registration_fee == 0 else '₹' ~ ev.registration_fee }}</span>
+                            <span class="badge">{{ 'Team' if ev.max_team_size > 1 else 'Individual' }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div id="team-details-container"></div>
+
+                <div class="step-actions">
+                    <button type="button" class="btn btn-outline" onclick="prevStep(2)">Back</button>
+                    <button type="button" class="btn btn-navy" onclick="nextStep(4)">Review & Finalize</button>
+                </div>
+            </div>
+
+            <!-- Step 4: Declaration -->
+            <div class="tf-step-content" id="step-4">
+                <h3 class="form-section-label" style="margin-top: 0;">Final Declaration</h3>
+                
+                <div class="tf-summary">
+                    <h4 style="margin-top: 0; color: var(--navy);">Self Declaration</h4>
+                    <p style="font-size: 0.95rem; line-height: 1.6; color: var(--text-muted);">
+                        I hereby declare that the information provided by me is true and accurate to the best of my knowledge. 
+                        I understand that any misrepresentation may lead to disqualification. I accept and confirm that all 
+                        provided details are authentic.
+                    </p>
+                    
+                    <label style="display: flex; align-items: center; gap: 1rem; cursor: pointer; margin-top: 2rem;">
+                        <input type="checkbox" id="declaration-check" required style="width: 20px; height: 20px;">
+                        <span style="font-weight: 600; color: var(--navy);">I accept the terms and conditions.</span>
+                    </label>
+                </div>
+
+                <div id="payment-summary" style="text-align: right; padding: 1.5rem; border-top: 1px solid var(--border-mid);">
+                    <h2 id="total-fee-display" style="color: var(--navy); font-weight: 800;">Total: ₹0</h2>
+                </div>
+
+                <div class="step-actions">
+                    <button type="button" class="btn btn-outline" onclick="prevStep(3)">Back</button>
+                    <button type="button" class="btn btn-navy" id="final-submit-btn" onclick="processRegistration()">Complete Registration</button>
+                </div>
+            </div>
+
+            <!-- Step 5: Success -->
+            <div class="tf-step-content" id="step-5" style="text-align: center;">
+                <div style="width: 80px; height: 80px; background: #10b981; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto 2rem;">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h2 style="font-size: 2.25rem; font-weight: 800; color: var(--navy);">Registration Successful!</h2>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">Your registration ID is <strong id="success-reg-id" style="color: var(--navy);">#...</strong></p>
+                
+                <div id="ticket-qr-container" style="display: inline-block; padding: 2rem; background: var(--surface-2); border-radius: var(--radius-lg); margin-bottom: 2rem;">
+                    <!-- QR Code -->
+                </div>
+
+                <div id="registration-summary" style="max-width: 600px; margin: 0 auto 3rem; text-align: left; border: 1px solid var(--border-mid); border-radius: var(--radius-lg); padding: 2rem;">
+                    <h4 style="margin-top: 0; color: var(--navy); border-bottom: 1px solid var(--border-mid); padding-bottom: 1rem; margin-bottom: 1rem;">Participation Hub</h4>
+                    <div id="summary-events-list"></div>
+                </div>
+
+                <div class="grid-2" style="max-width: 500px; margin: 0 auto;">
+                    <button type="button" class="btn btn-outline" onclick="window.print()">Print Receipt</button>
+                    <button type="button" class="btn btn-navy" onclick="window.location.href='/'">Return Home</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    const techfestId = '{{ techfest.id }}';
+    const eventData = {{ events|tojson }};
+    const departments = {{ departments|tojson }};
+    const userDept = "{{ user.department if user else '' }}";
+    
+    let currentStep = 1;
+    const selectedEvents = new Set();
+    let totalFee = 0;
+
+    function toggleSpoorthyUI() {
+        const isSpoorthy = document.querySelector('input[name="is_spoorthy"]:checked')?.value === 'yes';
+        const loginPrompt = document.getElementById('spoorthy-login-prompt');
+        const collegeName = document.getElementById('college-name');
+        
+        if (isSpoorthy) {
+            if (loginPrompt) loginPrompt.style.display = 'block';
+            collegeName.value = "Sphoorthy Engineering College";
+            collegeName.readOnly = true;
+        } else {
+            if (loginPrompt) loginPrompt.style.display = 'none';
+            if (collegeName.value === "Sphoorthy Engineering College") collegeName.value = "";
+            collegeName.readOnly = false;
+        }
+    }
+
+    function updateDepts() {
+        const eduType = document.getElementById('edu-type').value;
+        const deptSelect = document.getElementById('dept-select');
+        deptSelect.innerHTML = '<option value="">Select Department</option>';
+        const list = departments[eduType] || [];
+        list.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d;
+            opt.textContent = d;
+            if (d === userDept) opt.selected = true;
+            deptSelect.appendChild(opt);
+        });
+    }
+
+    function nextStep(step, skipValidation = false) {
+        if (!skipValidation) {
+            const container = document.getElementById(`step-${currentStep}`);
+            const inputs = container.querySelectorAll('input[required], select[required]');
+            for (let i of inputs) {
+                if (!i.value || (i.type === 'checkbox' && !i.checked)) {
+                    Swal.fire('Required', 'Please complete all fields.', 'warning');
+                    return;
+                }
+            }
+
+            if (currentStep === 3 && selectedEvents.size === 0) {
+                Swal.fire('Wait', 'Please select at least one event.', 'warning');
+                return;
+            }
+        }
+
+        if (step === 3) renderTeamInputs();
+        if (step === 4) calculateTotalFee();
+
+        document.querySelectorAll('.tf-step-content').forEach(el => el.classList.remove('active'));
+        document.getElementById(`step-${step}`).classList.add('active');
+        
+        // Update dots
+        document.getElementById(`dot-${currentStep}`).classList.add('completed');
+        document.getElementById(`dot-${step}`).classList.add('active');
+        
+        currentStep = step;
+        window.scrollTo(0, 0);
+    }
+
+    function prevStep(step) {
+        document.querySelectorAll('.tf-step-content').forEach(el => el.classList.remove('active'));
+        document.getElementById(`step-${step}`).classList.add('active');
+        document.getElementById(`dot-${currentStep}`).classList.remove('active');
+        currentStep = step;
+        window.scrollTo(0, 0);
+    }
+
+    function toggleEvent(id) {
+        const el = document.getElementById(`ev-card-${id}`);
+        if (selectedEvents.has(id)) {
+            selectedEvents.delete(id);
+            el.classList.remove('selected');
+        } else {
+            selectedEvents.add(id);
+            el.classList.add('selected');
+        }
+        renderTeamInputs();
+    }
+
+    function renderTeamInputs() {
+        const container = document.getElementById('team-details-container');
+        container.innerHTML = '';
+        
+        const isSpoorthy = document.querySelector('input[name="is_spoorthy"]:checked')?.value === 'yes';
+
+        selectedEvents.forEach(id => {
+            const ev = eventData.find(e => e.id === id);
+            if (ev.max_team_size > 1) {
+                const div = document.createElement('div');
+                div.className = 'member-card reveal active';
+                div.style.background = 'var(--surface-2)';
+                div.style.marginTop = '1.5rem';
+                
+                let inputHtml = `
+                    <div style="background: var(--white); padding: 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--border-mid); margin-top: 1rem;">
+                        <p style="font-weight: 700; color: var(--navy); margin-bottom: 1rem; font-size: 0.9rem;">Add Member</p>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label class="form-label">Roll Number</label>
+                                <input type="text" id="mem-roll-${id}" class="form-input" maxlength="10" placeholder="21N8..." style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase(); if(this.value.length > 10) this.value = this.value.slice(0, 10);">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Date of Birth</label>
+                                <input type="date" id="mem-dob-${id}" class="form-input">
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline" style="width: 100%;" onclick="addInternalMember('${id}', ${ev.max_team_size})">Verify & Add Member</button>
+                    </div>
+                `;
+
+                div.innerHTML = `
+                    <h4 style="margin-top:0; color: var(--navy);">Team Settings: ${ev.name}</h4>
+                    <div class="form-group">
+                        <label class="form-label">Team Name *</label>
+                        <input type="text" name="team_name_${id}" class="form-input" required placeholder="e.g. Dream Team">
+                    </div>
+                    <div id="members-${id}" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
+                    ${inputHtml}
+                `;
+                container.appendChild(div);
+            }
+        });
+    }
+
+    async function addInternalMember(evId, max) {
+        const list = document.getElementById(`members-${evId}`);
+        if (list.children.length + 1 >= max) {
+            Swal.fire('Limit Reached', `Maximum team size is ${max}`, 'warning');
+            return;
+        }
+
+        const rollInput = document.getElementById(`mem-roll-${evId}`);
+        const dobInput = document.getElementById(`mem-dob-${evId}`);
+        const roll = rollInput.value.trim();
+        const dob = dobInput.value;
+
+        if (!roll || !dob) { Swal.fire('Error', 'Enter Roll No and DOB', 'error'); return; }
+
+        Swal.showLoading();
+        try {
+            const r = await fetch(`/em/api/student-lookup?roll=${roll}&dob=${dob}`);
+            const data = await r.json();
+            if (data.success) {
+                const mDiv = document.createElement('div');
+                mDiv.className = 'reveal active';
+                mDiv.style.background = 'var(--white)';
+                mDiv.style.padding = '1rem';
+                mDiv.style.borderRadius = '12px';
+                mDiv.style.borderLeft = '4px solid #10b981';
+                mDiv.style.display = 'flex';
+                mDiv.style.justifyContent = 'space-between';
+                mDiv.style.alignItems = 'center';
+                mDiv.innerHTML = `
+                    <div>
+                        <div style="font-weight: 800; color: var(--navy);">${data.student.name}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">${data.student.roll_number} &bull; ${data.student.department}</div>
+                    </div>
+                    <input type="hidden" name="mem_name_${evId}[]" value="${data.student.name}">
+                    <input type="hidden" name="mem_meta_${evId}[]" value="${data.student.roll_number}">
+                    <button type="button" onclick="this.parentElement.remove()" style="background:none; border:none; color:var(--em-danger);"><i class="fas fa-trash"></i></button>
+                `;
+                list.appendChild(mDiv);
+                rollInput.value = ''; dobInput.value = '';
+                Swal.close();
+            } else {
+                Swal.fire('Not Found', 'Student records not verified.', 'error');
+            }
+        } catch(e) { Swal.fire('Error', 'Verification failed.', 'error'); }
+    }
+
+    function calculateTotalFee() {
+        totalFee = 0;
+        selectedEvents.forEach(id => {
+            const ev = eventData.find(e => e.id === id);
+            totalFee += parseInt(ev.registration_fee || 0);
+        });
+        document.getElementById('total-fee-display').textContent = `Total: ₹${totalFee}`;
+    }
+
+    async function processRegistration() {
+        if (!document.getElementById('declaration-check').checked) {
+            return Swal.fire('Wait', 'Please accept the declaration.', 'warning');
+        }
+
+        const formData = new FormData(document.getElementById('tf-registration-form'));
+        const studentDetails = {
+            name: formData.get('name'), 
+            email: formData.get('email'), 
+            gender: formData.get('gender'),
+            mobile: formData.get('mobile'), 
+            is_spoorthy: formData.get('is_spoorthy'),
+            college_name: formData.get('college_name'), 
+            college_state: formData.get('college_state'),
+            university: formData.get('university'), 
+            edu_type: formData.get('edu_type'),
+            department: formData.get('department'),
+            roll_number: '{{ user.roll_number if user else "" }}'
+        };
+
+        const selectedEventsData = [];
+        selectedEvents.forEach(id => {
+            const ev = eventData.find(e => e.id === id);
+            const eventReg = {
+                event_id: id, 
+                name: ev.name, 
+                fee: ev.registration_fee,
+                team_name: formData.get(`team_name_${id}`) || '',
+                members: []
+            };
+            const mNames = formData.getAll(`mem_name_${id}[]`);
+            const mMetas = formData.getAll(`mem_meta_${id}[]`);
+            mNames.forEach((n, idx) => { eventReg.members.push({ name: n, meta: mMetas[idx] }); });
+            selectedEventsData.push(eventReg);
+        });
+
+        Swal.showLoading();
+        try {
+            const resp = await fetch('/em/api/techfest/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+                body: JSON.stringify({ techfest_id: techfestId, student_details: studentDetails, selected_events: selectedEventsData })
+            });
+            const result = await resp.json();
+            if (result.success) {
+                document.getElementById('success-reg-id').textContent = '#' + result.reg_id;
+                document.getElementById('ticket-qr-container').innerHTML = `<img src="/em/api/techfest/qr/${result.reg_id}" style="width: 200px; height: 200px; background: white; padding: 10px; border-radius: 8px;">`;
+                
+                const summaryList = document.getElementById('summary-events-list');
+                summaryList.innerHTML = '';
+                selectedEventsData.forEach(ev => {
+                    summaryList.innerHTML += `
+                        <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--surface-2); border-radius: 12px;">
+                            <div style="font-weight: 800; color: var(--navy);">${ev.name}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted);">${ev.team_name ? 'Team: ' + ev.team_name : 'Individual Entry'}</div>
+                        </div>
+                    `;
+                });
+                
+                nextStep(5, true);
+                Swal.fire('Success', 'Your registration is confirmed!', 'success');
+            } else {
+                Swal.fire('Failed', result.message || 'Registration error occurred.', 'error');
+            }
+        } catch(e) {
+            Swal.fire('Error', 'Connection lost. Try again.', 'error');
+        }
+    }
+
+    window.onload = () => { toggleSpoorthyUI(); updateDepts(); };
+</script>
+{% endblock %}

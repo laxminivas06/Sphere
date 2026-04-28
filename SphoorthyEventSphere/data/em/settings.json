@@ -1,0 +1,8 @@
+{
+    "razorpay_key_id": "rzp_test_SfqjImQYD5CFui",
+    "razorpay_key_secret": "7mbuyPRDhLUaPV8GEqdC87Ll",
+    "campus_lat": "79.2702841",
+    "campus_lng": "17.0627116",
+    "campus_radius": "500",
+    "payment_demo_mode": true
+}

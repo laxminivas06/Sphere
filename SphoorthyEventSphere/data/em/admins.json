@@ -1,0 +1,35 @@
+[
+    {
+        "id": "aae21c2a-00c3-4775-a33e-afac5479c08d",
+        "name": "Rishikesh",
+        "email": "freshers@gmail.com",
+        "phone": "9059160424",
+        "assigned_events": [
+            "2cbdc34d-459c-48a7-9f02-5d7a28422f90"
+        ],
+        "created_at": "2026-04-27T20:32:27.931536",
+        "active_event": "2cbdc34d-459c-48a7-9f02-5d7a28422f90"
+    },
+    {
+        "id": "5a34d6f0-0684-4d26-bafe-7e43241c1731",
+        "name": "sam",
+        "email": "hackathon@gmail.com",
+        "phone": "09059160424",
+        "assigned_events": [
+            "a825993f-35b4-483d-9d46-acb7c5a23dc3"
+        ],
+        "created_at": "2026-04-27T20:46:25.240908",
+        "active_event": "a825993f-35b4-483d-9d46-acb7c5a23dc3"
+    },
+    {
+        "id": "138b9298-af6b-4278-a186-7d93515b03ce",
+        "name": "jagan",
+        "email": "jagan@gmail.com",
+        "phone": "9059160424",
+        "assigned_events": [
+            "9d45f923-c80c-4457-832c-a1342991c7b6"
+        ],
+        "created_at": "2026-04-27T20:52:17.960114",
+        "active_event": "9d45f923-c80c-4457-832c-a1342991c7b6"
+    }
+]

@@ -1,0 +1,208 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+    :root {
+        --tf-primary: #6366f1;
+        --tf-glass: rgba(30, 41, 59, 0.7);
+        --tf-border: rgba(255, 255, 255, 0.1);
+        --tf-text-muted: #94a3b8;
+    }
+    .page-container { max-width: 1200px; margin: 0 auto; padding: 2rem; min-height: 100vh; }
+    .hub-card { 
+        background: var(--tf-glass); 
+        backdrop-filter: blur(12px); 
+        border: 1px solid var(--tf-border); 
+        border-radius: 24px; 
+        padding: 2rem; 
+        margin-bottom: 2rem;
+    }
+    .admin-table { width: 100%; border-collapse: separate; border-spacing: 0 0.5rem; }
+    .admin-table tr { background: rgba(255,255,255,0.02); transition: background 0.2s; }
+    .admin-table tr:hover { background: rgba(255,255,255,0.05); }
+    .admin-table th { padding: 1rem; color: var(--tf-text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; text-align: left; }
+    .admin-table td { padding: 1.25rem 1rem; border-top: 1px solid var(--tf-border); border-bottom: 1px solid var(--tf-border); }
+    .admin-table td:first-child { border-left: 1px solid var(--tf-border); border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+    .admin-table td:last-child { border-right: 1px solid var(--tf-border); border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+    
+    .tf-btn { border: none; padding: 0.8rem 1.5rem; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: inline-flex; align-items: center; gap: 0.5rem; font-family: 'Outfit', sans-serif; text-decoration: none; }
+    .tf-btn-primary { background: linear-gradient(135deg, var(--tf-primary), #4f46e5); color: white; box-shadow: 0 10px 20px -10px rgba(99, 102, 241, 0.5); }
+    .tf-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 15px 30px -12px rgba(99, 102, 241, 0.6); }
+    .tf-btn-outline { background: rgba(255, 255, 255, 0.05); color: white; border: 1px solid var(--tf-border); }
+    .tf-btn-outline:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); }
+    
+    .tf-label { display: block; margin-bottom: 0.5rem; color: var(--tf-text-muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .tf-input { width: 100%; padding: 0.8rem 1rem; border-radius: 12px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--tf-border); color: white; transition: all 0.2s; font-family: inherit; margin-bottom: 1rem; }
+    .tf-input:focus { outline: none; border-color: var(--tf-primary); background: rgba(0, 0, 0, 0.3); }
+</style>
+
+<div class="page-container">
+    <div style="margin-bottom: 3rem;">
+        <a href="/em/techfest/{{ event.id }}/hub" style="color: var(--tf-text-muted); text-decoration: none; font-weight: 600;"><i class="fas fa-chevron-left"></i> Back to Hub</a>
+        <h1 style="margin: 1rem 0 0 0; font-size: 2.5rem; font-weight: 800;">Sub-Event Management</h1>
+        <p style="color: var(--tf-text-muted);">{{ event.title }} • Competition Tracks</p>
+    </div>
+
+    <div class="hub-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h3 style="margin: 0;">Active Tracks</h3>
+            <button class="tf-btn tf-btn-primary" onclick="openSubEventModal()"><i class="fas fa-plus"></i> Create Track</button>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Track Name</th>
+                        <th>Sub-Event Type</th>
+                        <th>Format</th>
+                        <th>Team Size</th>
+                        <th>Fee</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for se in sub_events %}
+                    <tr>
+                        <td><strong>{{ se.name }}</strong></td>
+                        <td>
+                            <span style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.1); color: var(--tf-primary); padding: 0.2rem 0.6rem; border-radius: 20px; border: 1px solid rgba(99, 102, 241, 0.2);">
+                                {{ se.sub_event_type|default('Normal')|title }}
+                            </span>
+                        </td>
+                        <td>{{ 'Individual' if se.max_team_size == 1 else 'Team' }}</td>
+                        <td>{{ se.min_team_size }} - {{ se.max_team_size }}</td>
+                        <td style="font-weight: 600; color: var(--tf-accent);">₹{{ se.registration_fee }}</td>
+                        <td>
+                            <button class="tf-btn tf-btn-outline" style="padding: 0.5rem; font-size: 0.8rem; color: #ef4444;" onclick="deleteSubEvent('{{ se.id }}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div id="sub-event-modal" class="modal-overlay" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; align-items:center; justify-content:center;">
+    <div class="hub-card" style="width: 100%; max-width: 500px;">
+        <h3 style="margin-top: 0;">New Competition Track</h3>
+        <form id="sub-event-form" onsubmit="saveSubEvent(event)">
+            <div class="tf-form-group">
+                <label class="tf-label">Track Name</label>
+                <input type="text" name="name" class="tf-input" required placeholder="e.g. Code Rush">
+                
+                <label class="tf-label" style="margin-top: 1rem;">Description</label>
+                <textarea name="description" class="tf-input" rows="3"></textarea>
+
+                <label class="tf-label">Sub-Event Type</label>
+                <select name="sub_event_type" class="tf-input">
+                    <option value="normal">Normal Event</option>
+                    <option value="ideathon">Ideathon</option>
+                    <option value="project_expo">Project Expo</option>
+                    <option value="blind_code">Blind Code</option>
+                    <option value="robo_challenge">Robo Challenge</option>
+                    <option value="paper_presentation">Paper or Poster Presentation</option>
+                    <option value="tech_byte">TechByte</option>
+                </select>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+                    <div>
+                        <label class="tf-label">Payment Type</label>
+                        <select name="payment_type" class="tf-input" onchange="document.getElementById('fee-input').style.display = (this.value == 'paid' ? 'block' : 'none')">
+                            <option value="free">Free</option>
+                            <option value="paid">Paid</option>
+                        </select>
+                    </div>
+                    <div id="fee-input" style="display: none;">
+                        <label class="tf-label">Fee (₹)</label>
+                        <input type="number" name="registration_fee" class="tf-input" value="0">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+                    <div>
+                        <label class="tf-label">Min Team Size</label>
+                        <input type="number" name="min_team_size" class="tf-input" value="1">
+                    </div>
+                    <div>
+                        <label class="tf-label">Max Team Size</label>
+                        <input type="number" name="max_team_size" class="tf-input" value="1">
+                    </div>
+                </div>
+                
+                <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed var(--tf-border);">
+                    <label class="tf-label" style="display: flex; justify-content: space-between; align-items: center;">
+                        Evaluation Requirements 
+                        <button type="button" class="tf-btn tf-btn-outline" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;" onclick="addRequirementField()">+ Add Field</button>
+                    </label>
+                    <div id="requirements-list" style="margin-top: 0.5rem;">
+                        <!-- Requirements will be added here -->
+                    </div>
+                </div>
+
+                <div style="margin-top: 1.5rem;">
+                    <label class="tf-label">Scoring Criteria (Comma-separated)</label>
+                    <input type="text" name="scoring_criteria" class="tf-input" placeholder="e.g. Presentation, Innovation, Implementation" value="Presentation, Innovation, Implementation">
+                    <p style="font-size: 0.65rem; color: var(--tf-text-muted); margin-top: -0.5rem;">Judges will rate participants based on these metrics.</p>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="tf-btn tf-btn-outline" style="flex: 1;" onclick="closeSubModal()">Cancel</button>
+                    <button type="submit" class="tf-btn tf-btn-primary" style="flex: 1;">Create Track</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openSubEventModal() { document.getElementById('sub-event-modal').style.display = 'flex'; }
+    function closeSubModal() { document.getElementById('sub-event-modal').style.display = 'none'; }
+
+    function addRequirementField() {
+        const container = document.getElementById('requirements-list');
+        const div = document.createElement('div');
+        div.className = 'requirement-item';
+        div.style = 'display: grid; grid-template-columns: 2fr 1fr auto; gap: 0.5rem; margin-bottom: 0.5rem;';
+        div.innerHTML = `
+            <input type="text" class="tf-input req-name" placeholder="Field Name (e.g. PPT)" style="margin-bottom:0;">
+            <select class="tf-input req-type" style="margin-bottom:0;">
+                <option value="text">Text</option>
+                <option value="file">File Upload</option>
+            </select>
+            <button type="button" class="tf-btn tf-btn-outline" style="color:#ef4444;" onclick="this.parentElement.remove()">×</button>
+        `;
+        container.appendChild(div);
+    }
+
+    async function saveSubEvent(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        data.techfest_id = '{{ event.id }}';
+        
+        // Collect requirements
+        const reqs = [];
+        document.querySelectorAll('.requirement-item').forEach(item => {
+            const name = item.querySelector('.req-name').value.trim();
+            if (name) {
+                reqs.push({ name: name, type: item.querySelector('.req-type').value });
+            }
+        });
+        data.requirements = reqs;
+
+        const resp = await fetch('/em/api/techfest/event/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
+            body: JSON.stringify(data)
+        });
+        if ((await resp.json()).success) location.reload();
+    }
+
+    async function deleteSubEvent(id) {
+        if (!confirm('Delete this track?')) return;
+        const resp = await fetch(`/em/api/techfest/event/delete/${id}`, { method: 'DELETE' });
+        if ((await resp.json()).success) location.reload();
+    }
+</script>
+{% endblock %}

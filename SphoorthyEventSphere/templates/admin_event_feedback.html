@@ -1,0 +1,117 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container" style="max-width: 1000px; padding-top: 2rem;">
+    <header style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">Feedback <span style="color: var(--primary)">Management</span></h1>
+            <p style="color: var(--text-muted)">Configure and view responses for <strong>{{ event.title }}</strong></p>
+        </div>
+        <a href="/admin" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Dashboard</a>
+    </header>
+
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+        <!-- Configuration -->
+        <aside>
+            <div class="card glass" style="padding: 1.5rem; border-radius: 16px; margin-bottom: 1.5rem;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Status</h3>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 12px;">
+                    <span style="font-weight: 600;">{{ 'LIVE' if event.feedback_open else 'CLOSED' }}</span>
+                    <button onclick="toggleFeedback({{ 'false' if event.feedback_open else 'true' }})" 
+                            class="btn {{ 'btn-outline' if event.feedback_open else 'btn-primary' }}" 
+                            style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                        {{ 'Close' if event.feedback_open else 'Open Now' }}
+                    </button>
+                </div>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem;">
+                    When open, a "Give Feedback" button will appear for registered students on the event page.
+                </p>
+            </div>
+
+            <div class="card glass" style="padding: 1.5rem; border-radius: 16px;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Setup Questions</h3>
+                <!-- Add question logic already existed in modal, I'll port it -->
+                <div id="questionsList">
+                    {% for q in event.feedback_questions or [] %}
+                    <div class="glass" style="padding: 0.75rem; border-radius: 8px; margin-bottom: 0.5rem; font-size: 0.85rem; display: flex; justify-content: space-between;">
+                        <span>{{ q }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div style="margin-top: 1rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
+                    <textarea id="newQuestion" class="glass" style="width: 100%; border-radius: 8px; padding: 0.5rem; color: #fff; margin-bottom: 0.5rem;" placeholder="New question..."></textarea>
+                    <button onclick="addQuestion()" class="btn btn-primary" style="width: 100%; font-size: 0.8rem;">Add Question</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Results -->
+        <main>
+            <div class="card glass" style="padding: 2rem; border-radius: 20px;">
+                <h3 style="margin-bottom: 2rem;"><i class="fas fa-poll" style="color: var(--primary); margin-right: 0.5rem;"></i> Response Analysis</h3>
+                <div id="feedbackResults">
+                    <p style="text-align: center; color: var(--text-muted);">Loading responses...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+async function toggleFeedback(status) {
+    const res = await fetch('/api/events/toggle_feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ club_id: '{{ club.id }}', event_id: '{{ event.id }}', open: status })
+    });
+    if ((await res.json()).success) location.reload();
+}
+
+async function addQuestion() {
+    const q = document.getElementById('newQuestion').value;
+    if(!q) return;
+    const res = await fetch('/api/events/update_details', {
+        method: 'POST',
+        body: (() => {
+            const fd = new FormData();
+            fd.append('club_id', '{{ club.id }}');
+            fd.append('event_id', '{{ event.id }}');
+            fd.append('feedback_questions', JSON.stringify([...{{ (event.feedback_questions or [])|tojson }}, q]));
+            return fd;
+        })()
+    });
+    if ((await res.json()).success) location.reload();
+}
+
+async function loadResults() {
+    const res = await fetch(`/api/events/feedback/results/{{ club.id }}/{{ event.id }}`);
+    const data = await res.json();
+    const container = document.getElementById('feedbackResults');
+    
+    if (!data.feedbacks || data.feedbacks.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: var(--text-muted);">No feedback received yet.</p>';
+        return;
+    }
+
+    let html = `<div style="margin-bottom: 2rem; padding: 1.5rem; background: rgba(99,102,241,0.05); border-radius: 12px;">
+                    <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">${data.feedbacks.length}</div>
+                    <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted);">Total Responses</div>
+                </div>`;
+
+    data.questions.forEach((q, qIdx) => {
+        html += `<div style="margin-bottom: 2.5rem;">
+                    <h4 style="margin-bottom: 1rem; padding-left: 1rem; border-left: 3px solid var(--primary);">Q: ${q}</h4>`;
+        data.feedbacks.forEach(fb => {
+            html += `<div class="glass" style="padding: 1rem; border-radius: 12px; margin-bottom: 0.75rem;">
+                        <div style="font-weight: 700; color: var(--primary); font-size: 0.8rem; margin-bottom: 0.4rem;">${fb.name} (${fb.user_id})</div>
+                        <div style="font-size: 0.95rem;">${fb.responses[qIdx] || '<span style="color: #666;">No response</span>'}</div>
+                    </div>`;
+        });
+        html += `</div>`;
+    });
+    container.innerHTML = html;
+}
+
+loadResults();
+</script>
+{% endblock %}

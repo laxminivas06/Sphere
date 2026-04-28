@@ -1,0 +1,190 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    {% include 'sidebar_super.html' %}
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div style="margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h1 style="font-size:2.2rem; font-weight:800; margin-bottom:0.4rem;">
+                    Institutional <span style="color:var(--primary)">Registry</span>
+                </h1>
+                <p style="color:var(--text-muted); margin: 0;">
+                    Complete institutional overview — Academic Year
+                    <span style="color: var(--primary); font-weight: 700; background: rgba(139, 92, 246, 0.1); padding: 0.2rem 0.6rem; border-radius: 8px;">20{{ current_year_str }}</span>
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; background: var(--surface-2); padding: 0.4rem; border-radius: 25px; border: 1px solid var(--border-light);">
+                <div class="reg-nav-pill active" onclick="showSection('clubs', this)">
+                    <i class="fas fa-shield-alt"></i> Club Registry
+                </div>
+                <div class="reg-nav-pill" onclick="showSection('events', this)">
+                    <i class="fas fa-calendar-alt"></i> Event Archive
+                </div>
+                <div class="reg-nav-pill" onclick="showSection('elections', this)">
+                    <i class="fas fa-vote-yea"></i> Elections Hub
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════ CLUB REGISTRY ═══════════════════════════════ -->
+        <div id="section-clubs" class="reg-section">
+            <div style="margin-bottom:1.5rem;">
+                <h3 style="font-weight: 800; color: var(--navy);">Institutional Clubs</h3>
+                <p style="color:var(--text-muted); font-size:0.85rem;">Manage and view the official registry of all student organizations.</p>
+            </div>
+
+            {% if clubs %}
+            <div class="club-list-container">
+                {% for club in clubs %}
+                {% set club_events = all_events_by_club.get(club.id, []) %}
+                {% set club_elections = all_elections_by_club.get(club.id, []) %}
+                {% set completed = club_events|selectattr('report_approved')|list %}
+                
+                <a href="/super/registry/{{ club.id }}" class="club-list-item">
+                    <div class="club-list-logo">
+                        {% if club.logo %}
+                        <img src="/static/uploads/clubs/{{ club.id }}/details/{{ club.logo }}" style="width:100%; height:100%; object-fit:cover; border-radius:18px;">
+                        {% else %}
+                        <i class="fas fa-users" style="color:var(--primary); font-size:1.5rem;"></i>
+                        {% endif %}
+                    </div>
+                    <div class="club-list-info">
+                        <div class="club-list-name">{{ club.name }}</div>
+                        <div class="club-list-meta">
+                            <span class="stat-pill"><i class="fas fa-calendar-check" style="color:var(--primary);"></i> {{ club_events|length }}</span>
+                            <span class="stat-pill"><i class="fas fa-vote-yea" style="color:#10b981;"></i> {{ club_elections|length }}</span>
+                            <span class="stat-pill"><i class="fas fa-file-alt" style="color:#f59e0b;"></i> {{ completed|length }}</span>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="padding:4rem; text-align:center; border:2px dashed var(--border-light); border-radius:20px; color:var(--text-muted);">
+                <i class="fas fa-shield-alt" style="font-size:3rem; opacity:0.2; display:block; margin-bottom:1rem;"></i>
+                No clubs found in the registry.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ═══════════════════════════════ EVENT REGISTRY ═══════════════════════════════ -->
+        <div id="section-events" class="reg-section" style="display:none;">
+            <div style="margin-bottom:1.5rem;">
+                <h3 style="font-weight: 800; color: var(--navy);">Event Registry Archive</h3>
+                <p style="color:var(--text-muted); font-size:0.85rem;">All institutional events organized by various clubs.</p>
+            </div>
+
+            {% for club in clubs %}
+            {% set club_events = all_events_by_club.get(club.id, []) %}
+            {% if club_events %}
+            <div style="margin-bottom:3rem; background: var(--white); padding: 1.5rem; border-radius: 20px; border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);">
+                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:1px solid var(--border-light);">
+                    <div class="club-list-logo" style="width: 36px; height: 36px; background: var(--surface-2); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        {% if club.logo %}
+                        <img src="/static/uploads/clubs/{{ club.id }}/details/{{ club.logo }}" style="width:100%; height:100%; object-fit:cover; border-radius:8px;">
+                        {% else %}
+                        <i class="fas fa-users" style="color:var(--primary); font-size:0.9rem;"></i>
+                        {% endif %}
+                    </div>
+                    <h4 style="margin:0; font-size:1.1rem; font-weight: 800; color: var(--navy);">{{ club.name }}</h4>
+                    <span style="margin-left: auto; font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">{{ club_events|length }} Events Found</span>
+                </div>
+
+                <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:1.25rem;">
+                    {% for ev in club_events | sort(attribute='date', reverse=True) %}
+                    {% set ev_slug = ev.title.lower().replace(' ', '_').replace('/', '_') %}
+                    <div class="glass" style="background: var(--white); border-radius:18px; overflow:hidden; border: 1px solid var(--border-light); transition: all 0.3s;" 
+                         onmouseover="this.style.borderColor='var(--primary)'; this.style.transform='translateY(-3px)'"
+                         onmouseout="this.style.borderColor='var(--border-light)'; this.style.transform='none'">
+                        
+                        <div style="padding:1.25rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                                <h5 style="font-size:1.05rem; margin:0; font-weight:800; color: var(--navy); line-height: 1.3;">{{ ev.title }}</h5>
+                                <span style="font-size:0.65rem; padding: 0.2rem 0.5rem; background: rgba(99,102,241,0.15); color: var(--primary); border-radius: 6px; font-weight: 800; text-transform: uppercase;">{{ ev.event_type }}</span>
+                            </div>
+                            
+                            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1.25rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                                <span><i class="fas fa-calendar-alt" style="margin-right:0.6rem; color: var(--primary); width: 14px;"></i>{{ ev.date }}</span>
+                                <span><i class="fas fa-map-marker-alt" style="margin-right:0.6rem; color: #ef4444; width: 14px;"></i>{{ ev.venue or 'TBD' }}</span>
+                            </div>
+                            
+                            <div style="display:flex; justify-content: space-between; align-items: center; padding-top: 1rem; border-top: 1px solid var(--border-light);">
+                                <div style="display: flex; gap: 0.3rem;">
+                                    {% if ev.approved %}
+                                    <i class="fas fa-check-circle" style="color: #10b981;" title="Approved"></i>
+                                    {% endif %}
+                                    {% if ev.report_approved %}
+                                    <i class="fas fa-file-signature" style="color: var(--primary);" title="Report Approved"></i>
+                                    {% endif %}
+                                </div>
+                                <a href="/super/registry/{{ club.id }}" class="btn btn-outline" style="font-size: 0.7rem; padding: 0.3rem 0.6rem; border-radius: 8px;">View Report</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- ═══════════════════════════════ ELECTIONS OVERVIEW ═══════════════════════════════ -->
+        <div id="section-elections" class="reg-section" style="display:none;">
+            <div style="margin-bottom:1.5rem;">
+                <h3 style="font-weight: 800; color: var(--navy);">Elections Governance</h3>
+                <p style="color:var(--text-muted); font-size:0.85rem;">Overview of all club leadership transitions and voting results.</p>
+            </div>
+
+            {% for club in clubs %}
+            {% set club_elections = all_elections_by_club.get(club.id, []) %}
+            {% if club_elections %}
+            <div style="margin-bottom:2.5rem; background: var(--white); padding: 1.5rem; border-radius: 20px; border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);">
+                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:1px solid var(--border-light);">
+                    <div class="club-list-logo" style="width: 32px; height: 32px; background: var(--surface-2); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        {% if club.logo %}
+                        <img src="/static/uploads/clubs/{{ club.id }}/details/{{ club.logo }}" style="width:100%; height:100%; object-fit:cover; border-radius:8px;">
+                        {% else %}
+                        <i class="fas fa-users" style="color:var(--primary); font-size:0.8rem;"></i>
+                        {% endif %}
+                    </div>
+                    <h4 style="margin:0; font-size:1.1rem; font-weight: 800; color: var(--navy);">{{ club.name }}</h4>
+                </div>
+
+                <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:1.25rem;">
+                    {% for el in club_elections | sort(attribute='createdAt', reverse=True) %}
+                    {% set status_color = '#f59e0b' if el.status == 'nominations_open' else ('#10b981' if el.status == 'voting_started' else ('#6366f1' if el.status == 'results_published' else '#94a3b8')) %}
+                    <div class="glass" style="background: var(--white); padding: 1.25rem; border-radius: 18px; border: 1px solid var(--border-light); border-left: 4px solid {{ status_color }}; box-shadow: var(--shadow-sm);">
+                        <div style="font-weight:800; margin-bottom:0.5rem; font-size:1rem; color: var(--navy);">{{ el.title }}</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                            <span style="font-size:0.7rem; color:{{ status_color }}; font-weight: 800; text-transform: uppercase; background: {{ status_color }}1a; padding: 0.2rem 0.6rem; border-radius: 10px;">
+                                {{ el.status | replace('_', ' ') }}
+                            </span>
+                            <a href="/super/registry/{{ club.id }}" style="color: var(--primary); font-size: 0.75rem; text-decoration: none; font-weight: 600;">View Results →</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </main>
+</div>
+
+<script>
+    function showSection(id, btn) {
+        document.querySelectorAll('.reg-section').forEach(s => s.style.display = 'none');
+        document.getElementById('section-' + id).style.display = 'block';
+
+        document.querySelectorAll('.reg-nav-pill').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+    }
+</script>
+
+{% endblock %}

@@ -1,0 +1,421 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+:root {
+  --ps-cyan: #22d3ee;
+  --ps-indigo: #6366f1;
+  --ps-purple: #8b5cf6;
+  --ps-green: #10b981;
+  --ps-gold: #f59e0b;
+  --ps-red: #f43f5e;
+}
+.ps-wrap { max-width: 800px; margin: 3rem auto; padding: 0 1.5rem 4rem; }
+.ps-back { display: inline-flex; align-items: center; gap: .5rem; color: rgba(255,255,255,.4); font-size: .8rem; text-decoration: none; margin-bottom: 2rem; padding: .45rem .85rem; border-radius: 9px; border: 1px solid rgba(255,255,255,.07); transition: .2s; }
+.ps-back:hover { color: #fff; }
+
+.ps-header { background: linear-gradient(135deg, rgba(34,211,238,.08), rgba(99,102,241,.06)); border: 1px solid rgba(34,211,238,.2); border-radius: 24px; padding: 2rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1.25rem; }
+.ps-header-icon { width: 58px; height: 58px; background: rgba(34,211,238,.12); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0; color: var(--ps-cyan); }
+.ps-event-name { font-size: .8rem; color: rgba(255,255,255,.4); margin-bottom: .2rem; }
+.ps-title { font-size: 1.4rem; font-weight: 800; color: #fff; }
+.ps-badge { display: inline-flex; align-items: center; gap: .35rem; background: rgba(16,185,129,.12); color: var(--ps-green); border: 1px solid rgba(16,185,129,.25); border-radius: 8px; padding: .2rem .6rem; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-top: .5rem; }
+
+.ps-step { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 22px; padding: 1.75rem; margin-bottom: 1.5rem; }
+.ps-step-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .12em; color: rgba(255,255,255,.3); margin-bottom: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: .5rem; }
+.ps-step-label span { width: 22px; height: 22px; background: rgba(34,211,238,.15); color: var(--ps-cyan); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 800; flex-shrink: 0; }
+
+.fl { display: block; font-size: .73rem; text-transform: uppercase; letter-spacing: .07em; color: rgba(255,255,255,.38); margin-bottom: .4rem; }
+.fi { width: 100%; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: .75rem 1rem; color: #fff; font-size: .9rem; outline: none; transition: .2s; box-sizing: border-box; font-family: inherit; }
+.fi:focus { border-color: rgba(34,211,238,.45); background: rgba(34,211,238,.05); }
+.fi[readonly] { opacity: .6; cursor: default; }
+.fg { margin-bottom: 1.1rem; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media(max-width:600px){ .grid-2 { grid-template-columns: 1fr; } }
+
+/* Team lookup row */
+.team-lookup-row { display: flex; gap: .75rem; }
+.team-lookup-row .fi { flex: 1; }
+.btn-lookup { background: linear-gradient(135deg, var(--ps-cyan), var(--ps-indigo)); border: none; border-radius: 12px; padding: .75rem 1.25rem; color: #fff; font-size: .88rem; font-weight: 700; cursor: pointer; transition: .2s; white-space: nowrap; }
+.btn-lookup:hover { opacity: .88; transform: translateY(-1px); }
+.btn-lookup:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+/* Team info card */
+.team-info-card { background: rgba(34,211,238,.07); border: 1px solid rgba(34,211,238,.18); border-radius: 16px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; display: none; }
+.team-info-card.visible { display: block; }
+.team-name-large { font-size: 1.1rem; font-weight: 700; margin-bottom: .5rem; color: #fff; }
+.member-chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
+.chip { display: inline-flex; align-items: center; gap: .35rem; padding: .3rem .7rem; border-radius: 20px; font-size: .75rem; background: rgba(255,255,255,.07); }
+.chip.leader { background: rgba(139,92,246,.15); color: #c4b5fd; }
+.chip.already-submitted { background: rgba(16,185,129,.12); color: #6ee7b7; border: 1px solid rgba(16,185,129,.25); }
+
+/* Radio button pills */
+.pill-group { display: flex; gap: .6rem; flex-wrap: wrap; }
+.pill-label { cursor: pointer; }
+.pill-label input { display: none; }
+.pill-label span {
+  display: inline-block;
+  padding: .5rem 1.1rem;
+  border-radius: 50px;
+  border: 1px solid rgba(255,255,255,.12);
+  font-size: .82rem;
+  font-weight: 600;
+  color: rgba(255,255,255,.5);
+  transition: .2s;
+}
+.pill-label input:checked + span {
+  border-color: var(--ps-cyan);
+  background: rgba(34,211,238,.12);
+  color: var(--ps-cyan);
+}
+.pill-label span:hover { border-color: rgba(34,211,238,.4); color: rgba(255,255,255,.8); }
+
+/* File drop zone */
+.drop-zone { border: 2px dashed rgba(34,211,238,.2); border-radius: 14px; padding: 1.5rem; text-align: center; cursor: pointer; transition: .2s; }
+.drop-zone:hover, .drop-zone.drag-over { border-color: var(--ps-cyan); background: rgba(34,211,238,.04); }
+.drop-zone input { display: none; }
+.drop-zone-icon { font-size: 2rem; color: rgba(34,211,238,.4); margin-bottom: .5rem; }
+.drop-zone-text { font-size: .82rem; color: rgba(255,255,255,.4); }
+.drop-zone-file { font-size: .8rem; color: var(--ps-cyan); margin-top: .5rem; }
+
+/* Submit button */
+.ps-submit-btn { width: 100%; background: linear-gradient(135deg, var(--ps-cyan), var(--ps-indigo)); border: none; border-radius: 16px; padding: 1.1rem; color: #fff; font-size: 1rem; font-weight: 700; cursor: pointer; transition: .25s; display: flex; align-items: center; justify-content: center; gap: .5rem; letter-spacing: .02em; margin-top: 1.5rem; }
+.ps-submit-btn:hover { opacity: .88; transform: translateY(-2px); box-shadow: 0 10px 30px rgba(34,211,238,.25); }
+.ps-submit-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* Alert / result */
+.ps-result { padding: .9rem 1.1rem; border-radius: 12px; font-size: .86rem; margin-top: 1rem; display: none; }
+
+/* Success state */
+.ps-success { background: rgba(16,185,129,.07); border: 1px solid rgba(16,185,129,.25); border-radius: 22px; padding: 2.5rem; text-align: center; display: none; }
+.ps-success.visible { display: block; }
+</style>
+
+<div class="ps-wrap">
+  <a href="/em/hackathon/{{ event.id }}/hub" class="ps-back"><i class="fas fa-arrow-left"></i> Back to Hackathon Hub</a>
+
+  <!-- Header -->
+  <div class="ps-header">
+    <div class="ps-header-icon"><i class="fas fa-file-upload"></i></div>
+    <div>
+      <div class="ps-event-name">{{ event.title }}</div>
+      <div class="ps-title">Project Submission Portal</div>
+      <div class="ps-badge"><i class="fas fa-circle" style="font-size:.45rem;"></i> Portal Active</div>
+    </div>
+  </div>
+
+  <!-- Success overlay (shown after submit) -->
+  <div class="ps-success" id="psSuccess">
+    <div style="font-size:3.5rem;margin-bottom:1rem;">🎉</div>
+    <h2 style="color:var(--ps-green);margin:0 0 .5rem;">Submitted to Evaluators!</h2>
+    <p style="color:rgba(255,255,255,.5);font-size:.9rem;max-width:380px;margin:.5rem auto 1.5rem;">The team's project evaluation details have been recorded and sent to the evaluator dashboard.</p>
+    <button onclick="resetForm()" style="background:rgba(34,211,238,.12);color:var(--ps-cyan);border:1px solid rgba(34,211,238,.25);border-radius:12px;padding:.75rem 1.75rem;font-size:.9rem;font-weight:700;cursor:pointer;">
+      <i class="fas fa-plus" style="margin-right:.4rem;"></i>Submit Another Team
+    </button>
+  </div>
+
+  <!-- Main Form Card -->
+  <div id="psFormWrap">
+
+    <!-- Step 1: Team ID Lookup -->
+    <div class="ps-step">
+      <div class="ps-step-label"><span>1</span> Team Identification</div>
+
+      <div class="fg">
+        <label class="fl">Team ID</label>
+        <div class="team-lookup-row">
+          <input type="text" id="teamIdInput" class="fi" placeholder="e.g. TEAM-A1B2C3D4" autocomplete="off" oninput="clearTeamInfo()">
+          <button class="btn-lookup" id="lookupBtn" onclick="lookupTeam()">
+            <i class="fas fa-search" style="margin-right:.4rem;"></i>Fetch Team
+          </button>
+        </div>
+        <div style="font-size:.73rem;color:rgba(255,255,255,.3);margin-top:.4rem;"><i class="fas fa-info-circle" style="margin-right:.3rem;"></i>Ask the team leader for their Team ID from the registration confirmation.</div>
+      </div>
+
+      <!-- Team card (populated on lookup) -->
+      <div class="team-info-card" id="teamInfoCard">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
+          <div>
+            <div style="font-size:.7rem;color:rgba(34,211,238,.7);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.2rem;">Team Found</div>
+            <div class="team-name-large" id="teamNameDisplay">—</div>
+          </div>
+          <div id="alreadySubmittedBadge" style="display:none;">
+            <span class="chip already-submitted"><i class="fas fa-check-circle"></i> Already Submitted — will update</span>
+          </div>
+        </div>
+        <div style="font-size:.75rem;color:rgba(255,255,255,.35);margin-top:.75rem;margin-bottom:.3rem;">Members</div>
+        <div class="member-chips" id="memberChips"></div>
+      </div>
+
+      <div id="lookupError" style="display:none;font-size:.82rem;color:#f87171;padding:.6rem .9rem;background:rgba(239,68,68,.08);border-radius:10px;border:1px solid rgba(239,68,68,.2);"></div>
+    </div>
+
+    <!-- Step 2: Project Details (hidden until team fetched) -->
+    <div class="ps-step" id="projectDetailsStep" style="display:none;">
+      <div class="ps-step-label"><span>2</span> Project Details</div>
+
+      <div class="fg">
+        <label class="fl">Project / Idea Title *</label>
+        <input type="text" id="projectTitle" class="fi" placeholder="e.g. SmartBin — AI-powered Waste Classifier" required>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Problem Statement *</label>
+        <textarea id="problemStatement" class="fi" rows="4" placeholder="What problem does your project solve? Describe the challenge faced by users or society…" required style="resize:vertical;"></textarea>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Proposed Solution *</label>
+        <textarea id="solutionDesc" class="fi" rows="4" placeholder="Explain your solution — how it works, what makes it unique, and how it addresses the problem…" required style="resize:vertical;"></textarea>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Project Type *</label>
+        <div class="pill-group">
+          <label class="pill-label"><input type="radio" name="projectType" value="Software" checked><span>💻 Software</span></label>
+          <label class="pill-label"><input type="radio" name="projectType" value="Hardware"><span>🔧 Hardware</span></label>
+          <label class="pill-label"><input type="radio" name="projectType" value="Software + Hardware"><span>🤖 Software + Hardware</span></label>
+          <label class="pill-label"><input type="radio" name="projectType" value="AI/ML"><span>🧠 AI / ML</span></label>
+          <label class="pill-label"><input type="radio" name="projectType" value="Web/App"><span>🌐 Web / App</span></label>
+          <label class="pill-label"><input type="radio" name="projectType" value="Other"><span>✨ Other</span></label>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Tech Stack Used *</label>
+        <input type="text" id="techStack" class="fi" placeholder="e.g. React, Node.js, Python, TensorFlow, Arduino…" required>
+      </div>
+
+      <div class="grid-2">
+        <div class="fg">
+          <label class="fl">GitHub Repository URL</label>
+          <input type="url" id="githubUrl" class="fi" placeholder="https://github.com/…">
+        </div>
+        <div class="fg">
+          <label class="fl">Live Demo / Video URL</label>
+          <input type="url" id="demoUrl" class="fi" placeholder="https://youtube.com/…">
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Presentation Upload (hidden until team fetched) -->
+    <div class="ps-step" id="uploadStep" style="display:none;">
+      <div class="ps-step-label"><span>3</span> Presentation / Report</div>
+
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('presentationFile').click()"
+           ondragover="event.preventDefault();this.classList.add('drag-over')"
+           ondragleave="this.classList.remove('drag-over')"
+           ondrop="handleDrop(event)">
+        <input type="file" id="presentationFile" accept=".pdf,.ppt,.pptx,.doc,.docx,.zip" onchange="handleFile(this)">
+        <div class="drop-zone-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+        <div class="drop-zone-text">Click to upload or drag & drop</div>
+        <div style="font-size:.7rem;color:rgba(255,255,255,.25);margin-top:.3rem;">PDF, PPT, PPTX, DOC, DOCX, ZIP — max 20 MB</div>
+        <div class="drop-zone-file" id="selectedFileName" style="display:none;"></div>
+      </div>
+      <div style="font-size:.73rem;color:rgba(255,255,255,.3);margin-top:.6rem;"><i class="fas fa-info-circle" style="margin-right:.3rem;"></i>Optional but strongly recommended for complete evaluation by judges.</div>
+    </div>
+
+    <!-- Submit -->
+    <div id="submitSection" style="display:none;">
+      <div id="psResult" class="ps-result"></div>
+      <button class="ps-submit-btn" id="psSubmitBtn" onclick="submitProject()">
+        <i class="fas fa-paper-plane"></i> Submit to Evaluators
+      </button>
+    </div>
+
+  </div><!-- /psFormWrap -->
+</div>
+
+<script>
+let currentTeam = null;
+
+async function lookupTeam() {
+  const teamId = document.getElementById('teamIdInput').value.trim().toUpperCase();
+  const errBox = document.getElementById('lookupError');
+  const btn    = document.getElementById('lookupBtn');
+  errBox.style.display = 'none';
+  clearTeamInfo();
+
+  if (!teamId) {
+    errBox.style.display = 'block';
+    errBox.textContent = 'Please enter a Team ID.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:.4rem;"></i>Fetching…';
+
+  try {
+    const r = await fetch('/em/api/hackathon/team-lookup?team_id=' + encodeURIComponent(teamId) + '&event_id={{ event.id }}');
+    const d = await r.json();
+    if (!d.success) throw new Error(d.message || 'Team not found');
+
+    currentTeam = d.team;
+    document.getElementById('teamNameDisplay').textContent = d.team.team_name;
+
+    // Members chips
+    const chips = document.getElementById('memberChips');
+    chips.innerHTML = '';
+    (d.team.members || []).forEach(m => {
+      const chip = document.createElement('span');
+      chip.className = 'chip' + (m.is_leader ? ' leader' : '');
+      chip.innerHTML = (m.is_leader ? '<i class="fas fa-crown" style="font-size:.55rem;"></i> ' : '') +
+        (m.name || m.roll_number || m.email || 'Member');
+      chips.appendChild(chip);
+    });
+
+    // Already submitted badge
+    document.getElementById('alreadySubmittedBadge').style.display = d.team.submitted ? 'block' : 'none';
+
+    // Pre-fill existing data if any
+    if (d.team.project_title) document.getElementById('projectTitle').value = d.team.project_title;
+    if (d.team.description)   document.getElementById('problemStatement').value = d.team.description;
+    if (d.team.solution)      document.getElementById('solutionDesc').value = d.team.solution;
+    if (d.team.tech_stack)    document.getElementById('techStack').value = d.team.tech_stack;
+    if (d.team.github_url)    document.getElementById('githubUrl').value = d.team.github_url;
+    if (d.team.demo_url)      document.getElementById('demoUrl').value = d.team.demo_url;
+    if (d.team.project_type) {
+      document.querySelectorAll('input[name="projectType"]').forEach(r => {
+        if (r.value === d.team.project_type) r.checked = true;
+      });
+    }
+
+    document.getElementById('teamInfoCard').classList.add('visible');
+    document.getElementById('projectDetailsStep').style.display = 'block';
+    document.getElementById('uploadStep').style.display = 'block';
+    document.getElementById('submitSection').style.display = 'block';
+
+    // Smooth scroll
+    document.getElementById('projectDetailsStep').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch(e) {
+    errBox.style.display = 'block';
+    errBox.textContent = '❌ ' + e.message;
+    currentTeam = null;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-search" style="margin-right:.4rem;"></i>Fetch Team';
+  }
+}
+
+function clearTeamInfo() {
+  currentTeam = null;
+  document.getElementById('teamInfoCard').classList.remove('visible');
+  document.getElementById('projectDetailsStep').style.display = 'none';
+  document.getElementById('uploadStep').style.display = 'none';
+  document.getElementById('submitSection').style.display = 'none';
+  document.getElementById('lookupError').style.display = 'none';
+  document.getElementById('alreadySubmittedBadge').style.display = 'none';
+}
+
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const el = document.getElementById('selectedFileName');
+  el.style.display = 'block';
+  el.textContent = '📎 ' + file.name + ' (' + (file.size / 1024 / 1024).toFixed(2) + ' MB)';
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const input = document.getElementById('presentationFile');
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  input.files = dt.files;
+  handleFile(input);
+}
+
+async function submitProject() {
+  if (!currentTeam) {
+    alert('Please look up a team first.');
+    return;
+  }
+
+  const title     = document.getElementById('projectTitle').value.trim();
+  const problem   = document.getElementById('problemStatement').value.trim();
+  const solution  = document.getElementById('solutionDesc').value.trim();
+  const techStack = document.getElementById('techStack').value.trim();
+  const type      = document.querySelector('input[name="projectType"]:checked')?.value || 'Software';
+
+  if (!title || !problem || !solution || !techStack) {
+    const res = document.getElementById('psResult');
+    res.style.display = 'block';
+    res.style.background = 'rgba(239,68,68,.1)';
+    res.style.border = '1px solid rgba(239,68,68,.25)';
+    res.style.color = '#f87171';
+    res.textContent = '⚠️ Please fill in all required fields (Title, Problem Statement, Solution, Tech Stack).';
+    return;
+  }
+
+  const btn = document.getElementById('psSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting…';
+
+  const fd = new FormData();
+  fd.append('event_id', '{{ event.id }}');
+  fd.append('team_id', currentTeam.team_id);
+  fd.append('project_title', title);
+  fd.append('problem_statement', problem);
+  fd.append('solution', solution);
+  fd.append('tech_stack', techStack);
+  fd.append('project_type', type);
+  fd.append('github_url', document.getElementById('githubUrl').value.trim());
+  fd.append('demo_url', document.getElementById('demoUrl').value.trim());
+
+  const fileInput = document.getElementById('presentationFile');
+  if (fileInput.files[0]) {
+    fd.append('presentation_file', fileInput.files[0]);
+  }
+
+  try {
+    const r = await fetch('/em/api/hackathon/project-submit', {
+      method: 'POST',
+      body: fd
+    });
+    const d = await r.json();
+
+    if (d.success) {
+      document.getElementById('psFormWrap').style.display = 'none';
+      document.getElementById('psSuccess').classList.add('visible');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      throw new Error(d.message || 'Submission failed');
+    }
+  } catch(e) {
+    const res = document.getElementById('psResult');
+    res.style.display = 'block';
+    res.style.background = 'rgba(239,68,68,.1)';
+    res.style.border = '1px solid rgba(239,68,68,.25)';
+    res.style.color = '#f87171';
+    res.textContent = '❌ ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit to Evaluators';
+  }
+}
+
+function resetForm() {
+  currentTeam = null;
+  document.getElementById('teamIdInput').value = '';
+  document.getElementById('projectTitle').value = '';
+  document.getElementById('problemStatement').value = '';
+  document.getElementById('solutionDesc').value = '';
+  document.getElementById('techStack').value = '';
+  document.getElementById('githubUrl').value = '';
+  document.getElementById('demoUrl').value = '';
+  document.getElementById('presentationFile').value = '';
+  document.getElementById('selectedFileName').style.display = 'none';
+  clearTeamInfo();
+  document.getElementById('psSuccess').classList.remove('visible');
+  document.getElementById('psFormWrap').style.display = 'block';
+  document.getElementById('psResult').style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Allow pressing Enter in team ID field to trigger lookup
+document.getElementById('teamIdInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') lookupTeam();
+});
+</script>
+{% endblock %}

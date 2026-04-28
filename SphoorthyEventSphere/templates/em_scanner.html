@@ -1,0 +1,257 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+:root{--em-indigo:#6366f1;--em-purple:#8b5cf6;--em-teal:#14b8a6;}
+.scanner-page{max-width:700px;margin:0 auto;padding:2.5rem 1rem;}
+.scanner-header{text-align:center;margin-bottom:2.5rem;}
+.scanner-header h1{font-size:1.8rem;font-weight:800;margin-bottom:.5rem;}
+.scanner-header h1 span{background:linear-gradient(135deg,var(--em-indigo),var(--em-purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.event-selector-bar{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;}
+.event-selector-bar label{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:.5rem;}
+.event-selector-bar select{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:.75rem 1rem;color:#fff;outline:none;font-size:.9rem;}
+.event-selector-bar select option{background:#1e1b4b;}
+.camera-box{position:relative;border-radius:22px;overflow:hidden;background:#000;aspect-ratio:1/1;max-width:500px;margin:0 auto 1.5rem;border:2px solid rgba(99,102,241,.3);}
+#videoEl{width:100%;height:100%;object-fit:cover;display:block;}
+.scanner-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+.scan-frame{width:65%;aspect-ratio:1;border:2px solid rgba(99,102,241,.8);border-radius:16px;position:relative;box-shadow:0 0 0 2000px rgba(0,0,0,.45);}
+.scan-frame::before,.scan-frame::after{content:'';position:absolute;width:20px;height:20px;}
+.scan-frame::before{top:-2px;left:-2px;border-top:3px solid var(--em-indigo);border-left:3px solid var(--em-indigo);border-radius:4px 0 0 0;}
+.scan-frame::after{bottom:-2px;right:-2px;border-bottom:3px solid var(--em-indigo);border-right:3px solid var(--em-indigo);border-radius:0 0 4px 0;}
+.scan-line{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--em-indigo),transparent);animation:scanMove 2s linear infinite;}
+@keyframes scanMove{0%{top:0}100%{top:calc(100% - 2px)}}
+.scan-actions{display:flex;gap:.75rem;justify-content:center;margin-bottom:1.5rem;}
+.btn-scan{padding:.9rem 2rem;border-radius:14px;font-weight:700;font-size:.9rem;cursor:pointer;border:none;transition:.25s;}
+.btn-scan-start{background:linear-gradient(135deg,var(--em-indigo),var(--em-purple));color:#fff;}
+.btn-scan-start:hover{opacity:.85;transform:translateY(-2px);}
+.btn-scan-stop{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#f87171;}
+/* Result card */
+.result-card{border-radius:20px;padding:1.75rem;margin-bottom:1.5rem;transition:all .35s;opacity:0;transform:translateY(10px);max-width:500px;margin:0 auto 1.5rem;}
+.result-card.show{opacity:1;transform:none;}
+.result-card.success{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);}
+.result-card.error{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);}
+.result-card.warning{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);}
+.result-icon{font-size:2.5rem;display:block;text-align:center;margin-bottom:.75rem;}
+.result-title{font-size:1.05rem;font-weight:700;margin-bottom:.5rem;text-align:center;}
+.result-detail{font-size:.85rem;color:var(--text-muted);text-align:center;}
+.student-info{background:rgba(255,255,255,.05);border-radius:12px;padding:1rem;margin-top:.75rem;display:grid;grid-template-columns:1fr 1fr;gap:.5rem;}
+.info-item{font-size:.8rem;}
+.info-item span{display:block;color:var(--text-muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;}
+/* Manual entry */
+.manual-entry{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:1.5rem;max-width:500px;margin:0 auto;}
+.manual-entry h4{font-size:.82rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:1rem;}
+.manual-input-row{display:flex;gap:.75rem;}
+.manual-input-row input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:.75rem 1rem;color:#fff;font-size:.88rem;outline:none;font-family:monospace;}
+.manual-input-row button{background:linear-gradient(135deg,var(--em-indigo),var(--em-purple));border:none;border-radius:10px;padding:.75rem 1.25rem;color:#fff;font-weight:700;cursor:pointer;font-size:.85rem;white-space:nowrap;}
+/* History */
+.scan-history{max-width:500px;margin:1.5rem auto 0;}
+.scan-history h4{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:.75rem;}
+.history-item{display:flex;align-items:center;gap:.75rem;padding:.6rem .9rem;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:10px;margin-bottom:.4rem;font-size:.82rem;}
+.history-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+</style>
+
+<div class="scanner-page">
+  <div class="scanner-header">
+    <div style="display:flex;justify-content:center;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+      <a href="/em/dashboard" style="display:inline-flex;align-items:center;gap:.5rem;color:rgba(255,255,255,.5);font-size:.82rem;text-decoration:none;padding:.45rem .85rem;border-radius:10px;border:1px solid rgba(255,255,255,.07);transition:.2s;" onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,.2)'" onmouseout="this.style.color='rgba(255,255,255,.5)';this.style.borderColor='rgba(255,255,255,.07)'">
+        <i class="fas fa-arrow-left"></i> Dashboard
+      </a>
+      {% if preselected_event_id %}
+      <a href="/em/event/{{ preselected_event_id }}/hub" style="display:inline-flex;align-items:center;gap:.5rem;color:rgba(255,255,255,.5);font-size:.82rem;text-decoration:none;padding:.45rem .85rem;border-radius:10px;border:1px solid rgba(255,255,255,.07);transition:.2s;" onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,.2)'" onmouseout="this.style.color='rgba(255,255,255,.5)';this.style.borderColor='rgba(255,255,255,.07)'">
+        <i class="fas fa-rocket"></i> Event Hub
+      </a>
+      {% endif %}
+    </div>
+    <h1>QR <span>Entry Scanner</span></h1>
+    <p style="color:var(--text-muted);font-size:.92rem;">Scan student tickets at the venue entrance</p>
+  </div>
+
+  <!-- Event selector -->
+  <div class="event-selector-bar">
+    <label>Scanning for Event</label>
+    <select id="scanEventSelect" {% if preselected_event_id %}style="pointer-events:none;opacity:.75;border-color:rgba(16,185,129,.3);"{% endif %}>
+      {% if not preselected_event_id %}
+      <option value="">-- Select Event (optional for validation) --</option>
+      {% endif %}
+      {% for ev in events %}
+      <option value="{{ ev.id }}" {% if preselected_event_id == ev.id %}selected{% endif %}>{{ ev.title }} — {{ ev.date or 'Date TBA' }}</option>
+      {% endfor %}
+    </select>
+    {% if preselected_event_id %}
+    <p style="font-size:.72rem;color:rgba(16,185,129,.7);margin-top:.4rem;"><i class="fas fa-lock" style="margin-right:.3rem;"></i>Pre-loaded for this event</p>
+    {% endif %}
+  </div>
+
+  <!-- Camera -->
+  <div class="camera-box" id="cameraBox">
+    <video id="videoEl" playsinline autoplay muted></video>
+    <canvas id="canvasEl" style="display:none;"></canvas>
+    <div class="scanner-overlay">
+      <div class="scan-frame">
+        <div class="scan-line" id="scanLine" style="display:none;"></div>
+      </div>
+    </div>
+    <div id="cameraPlaceholder" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;background:rgba(10,10,25,.9);">
+      <i class="fas fa-camera" style="font-size:3rem;color:rgba(99,102,241,.5);"></i>
+      <p style="color:var(--text-muted);font-size:.9rem;text-align:center;">Click "Start Scanner" to activate camera</p>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="scan-actions">
+    <button class="btn-scan btn-scan-start" id="startBtn" onclick="startScanner()">
+      <i class="fas fa-camera" style="margin-right:.5rem;"></i>Start Scanner
+    </button>
+    <button class="btn-scan btn-scan-stop" id="stopBtn" onclick="stopScanner()" style="display:none;">
+      <i class="fas fa-stop" style="margin-right:.5rem;"></i>Stop
+    </button>
+  </div>
+
+  <!-- Result -->
+  <div class="result-card" id="resultCard">
+    <div class="result-icon" id="resultIcon"></div>
+    <div class="result-title" id="resultTitle"></div>
+    <div class="result-detail" id="resultDetail"></div>
+    <div class="student-info" id="studentInfo" style="display:none;"></div>
+  </div>
+
+  <!-- Manual entry -->
+  <div class="manual-entry">
+    <h4><i class="fas fa-keyboard" style="margin-right:.4rem;"></i>Manual QR Entry</h4>
+    <div class="manual-input-row">
+      <input type="text" id="manualQr" placeholder="Paste QR code data here…" 
+             onkeydown="if(event.key==='Enter') manualScan()">
+      <button onclick="manualScan()"><i class="fas fa-check"></i> Verify</button>
+    </div>
+    <p style="color:var(--text-muted);font-size:.75rem;margin-top:.5rem;"><i class="fas fa-info-circle" style="margin-right:.3rem;"></i>Format: EM|event_id|ticket_id|user_id|status</p>
+  </div>
+
+  <!-- Scan history -->
+  <div class="scan-history">
+    <h4><i class="fas fa-history" style="margin-right:.4rem;"></i>Recent Scans</h4>
+    <div id="historyList"><p style="color:var(--text-muted);font-size:.82rem;">No scans yet.</p></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script>
+let stream = null, scanInterval = null, lastScanned = '', lastTime = 0;
+const scanHistory = [];
+
+async function startScanner() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 1280 } }
+    });
+    const video = document.getElementById('videoEl');
+    video.srcObject = stream;
+    document.getElementById('cameraPlaceholder').style.display = 'none';
+    document.getElementById('scanLine').style.display = '';
+    document.getElementById('startBtn').style.display = 'none';
+    document.getElementById('stopBtn').style.display = '';
+    scanInterval = setInterval(scanFrame, 250);
+  } catch(e) {
+    showResult('error', '❌', 'Camera Access Denied', 'Please allow camera permission in your browser settings, or use manual entry below.');
+  }
+}
+
+function stopScanner() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+  document.getElementById('cameraPlaceholder').style.display = 'flex';
+  document.getElementById('scanLine').style.display = 'none';
+  document.getElementById('startBtn').style.display = '';
+  document.getElementById('stopBtn').style.display = 'none';
+}
+
+function scanFrame() {
+  const video  = document.getElementById('videoEl');
+  const canvas = document.getElementById('canvasEl');
+  if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+  canvas.width  = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+  const d = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const code = jsQR(d.data, d.width, d.height, { inversionAttempts: 'dontInvert' });
+  if (code && code.data) {
+    const now = Date.now();
+    if (code.data === lastScanned && now - lastTime < 3000) return;
+    lastScanned = code.data;
+    lastTime    = now;
+    processScan(code.data);
+  }
+}
+
+async function processScan(qrData) {
+  showResult('loading', '⏳', 'Verifying…', 'Checking ticket validity…');
+  const r = await fetch('/em/api/scan', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ qr_data: qrData })
+  });
+  const d = await r.json();
+  addHistory(qrData, d.success, d.already_in);
+  if (d.success) {
+    const t = d.ticket || {};
+    showResult('success', '✅', d.message, `Ticket: ${t.ticket_id || ''}`, t);
+    vibrate(200);
+  } else if (d.already_in) {
+    const t = d.ticket || {};
+    showResult('warning', '⚠️', 'Already Checked In', d.message, t);
+    vibrate([100, 50, 100]);
+  } else {
+    showResult('error', '❌', 'Entry Denied', d.message || 'Ticket not valid.');
+    vibrate([200, 50, 200]);
+  }
+}
+
+function manualScan() {
+  const v = document.getElementById('manualQr').value.trim();
+  if (!v) return;
+  processScan(v);
+  document.getElementById('manualQr').value = '';
+}
+
+function showResult(type, icon, title, detail, ticket=null) {
+  const card = document.getElementById('resultCard');
+  card.className = `result-card ${type}`;
+  document.getElementById('resultIcon').textContent  = icon;
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultDetail').textContent = detail;
+  const si = document.getElementById('studentInfo');
+  if (ticket && ticket.user_name) {
+    si.style.display = 'grid';
+    si.innerHTML = `
+      <div class="info-item"><span>Name</span>${ticket.user_name}</div>
+      <div class="info-item"><span>Ticket ID</span>${ticket.ticket_id}</div>
+      <div class="info-item"><span>Dept</span>${ticket.user_dept||'N/A'}</div>
+      <div class="info-item"><span>Status</span>${ticket.payment_status==='paid'?'✅ Paid':'🆓 Free'}</div>
+    `;
+  } else { si.style.display = 'none'; }
+  void card.offsetWidth;
+  card.classList.add('show');
+}
+
+function addHistory(qr, success, alreadyIn) {
+  const now  = new Date().toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const name = qr.split('|')[2] || qr.slice(0,20);
+  const color = success ? '#10b981' : alreadyIn ? '#f59e0b' : '#f87171';
+  const icon  = success ? '✓' : alreadyIn ? '⚠' : '✗';
+  scanHistory.unshift({ icon, color, name, time: now });
+  const list = document.getElementById('historyList');
+  list.innerHTML = scanHistory.slice(0,10).map(h => `
+    <div class="history-item">
+      <div class="history-dot" style="background:${h.color};"></div>
+      <span style="font-weight:600;color:${h.color};width:14px;">${h.icon}</span>
+      <span style="flex:1;color:#fff;font-family:monospace;font-size:.78rem;">${h.name}</span>
+      <span style="color:var(--text-muted);font-size:.75rem;">${h.time}</span>
+    </div>`).join('');
+}
+
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
+// Clean up on page unload
+window.addEventListener('beforeunload', stopScanner);
+</script>
+{% endblock %}

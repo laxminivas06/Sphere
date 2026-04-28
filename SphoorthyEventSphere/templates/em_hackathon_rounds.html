@@ -1,0 +1,94 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+  .hr-main { padding: 2rem; max-width: 900px; margin: 0 auto; }
+  .hr-card { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); padding: 1.5rem; border-radius: 16px; margin-bottom: 1.5rem; }
+  .hr-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  .hr-title { font-size: 1.2rem; font-weight: bold; color: #fff; }
+  .hr-input { background: rgba(0,0,0,.2); border: 1px solid rgba(255,255,255,.2); padding: .6rem; color: #fff; border-radius: 8px; outline: none; width: 100%; margin-bottom: .5rem; }
+  .hr-crit-row { display: flex; gap: 1rem; align-items: center; margin-bottom: .5rem; }
+  .hr-crit-input { flex: 1; }
+  .hr-crit-mark { width: 100px; }
+  .btn-blue { padding: .6rem 1.2rem; border-radius: 8px; background: rgba(59,130,246,.2); color: #60a5fa; border: 1px solid rgba(59,130,246,.4); font-weight: bold; cursor: pointer; }
+  .btn-red { padding: .4rem .8rem; border-radius: 8px; background: rgba(239,68,68,.1); color: #f87171; border: 1px solid rgba(239,68,68,.3); font-weight: bold; cursor: pointer; }
+  .btn-green { padding: .6rem 1.2rem; border-radius: 8px; background: #10b981; color: #fff; border: none; font-weight: bold; cursor: pointer; }
+</style>
+
+<div class="hr-main">
+  <a href="/em/hackathon/{{ event.id }}/hub" style="color:rgba(255,255,255,.5);text-decoration:none;"><i class="fas fa-arrow-left"></i> Back to Hub</a>
+  <h2 style="margin-top:1rem;">Evaluation Rounds & Criteria - {{ event.title }}</h2>
+  <p style="color:rgba(255,255,255,.6);">Define evaluation rounds and marking criteria. Teams must pass a round to progress to the next.</p>
+
+  <div id="roundsContainer"></div>
+  
+  <div style="display:flex;gap:1rem;margin-top:2rem;">
+    <button class="btn-blue" onclick="addRound()"><i class="fas fa-plus"></i> Add Round</button>
+    <button class="btn-green" onclick="saveRounds()"><i class="fas fa-save"></i> Save Configuration</button>
+  </div>
+</div>
+
+<script>
+let rounds = {{ (event.evaluation_rounds or []) | tojson | safe }};
+if (rounds.length === 0) {
+    rounds.push({ name: "Round 1: Problem Statement", criteria: [{name: "Problem Statement", marks: 5}, {name: "Social Impact", marks: 5}] });
+}
+
+function renderRounds() {
+    const cont = document.getElementById('roundsContainer');
+    cont.innerHTML = '';
+    rounds.forEach((r, rIdx) => {
+        let html = `
+        <div class="hr-card">
+            <div class="hr-header">
+                <input type="text" class="hr-input hr-title" value="${r.name}" style="background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.2);border-radius:0;margin:0;width:70%;" onchange="updateRoundName(${rIdx}, this.value)" placeholder="Round Name (e.g. Round 1: Ideation)">
+                <button class="btn-red" onclick="removeRound(${rIdx})"><i class="fas fa-trash"></i></button>
+            </div>
+            <p style="font-size:.8rem;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:.8rem;">Scoring Criteria</p>
+            <div id="crit-list-${rIdx}">
+        `;
+        r.criteria.forEach((c, cIdx) => {
+            html += `
+                <div class="hr-crit-row">
+                    <input type="text" class="hr-input hr-crit-input" value="${c.name}" onchange="updateCritName(${rIdx}, ${cIdx}, this.value)" placeholder="Criteria (e.g. Innovation)">
+                    <input type="number" class="hr-input hr-crit-mark" value="${c.marks}" onchange="updateCritMark(${rIdx}, ${cIdx}, this.value)" placeholder="Max Marks">
+                    <button class="btn-red" onclick="removeCrit(${rIdx}, ${cIdx})"><i class="fas fa-times"></i></button>
+                </div>
+            `;
+        });
+        html += `
+            </div>
+            <button class="btn-blue" style="font-size:.8rem;padding:.4rem .8rem;margin-top:.5rem;" onclick="addCrit(${rIdx})"><i class="fas fa-plus"></i> Add Criteria</button>
+        </div>
+        `;
+        cont.innerHTML += html;
+    });
+}
+
+function updateRoundName(rIdx, val) { rounds[rIdx].name = val; }
+function updateCritName(rIdx, cIdx, val) { rounds[rIdx].criteria[cIdx].name = val; }
+function updateCritMark(rIdx, cIdx, val) { rounds[rIdx].criteria[cIdx].marks = parseInt(val) || 0; }
+function addRound() { rounds.push({name: "New Round", criteria: [{name: "Criteria 1", marks: 10}]}); renderRounds(); }
+function removeRound(rIdx) { rounds.splice(rIdx, 1); renderRounds(); }
+function addCrit(rIdx) { rounds[rIdx].criteria.push({name: "", marks: 0}); renderRounds(); }
+function removeCrit(rIdx, cIdx) { rounds[rIdx].criteria.splice(cIdx, 1); renderRounds(); }
+
+async function saveRounds() {
+    const btn = document.querySelector('.btn-green');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    try {
+        const r = await fetch(`/em/api/hackathon/{{ event.id }}/rounds`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({rounds: rounds})
+        });
+        const d = await r.json();
+        if(d.success) {
+            btn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+            setTimeout(() => btn.innerHTML = '<i class="fas fa-save"></i> Save Configuration', 2000);
+        } else alert("Failed to save.");
+    } catch(e) { alert("Error occurred."); btn.innerHTML = '<i class="fas fa-save"></i> Save Configuration'; }
+}
+
+renderRounds();
+</script>
+{% endblock %}

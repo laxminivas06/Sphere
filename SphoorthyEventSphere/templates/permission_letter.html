@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Permission Letter - {{ club_name }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+        }
+
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', "Times New Roman", serif;
+            font-size: 12px;
+            margin: 0;
+            padding: 0;
+            background: #f0f2f5;
+            color: #000;
+            overflow-x: hidden;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 5000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: #1e293b;
+            color: white;
+            width: 100%;
+            max-width: 500px;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.8rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: white;
+            font-family: inherit;
+        }
+
+        /* ===== DOCUMENT CONTAINER ===== */
+        .document-container {
+            background: white;
+            width: 210mm;
+            margin: 40px auto;
+            padding: 5mm 20mm 15mm 20mm;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+            position: relative;
+            border-radius: 4px;
+        }
+
+        /* ===== TABLE ===== */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        td,
+        th {
+            border: 1px solid black;
+            padding: 7px 6px;
+            vertical-align: middle;
+            empty-cells: show;
+            line-height: 1.25;
+        }
+
+        /* COLUMN WIDTH */
+        .col1 {
+            width: 8%;
+        }
+
+        .col2 {
+            width: 35%;
+        }
+
+        .col3 {
+            width: 28.5%;
+        }
+
+        .col4 {
+            width: 28.5%;
+        }
+
+        /* LOGO */
+        .logo-row {
+            height: 80px;
+            text-align: center;
+        }
+
+        .logo {
+            max-height: 70px;
+            width: auto;
+            display: block;
+            margin: 10px auto;
+        }
+
+        /* YES NO */
+        .yesno {
+            width: 100%;
+            border-top: 1px solid black;
+            border-collapse: collapse;
+        }
+
+        .yesno td {
+            width: 50%;
+            text-align: center;
+            font-weight: bold;
+            height: 30px;
+        }
+
+        /* BOTTOM */
+        tr {
+            page-break-inside: auto !important;
+        }
+
+        .bottom td {
+            border: none !important;
+            text-align: center;
+            padding-top: 50px;
+            font-weight: bold;
+        }
+
+        .notice-text {
+            font-size: 13px;
+            font-weight: bold;
+            padding: 12px;
+            border: 1px solid black;
+        }
+
+        /* EDITABLE STYLES */
+        [contenteditable="true"] {
+            background: rgba(99, 102, 241, 0.03);
+            border-bottom: 1px dashed transparent;
+            transition: all 0.2s;
+            outline: none;
+            padding: 2px 4px;
+            min-height: 1.2em;
+        }
+
+        [contenteditable="true"]:hover {
+            background: rgba(99, 102, 241, 0.08);
+            border-bottom-color: var(--primary);
+        }
+
+        [contenteditable="true"]:focus {
+            background: #fff;
+            border-bottom: 1px solid var(--primary);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+        }
+
+        /* FLOATING CONTROLS */
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .fab {
+            padding: 12px 24px;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s, background 0.2s;
+            font-family: inherit;
+        }
+
+        .fab-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .fab-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .fab-outline {
+            background: white;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .fab-outline:hover {
+            background: #f8fafc;
+            transform: translateY(-2px);
+        }
+
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            display: none;
+            z-index: 2000;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                bottom: -50px;
+                opacity: 0;
+            }
+
+            to {
+                bottom: 30px;
+                opacity: 1;
+            }
+        }
+
+        @media print {
+            body {
+                background: none;
+                margin: 0;
+                font-size: 12px !important;
+            }
+
+            .document-container {
+                margin: 0;
+                width: 100%;
+                box-shadow: none;
+                border-radius: 0;
+                padding: 10mm;
+            }
+
+            .controls,
+            .no-print {
+                display: none !important;
+            }
+
+            [contenteditable="true"] {
+                background: none;
+                border: none;
+                padding: 0;
+            }
+
+            tr {
+                page-break-inside: auto !important;
+            }
+
+            td,
+            th {
+                page-break-inside: avoid !important;
+                padding: 7px 6px !important;
+                line-height: 1.25 !important;
+            }
+
+            .page-break {
+                page-break-before: always !important;
+            }
+
+            .page-break td {
+                padding-top: 50px !important;
+                /* Space at top of 2nd page */
+            }
+
+            table {
+                width: 100% !important;
+                border: 1px solid black !important;
+                border-collapse: collapse !important;
+                table-layout: fixed !important;
+                margin: 0 !important;
+            }
+
+            .logo {
+                max-height: 80px !important;
+            }
+        }
+
+        @media screen and (max-width: 800px) {
+            .document-container {
+                width: 210mm;
+                transform: scale(0.45);
+                transform-origin: top center;
+                margin: -150px -55px; /* Adjust margin to compensate for scale */
+                padding: 10mm;
+            }
+            
+            body {
+                overflow-x: auto;
+            }
+
+            .controls {
+                position: fixed;
+                bottom: 20px;
+                top: auto;
+                left: 0;
+                right: 0;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                background: rgba(15, 23, 42, 0.9);
+                padding: 15px;
+                backdrop-filter: blur(10px);
+                z-index: 5001;
+            }
+
+            .fab {
+                padding: 8px 16px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="controls no-print">
+        {% if not event.event_finished %}
+        <button class="fab fab-primary" onclick="saveDetails()">
+            <i class="fas fa-{{ 'rocket' if is_trusted else 'save' }}"></i> 
+            {{ 'Save & Post Event' if is_trusted else 'Save & Submit for Approval' }}
+        </button>
+        {% if is_trusted %}
+        <div style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 10px 15px; border-radius: 12px; font-size: 11px; font-weight: bold; border: 1px solid rgba(16, 185, 129, 0.2);">
+            <i class="fas fa-shield-alt"></i> TRUSTED CLUB: AUTO-APPROVAL ACTIVE
+        </div>
+        {% endif %}
+        <button class="fab fab-outline" onclick="toggleModal('editCoreModal', true)"><i class="fas fa-edit"></i> Edit Overall Details</button>
+        <button class="fab fab-outline" onclick="deleteEvent()" style="color: #ef4444; border-color: #ef4444;"><i class="fas fa-trash-alt"></i> Delete Letter</button>
+        {% endif %}
+        <button class="fab fab-outline" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> Download PDF</button>
+        <a href="/admin" class="fab fab-outline" style="text-decoration: none;"><i class="fas fa-arrow-left"></i> Back
+            to Dashboard</a>
+    </div>
+
+    <div class="document-container" id="permissionLetter">
+        <table>
+            <colgroup>
+                <col class="col1">
+                <col class="col2">
+                <col class="col3">
+                <col class="col4">
+            </colgroup>
+
+            <tr class="logo-row">
+                <td colspan="4" style="padding:0; border: 1px solid black;">
+                    <img src="/static/uploads/logos/college_logo.png" class="logo">
+                </td>
+            </tr>
+
+            <tr>
+                <td colspan="4" style="text-align:center; font-size: 16px; padding: 12px; border: 1px solid black;">
+                    <b>CLUB PROGRAM PERMISSION LETTER</b>
+                    {% if event.get('collaborating_clubs', []) %}
+                        <br><span style="font-size: 11px; background: #6366f1; color: white; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-top: 5px; font-weight: bold; -webkit-print-color-adjust: exact;">COLLABORATED EVENT</span>
+                    {% endif %}
+                </td>
+            </tr>
+
+            <tr>
+                <td colspan="2" style="border: 1px solid black;"><b>Letter No.:</b> SPHN / <span id="club_name_num">{{
+                        club_name }}</span> / 2026-2027</td>
+                <td colspan="2" style="text-align:right; border: 1px solid black;"><b>Letter Date:</b> <span
+                        id="date_str" contenteditable="{{ 'false' if event.event_finished else 'true' }}">{{ date_str }}</span></td>
+            </tr>
+
+            <tr>
+                <th style="text-align:center; border: 1px solid black;">SL.No.</th>
+                <th style="text-align:center; border: 1px solid black;">PARTICULARS</th>
+                <th colspan="2" style="text-align:center; border: 1px solid black;">DETAILS</th>
+            </tr>
+
+            <tr>
+                <td style="text-align:center; border: 1px solid black;">1</td>
+                <td style="border: 1px solid black;">Club Name</td>
+                <td colspan="2" style="border: 1px solid black;"><b>{{ club_name }}</b></td>
+            </tr>
+            <tr>
+                <td style="text-align:center; border: 1px solid black;">2</td>
+                <td style="border: 1px solid black;">Title of the PROGRAM</td>
+                <td id="title" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ program_title }}
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align:center; border: 1px solid black;">3</td>
+                <td style="border: 1px solid black;">Program Date & Place</td>
+                <td id="program_date_place" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{
+                    program_date_place }}</td>
+            </tr>
+
+            <tr>
+                <td rowspan="7" style="text-align:center; border: 1px solid black;">4</td>
+                <td style="border: 1px solid black;">A. Resource Person Name</td>
+                <td id="resource_person" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{
+                    resource_person }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">B. Date of Appointment</td>
+                <td id="appointment_date" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{
+                    appointment_date }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">C. Mode of Transport Receiving</td>
+                <td id="transport_receive" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{
+                    transport_receive }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">D. Mode of Transport Sending</td>
+                <td id="transport_send" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{
+                    transport_send }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">E. Honoring</td>
+                <td id="honoring" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ honoring }}
+                </td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">&nbsp;&nbsp;&nbsp;i. Memento, Bouquet & Shawl</td>
+                <td id="memento" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ memento }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">&nbsp;&nbsp;&nbsp;ii. Cash</td>
+                <td id="cash" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ cash }}</td>
+            </tr>
+
+            <tr>
+                <td style="text-align:center; border: 1px solid black;">5</td>
+                <td style="border: 1px solid black;">Refreshment: Tiffen/ Lunch for students, parents and Staff</td>
+                <td id="refreshment" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ refreshment
+                    }}</td>
+            </tr>
+
+            <tr>
+                <td rowspan="5" style="text-align:center; border: 1px solid black;">6</td>
+                <td style="border: 1px solid black;">Invitation & Flex Designing</td>
+                <td colspan="2" style="background:#f9fafb; border: 1px solid black;"></td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">A. Printing Invitation, Posters, Models</td>
+                <td id="printing" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ printing }}
+                </td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">B. Invitation Distribution (Post & Person)</td>
+                <td id="distribution" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{
+                    distribution }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">C. Flex Model & Size (Welcome & Stage)</td>
+                <td id="flex" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ flex }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">D. Digital Media (Pre, Event, Post)</td>
+                <td id="digital_media" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ news }}
+                </td>
+            </tr>
+
+            <tr>
+                <td rowspan="4" style="text-align:center; border: 1px solid black;">7</td>
+                <td style="border: 1px solid black;"><b>Reception things requirement</b></td>
+                <td colspan="2" style="background:#f9fafb; border: 1px solid black;"></td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">A. Table & Table Cloth, Tray</td>
+                <td id="reception_tables" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">--</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">B. Sandal, Kungumam, Coconut…..</td>
+                <td id="sandal" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ sandal }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">C. Sweet boxes, Paneer bottle/spray</td>
+                <td id="sweets" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ sweets }}</td>
+            </tr>
+
+            <tr>
+                <td rowspan="6" style="text-align:center; border: 1px solid black;">8</td>
+                <td style="border: 1px solid black;"><b>Hall & Seating arrangements</b></td>
+                <td colspan="2" style="background:#f9fafb; border: 1px solid black;"></td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">A. No of Students</td>
+                <td id="participants" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ students }}
+                </td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">B. No of Chairs on the stage</td>
+                <td id="chairs" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ chairs }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">C. Mic and Speaker Arrangements</td>
+                <td id="mic" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ mic }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">D. Internet arrangements (if any)</td>
+                <td id="internet" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ internet }}
+                </td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">E. Others (Name plate, Flower, water etc.,)</td>
+                <td id="others" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ others }}</td>
+            </tr>
+
+            <tr>
+                <td rowspan="5" style="text-align:center; border: 1px solid black;">9</td>
+                <td style="border: 1px solid black;"><b>Advertisement</b></td>
+                <td colspan="2" style="background:#f9fafb; border: 1px solid black;"></td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">A. Photographer time</td>
+                <td id="photographer" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">--</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">B. Daily News</td>
+                <td id="news" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ news }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">C. Before and During the PGM</td>
+                <td id="before" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ before }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">D. After the PROGRAM</td>
+                <td id="after" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{ after }}</td>
+            </tr>
+
+            <tr>
+                <td rowspan="4" style="text-align:center; border: 1px solid black;">10</td>
+                <td style="border: 1px solid black;"><b>Feedback Details</b></td>
+                <td colspan="2" style="background:#f9fafb; border: 1px solid black;"></td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">1. Feedback notes for Guest</td>
+                <td id="guest_feedback" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{
+                    guest_feedback }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">2. Students with Google form</td>
+                <td id="student_feedback" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{
+                    student_feedback }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">3. Organizers</td>
+                <td id="organizer_feedback" colspan="2" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="border: 1px solid black;">{{
+                    organizer_feedback }}</td>
+            </tr>
+            <tr>
+                <td colspan="4" class="notice-text">
+                    *** Current event permission will be given only after report submission
+                </td>
+            </tr>
+
+            <tr>
+                <td colspan="2" style="padding: 12px; vertical-align: top; border: 1px solid black; height: 120px;">
+                    <b style="font-size: 13px;">Is the previous Event Report Document Submitted?</b>
+                    <div style="margin-top: 15px;">
+                        <span
+                            style="border: 1px solid black; padding: 4px 15px; font-weight: bold; background: #f0fdf4; margin-right: 15px; display: inline-block;">YES</span>
+                        <span
+                            style="border: 1px solid black; padding: 4px 15px; font-weight: bold; display: inline-block;">NO</span>
+                    </div>
+                </td>
+
+                <td colspan="2"
+                    style="vertical-align: middle; padding: 20px 0; text-align: center; border: 1px solid black; height: 120px;">
+                    <table style="width: 90%; margin: 0 auto; border: none !important; table-layout: fixed;">
+                        <tr style="border: none !important;">
+                            <td
+                                style="border: none !important; text-align: center; line-height: 1.4; vertical-align: middle;">
+                                <b>Club President /</b><br><b>Secretary</b>
+                            </td>
+                            <td style="border: none !important; text-align: center; vertical-align: middle;">
+                                <b>Mentor</b>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+
+            <tr>
+                <td colspan="2" style="padding: 15px; vertical-align: top; border: 1px solid black;">
+                    <b>Description:</b><br>
+                    <div id="description" contenteditable="{{ 'false' if event.event_finished else 'true' }}" style="margin-top: 8px; min-height: 80px;">{{
+                        description if description and description != "None" else "" }}</div>
+                </td>
+                <td colspan="2"
+                    style="padding: 15px; vertical-align: bottom; height: 120px; text-align: center; border: 1px solid black;">
+                    <b>Chief Coordinator</b>
+                </td>
+            </tr>
+        </table>
+
+        <table class="bottom" style="border: none !important; margin-top: 20px;">
+            <tr style="border: none !important;">
+                <td style="border: none !important;">Secretary</td>
+                <td style="border: none !important;">Principal</td>
+                <td style="border: none !important;">AO</td>
+                <td style="border: none !important;">FM</td>
+            </tr>
+        </table>
+
+        <div style="font-size:12px; line-height: 1.6; margin-top: 20px;">
+            <b>*This Document is to be furnished before 3 working days to the day of the Event</b><br>
+            <b>Note: Please furnish the information which is relevant not covered above.</b>
+        </div>
+    </div>
+
+    <div id="toast">Details saved successfully!</div>
+
+    <!-- Edit Core Details Modal -->
+    <div id="editCoreModal" class="modal-overlay">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem;">
+                <h3 style="margin:0;">Edit Overall Event Details</h3>
+                <button onclick="toggleModal('editCoreModal', false)" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            
+            <form id="coreDetailsForm">
+                <input type="hidden" name="club_id" value="{{ club_id }}">
+                <input type="hidden" name="event_id" value="{{ event_id }}">
+                
+                <div class="form-group">
+                    <label class="form-label">Event Title</label>
+                    <input type="text" name="title" class="form-input" value="{{ program_title }}">
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                    <div class="form-group">
+                        <label class="form-label">Date</label>
+                        <input type="date" name="date" class="form-input" value="{{ event.date }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Time</label>
+                        <input type="time" name="time" class="form-input" value="{{ event.time }}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Venue</label>
+                    <input type="text" name="venue" class="form-input" value="{{ event.venue }}">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Change Poster (Image)</label>
+                    <input type="file" name="poster" class="form-input" accept="image/*">
+                </div>
+
+                <button type="submit" class="fab fab-primary" style="width:100%; justify-content:center; margin-top:1rem; padding:15px;">
+                    <i class="fas fa-save"></i> Update Event Settings
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleModal(id, show) {
+            document.getElementById(id).style.display = show ? 'flex' : 'none';
+        }
+
+        document.getElementById('coreDetailsForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            try {
+                const csrf = document.querySelector('meta[name="csrf-token"]').content;
+                const res = await fetch('/api/events/update_details', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrf },
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('Event settings updated! Reloading...');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (err) {
+                alert('Connection error');
+            }
+        };
+
+        async function saveDetails() {
+            const fields = [
+                'title', 'program_date_place', 'resource_person', 'appointment_date',
+                'transport_receive', 'transport_send', 'honoring', 'memento', 'cash',
+                'refreshment', 'printing', 'distribution', 'flex', 'sandal', 'sweets',
+                'participants', 'chairs', 'mic', 'internet', 'others', 'news', 'before',
+                'after', 'guest_feedback', 'student_feedback', 'organizer_feedback',
+                'description', 'date_str'
+            ];
+
+            const data = { club_id: "{{ club_id }}", event_id: "{{ event_id }}" };
+            fields.forEach(f => {
+                const el = document.getElementById(f);
+                if (el) data[f] = el.innerText.trim();
+            });
+
+            const toast = document.getElementById('toast');
+            try {
+                const csrf = document.querySelector('meta[name="csrf-token"]').content;
+                const res = await fetch('/api/events/save_permission', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrf
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (result.success) {
+                    toast.innerText = '✓ Details saved successfully!';
+                    toast.style.background = '#059669';
+                } else {
+                    toast.innerText = '✗ Error: ' + result.message;
+                    toast.style.background = '#dc2626';
+                }
+            } catch (e) {
+                toast.innerText = '✗ Network error occurred';
+                toast.style.background = '#dc2626';
+            }
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+
+        async function deleteEvent() {
+            if (!confirm('Are you sure you want to delete this event permission letter?')) return;
+            try {
+                const csrf = document.querySelector('meta[name="csrf-token"]').content;
+                const res = await fetch(`/api/events/delete/{{ club_id }}/{{ event_id }}`, { 
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrf }
+                });
+                const json = await res.json();
+                if (json.success) {
+                    alert('Event deleted successfully');
+                    window.location.href = '/admin';
+                } else {
+                    alert('Error: ' + json.message);
+                }
+            } catch (e) {
+                alert('Network error occurred');
+            }
+        }
+
+        function downloadPDF() {
+            const element = document.getElementById('permissionLetter');
+
+            const opt = {
+                margin: [10, 5, 15, 5],
+                filename: `Permission_Letter_{{ program_title|replace(' ', '_') }}.pdf`,
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: {
+                    scale: 3,
+                    useCORS: true,
+                    scrollY: 0
+                },
+                jsPDF: {
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'portrait'
+                },
+                pagebreak: {
+                    mode: ['css', 'legacy']
+                }
+            };
+
+            html2pdf().set(opt).from(element).toPdf().get('pdf').then(function (pdf) {
+                const totalPages = pdf.internal.getNumberOfPages();
+                for (let i = 1; i <= totalPages; i++) {
+                    pdf.setPage(i);
+                    pdf.setFontSize(10);
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
+                    pdf.text(`Page ${i} of ${totalPages}`, pageWidth - 40, pageHeight - 8);
+                }
+            }).save();
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,21 @@
+[
+    {
+        "id": "tf-ev-94598B82",
+        "techfest_id": "9d45f923-c80c-4457-832c-a1342991c7b6",
+        "name": "nivas",
+        "description": "sfvgkubjrsfvg",
+        "sub_event_type": "ideathon",
+        "payment_type": "free",
+        "registration_fee": 0,
+        "min_team_size": 2,
+        "max_team_size": 4,
+        "status": "active",
+        "requirements": [],
+        "scoring_criteria": [
+            "Presentation",
+            "Innovation",
+            "Implementation"
+        ],
+        "updated_at": "2026-04-27T21:29:33.583450"
+    }
+]

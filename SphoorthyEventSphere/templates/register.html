@@ -1,0 +1,223 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container" style="max-width: 800px;">
+    <div class="card glass" style="padding: 2.5rem;">
+        <h2 style="margin-bottom: 0.5rem;">Join the Event</h2>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;">Registering for: <strong style="color: var(--text-main)">{{ event.title }}</strong></p>
+        
+        <form id="regForm" enctype="multipart/form-data">
+            <input type="hidden" name="event_id" value="{{ event.id }}">
+            <input type="hidden" name="club_id" value="{{ club_id }}">
+            
+            <div class="grid-3" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div class="form-group">
+                    <label>Roll Number</label>
+                    <input type="text" name="roll_number" value="{{ user.roll_number }}" readonly style="background: rgba(255,255,255,0.02); color: var(--text-muted);">
+                </div>
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" name="name" value="{{ user.name }}" readonly style="background: rgba(255,255,255,0.02); color: var(--text-muted);">
+                </div>
+                <div class="form-group">
+                    <label>Email ID <span style="color:red;">*</span></label>
+                    <input type="email" name="email" value="{{ user.email }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number <span style="color:red;">*</span></label>
+                    <input type="text" name="phone" value="{{ user.phone }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Branch <span style="color:red;">*</span></label>
+                    <input type="text" name="branch" value="{{ user.branch or '' }}" required placeholder="e.g. CSE">
+                </div>
+                <div class="form-group">
+                    <label>Year <span style="color:red;">*</span></label>
+                    <select name="year" required>
+                        <option value="">Select Year</option>
+                        <option value="1" {% if user.year == '1' %}selected{% endif %}>1st Year</option>
+                        <option value="2" {% if user.year == '2' %}selected{% endif %}>2nd Year</option>
+                        <option value="3" {% if user.year == '3' %}selected{% endif %}>3rd Year</option>
+                        <option value="4" {% if user.year == '4' %}selected{% endif %}>4th Year</option>
+                    </select>
+                </div>
+            </div>
+
+            <input type="hidden" name="reg_type" value="{{ event.registration_type | default('individual') }}">
+            {% if event.event_type == 'team' %}
+            <div class="form-group">
+                <label>Team Role <span style="color:red;">*</span></label>
+                <select name="team_role" id="teamRole" required onchange="toggleTeamFields(this.value)">
+                    <option value="">Select Role</option>
+                    <option value="leader">Team Leader</option>
+                    <option value="member">Team Member</option>
+                </select>
+            </div>
+            <div class="grid-3" id="teamLeaderFields" style="display: none; grid-template-columns: 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>Team Name <span style="color:red;">*</span></label>
+                    <input type="text" name="team_name" placeholder="Enter Team Name">
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Submit to generate Team ID. Share with members so they can join.</p>
+            </div>
+            <div class="grid-3" id="teamMemberFields" style="display: none; grid-template-columns: 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>Select Team <span style="color:red;">*</span></label>
+                    <select name="team_id">
+                        <option value="">-- Choose your team --</option>
+                        {% for t in teams %}
+                        <option value="{{ t.team_id }}">{{ t.team_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            {% endif %}
+
+            <div id="payment-section" style="margin-top: 2rem; display: {% if event.payment_type == 'paid' %}block{% else %}none{% endif %};">
+                <div class="section-label"><i class="fas fa-credit-card"></i> Payment Details</div>
+                <div class="glass" style="padding: 1.5rem; border-left: 4px solid var(--primary);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <span style="color: var(--text-muted); font-size: 0.9rem;">Registration Fee</span>
+                        <span id="fee-amount" style="font-size: 1.25rem; font-weight: 800; color: #fff;">₹{{ event.fee }}</span>
+                    </div>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin: 0;">
+                        This event requires a registration fee. Payments are processed securely via our institutional Razorpay gateway.
+                    </p>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">
+                Complete Registration
+            </button>
+        </form>
+    </div>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+const eventId = "{{ event.id }}";
+const clubId = "{{ club_id }}";
+const isPaid = {{ 'true' if event.payment_type == 'paid' else 'false' }};
+const regType = "{{ event.registration_type or 'individual' }}";
+function toggleTeamFields(val) {
+    const lF = document.getElementById('teamLeaderFields');
+    const mF = document.getElementById('teamMemberFields');
+    const paySec = document.getElementById('payment-section');
+    
+    if (lF) {
+        lF.style.display = val === 'leader' ? 'grid' : 'none';
+        lF.querySelectorAll('input').forEach(i => i.required = val === 'leader');
+    }
+    if (mF) {
+        mF.style.display = val === 'member' ? 'grid' : 'none';
+        mF.querySelectorAll('select').forEach(s => s.required = val === 'member');
+    }
+    
+    // If it's a team member, they don't pay individually (Leader pays for team)
+    if (paySec && isPaid) {
+        paySec.style.display = val === 'member' ? 'none' : 'block';
+    }
+}
+
+document.getElementById('regForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+
+    // Validation
+    const required = ['name', 'email', 'phone', 'roll_number', 'branch', 'year'];
+    for (const field of required) {
+        if (!formData.get(field)) {
+            Swal.fire('Missing Information', `Please fill in your ${field.replace('_', ' ')}.`, 'warning');
+            return;
+        }
+    }
+
+    const regData = Object.fromEntries(formData.entries());
+    regData.club_id = clubId;
+    regData.event_id = eventId;
+
+    if (isPaid) {
+        initiateRazorpay(regData);
+    } else {
+        submitRegistration(regData);
+    }
+}
+
+async function initiateRazorpay(regData) {
+    Swal.showLoading();
+    try {
+        const csrf = document.querySelector('meta[name="csrf-token"]').content;
+        const res = await fetch('/api/payment/create-order', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrf
+            },
+            body: JSON.stringify({ club_id: clubId, event_id: eventId })
+        });
+        
+        const order = await res.json();
+        if (!order.success) {
+            Swal.fire('Payment Error', order.message, 'error');
+            return;
+        }
+
+        const options = {
+            "key": order.key_id,
+            "amount": order.amount,
+            "currency": "INR",
+            "name": "{{ club.name }}",
+            "description": "{{ event.title }} Registration",
+            "order_id": order.order_id,
+            "handler": function (response) {
+                regData.payment_details = {
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_signature: response.razorpay_signature
+                };
+                submitRegistration(regData);
+            },
+            "prefill": {
+                "name": regData.name,
+                "email": regData.email,
+                "contact": regData.phone
+            },
+            "theme": { "color": "#6366f1" }
+        };
+        const rzp = new Razorpay(options);
+        rzp.open();
+        Swal.close();
+    } catch (e) {
+        Swal.fire('Error', 'Failed to initiate payment gateway.', 'error');
+    }
+}
+
+async function submitRegistration(regData) {
+    Swal.showLoading();
+    try {
+        const csrf = document.querySelector('meta[name="csrf-token"]').content;
+        const res = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrf
+            },
+            body: JSON.stringify(regData)
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+            localStorage.setItem('reg_email', regData.email);
+            localStorage.setItem('reg_phone', regData.phone);
+            window.location.href = `/success/${clubId}/${data.reg_id}`;
+        } else {
+            Swal.fire('Registration Failed', data.message, 'error');
+        }
+    } catch (e) {
+        Swal.fire('Error', 'An unexpected error occurred.', 'error');
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,439 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+  :root {
+    --ht-purple: #8b5cf6;
+    --ht-indigo: #6366f1;
+    --ht-teal: #14b8a6;
+    --ht-gold: #f59e0b;
+    --ht-green: #10b981;
+    --ht-pink: #ec4899;
+  }
+  .ht-main { padding: 2.5rem 1.5rem; max-width: 1200px; margin: 0 auto; }
+  .eh-back { display: inline-flex; align-items: center; gap: .6rem; color: rgba(255,255,255,.5); font-size: .82rem; text-decoration: none; margin-bottom: 2rem; padding: .5rem .9rem; border-radius: 10px; border: 1px solid rgba(255,255,255,.07); transition: .2s; }
+  .eh-back:hover { color: #fff; background: rgba(255,255,255,.05); }
+
+  .ht-hero { background: linear-gradient(135deg, rgba(99,102,241,.12), rgba(139,92,246,.08)); border: 1px solid rgba(99,102,241,.2); border-radius: 28px; padding: 2.5rem; margin-bottom: 2.5rem; display: flex; gap: 2rem; align-items: center; flex-wrap: wrap; }
+  .ht-hero-banner { width: 90px; height: 90px; border-radius: 18px; object-fit: cover; flex-shrink: 0; }
+  .ht-hero-placeholder { width: 90px; height: 90px; border-radius: 18px; background: rgba(99,102,241,.2); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; flex-shrink: 0; }
+  .ht-hero-title { font-size: 1.9rem; font-weight: 800; margin-bottom: .4rem; background: linear-gradient(135deg, #fff, rgba(255,255,255,.7)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .ht-hero-meta { display: flex; gap: 1rem; flex-wrap: wrap; font-size: .82rem; color: rgba(255,255,255,.5); }
+  .ht-hero-meta span { display: flex; align-items: center; gap: .4rem; }
+
+  .ht-modules { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
+  .ht-module { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 22px; padding: 1.75rem; text-decoration: none; color: inherit; transition: all .25s; display: flex; flex-direction: column; gap: 1rem; position: relative; overflow: hidden; }
+  .ht-module::before { content: ''; position: absolute; top: 0; right: 0; width: 80px; height: 80px; border-radius: 50%; transform: translate(30%, -30%); opacity: .08; background: var(--mod-color); }
+  .ht-module:hover { border-color: var(--mod-color); transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,.25); }
+  .ht-module-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; background: var(--icon-bg); color: var(--mod-color); }
+  .ht-module-title { font-size: 1.1rem; font-weight: 700; }
+  .ht-module-desc { font-size: .8rem; color: rgba(255,255,255,.45); line-height: 1.6; }
+  .ht-module-arrow { margin-top: auto; display: flex; align-items: center; gap: .4rem; font-size: .78rem; font-weight: 600; opacity: .6; transition: opacity .2s; color: var(--mod-color); }
+  .ht-module:hover .ht-module-arrow { opacity: 1; }
+
+  /* Settings panel */
+  .ht-settings-toggle { display: flex; align-items: center; gap: .6rem; cursor: pointer; color: rgba(255,255,255,.45); font-size: .82rem; padding: .6rem 1rem; border-radius: 10px; border: 1px solid rgba(255,255,255,.07); width: fit-content; margin-bottom: 1.25rem; transition: .2s; background: rgba(255,255,255,.02); user-select: none; }
+  .ht-settings-toggle:hover { color: #fff; border-color: rgba(255,255,255,.15); }
+  .ht-settings-panel { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 1.75rem; display: none; }
+  .ht-settings-panel.open { display: block; }
+  .toggle-row { display: flex; align-items: flex-start; justify-content: space-between; padding: .85rem 0; border-bottom: 1px solid rgba(255,255,255,.06); gap: 1rem; }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-label { font-size: .88rem; font-weight: 600; }
+  .toggle-sub { font-size: .75rem; color: rgba(255,255,255,.4); margin-top: .25rem; line-height: 1.55; }
+  .toggle-switch { position: relative; width: 44px; height: 24px; cursor: pointer; flex-shrink: 0; margin-top: .15rem; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; inset: 0; background: rgba(255,255,255,.12); border-radius: 12px; transition: .3s; }
+  .toggle-slider:before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .3s; }
+  .toggle-switch input:checked + .toggle-slider { background: var(--ht-green); }
+  .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
+
+  /* Active badge on portal tile */
+  .submission-active-badge { position: absolute; top: 1rem; right: 1rem; background: rgba(16,185,129,.15); color: #10b981; border: 1px solid rgba(16,185,129,.3); border-radius: 6px; padding: .15rem .5rem; font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+  /* Disabled state for portal tile */
+  .ht-module--disabled { opacity: .5; pointer-events: none; filter: grayscale(.4); }
+  .ht-module--active-portal { border-color: rgba(34,211,238,.3); }
+
+</style>
+
+<div class="dashboard-layout">
+  {% include 'sidebar_em.html' %}
+
+  <main class="main-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      {% if user.role != 'event_admin' %}
+      <a href="/em/dashboard" class="eh-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+      {% else %}
+      <div></div>
+      {% endif %}
+      <a href="/api/logout" class="eh-back" style="color:#f87171;border-color:rgba(239,68,68,.2);">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </a>
+    </div>
+
+    <div class="ht-hero">
+      {% if event.banner %}
+      <img src="/static/uploads/em/banners/{{ event.banner }}" class="ht-hero-banner" alt="Banner">
+      {% else %}
+      <div class="ht-hero-placeholder">🚀</div>
+      {% endif %}
+      <div style="flex:1;">
+        <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:.5rem;">
+          <span style="background:rgba(139,92,246,.15);color:#8b5cf6;border:1px solid rgba(139,92,246,.25);padding:.25rem .65rem;border-radius:8px;font-size:.68rem;font-weight:700;text-transform:uppercase;"><i class="fas fa-rocket"></i> Hackathon</span>
+          <span style="background:rgba(20,184,166,.12);color:#14b8a6;border:1px solid rgba(20,184,166,.2);padding:.25rem .65rem;border-radius:8px;font-size:.68rem;font-weight:700;text-transform:uppercase;">{{ event.status | upper }}</span>
+          {% if event.submission_portal_enabled %}
+          <span style="background:rgba(16,185,129,.12);color:#10b981;border:1px solid rgba(16,185,129,.2);padding:.25rem .65rem;border-radius:8px;font-size:.68rem;font-weight:700;text-transform:uppercase;"><i class="fas fa-door-open"></i> Submission Open</span>
+          {% endif %}
+        </div>
+        <h1 class="ht-hero-title">{{ event.title }}</h1>
+        <div class="ht-hero-meta">
+          {% if event.date %}<span><i class="fas fa-calendar-alt"></i> {{ event.date }}</span>{% endif %}
+          {% if event.venue %}<span><i class="fas fa-map-marker-alt"></i> {{ event.venue }}</span>{% endif %}
+        </div>
+      </div>
+    </div>
+
+  <h2 style="font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.35);margin-bottom:1.25rem;">Management Modules</h2>
+  <div class="ht-modules">
+    <!-- Registrations -->
+    <a href="/em/hackathon/{{ event.id }}/registrations" class="ht-module" style="--mod-color:#06b6d4;--icon-bg:rgba(6,182,212,.12);">
+      <div class="ht-module-icon"><i class="fas fa-users"></i></div>
+      <div>
+        <div class="ht-module-title">Team Registrations</div>
+        <div class="ht-module-desc">Manage teams, verify payments, download team QRs, and see submitted projects.</div>
+      </div>
+      <div class="ht-module-arrow">View Registrations <i class="fas fa-arrow-right"></i></div>
+    </a>
+
+    <!-- Analytics -->
+    <a href="/em/hackathon/{{ event.id }}/analytics" class="ht-module" style="--mod-color:#8b5cf6;--icon-bg:rgba(139,92,246,.12);">
+      <div class="ht-module-icon"><i class="fas fa-chart-pie"></i></div>
+      <div>
+        <div class="ht-module-title">Analytics</div>
+        <div class="ht-module-desc">View total teams, attendee counts, revenue insights, and check-in rates.</div>
+      </div>
+      <div class="ht-module-arrow">View Analytics <i class="fas fa-arrow-right"></i></div>
+    </a>
+
+    <!-- Scanner -->
+    <a href="/em/hackathon/{{ event.id }}/scanner" class="ht-module" style="--mod-color:#10b981;--icon-bg:rgba(16,185,129,.12);">
+      <div class="ht-module-icon"><i class="fas fa-qrcode"></i></div>
+      <div>
+        <div class="ht-module-title">QR Scanner</div>
+        <div class="ht-module-desc">Scan team QR codes to grant venue access and mark teams as checked-in.</div>
+      </div>
+      <div class="ht-module-arrow">Open Scanner <i class="fas fa-arrow-right"></i></div>
+    </a>
+
+    <!-- Bulk Email -->
+    <a href="/em/hackathon/{{ event.id }}/bulk-email" class="ht-module" style="--mod-color:#ec4899;--icon-bg:rgba(236,72,153,.12);">
+      <div class="ht-module-icon"><i class="fas fa-envelope-open-text"></i></div>
+      <div>
+        <div class="ht-module-title">Bulk Email</div>
+        <div class="ht-module-desc">Send email updates, alerts, or QR codes to all registered team leaders.</div>
+      </div>
+      <div class="ht-module-arrow">Send Emails <i class="fas fa-arrow-right"></i></div>
+    </a>
+
+    <!-- Evaluators -->
+    <a href="/em/hackathon/{{ event.id }}/evaluators" class="ht-module" style="--mod-color:#f59e0b;--icon-bg:rgba(245,158,11,.12);">
+      <div class="ht-module-icon"><i class="fas fa-gavel"></i></div>
+      <div>
+        <div class="ht-module-title">Evaluators</div>
+        <div class="ht-module-desc">Manage evaluator assignments, roles, and review submitted scores.</div>
+      </div>
+      <div class="ht-module-arrow">Manage Evaluators <i class="fas fa-arrow-right"></i></div>
+    </a>
+
+    <!-- Attendance -->
+    <a href="/em/hackathon/{{ event.id }}/attendance" class="ht-module" style="--mod-color:#f43f5e;--icon-bg:rgba(244,63,94,.12);">
+      <div class="ht-module-icon"><i class="fas fa-clipboard-check"></i></div>
+      <div>
+        <div class="ht-module-title">Attendance</div>
+        <div class="ht-module-desc">View department-wise checked-in students and forward PDFs to HODs.</div>
+      </div>
+      <div class="ht-module-arrow">View Attendance <i class="fas fa-arrow-right"></i></div>
+    </a>
+
+    <!-- Rounds Setup -->
+    <a href="/em/hackathon/{{ event.id }}/rounds" class="ht-module" style="--mod-color:#eab308;--icon-bg:rgba(234,179,8,.12);">
+      <div class="ht-module-icon"><i class="fas fa-layer-group"></i></div>
+      <div>
+        <div class="ht-module-title">Evaluation Rounds</div>
+        <div class="ht-module-desc">Define scoring criteria and multiple rounds (e.g. Problem Statement, Final Pitch).</div>
+      </div>
+      <div class="ht-module-arrow">Setup Rounds <i class="fas fa-arrow-right"></i></div>
+    </a>
+
+    <!-- Leaderboard -->
+    <a href="/em/hackathon/{{ event.id }}/leaderboard" class="ht-module" style="--mod-color:#f97316;--icon-bg:rgba(249,115,22,.12);">
+      <div class="ht-module-icon"><i class="fas fa-trophy"></i></div>
+      <div>
+        <div class="ht-module-title">Live Leaderboard</div>
+        <div class="ht-module-desc">Present live team rankings to the audience with interactive filters.</div>
+      </div>
+      <div class="ht-module-arrow">View Leaderboard <i class="fas fa-arrow-right"></i></div>
+    </a>
+
+    <!-- Project Submission Portal -->
+    <a href="/em/hackathon/{{ event.id }}/project-submit"
+       class="ht-module {% if not event.submission_portal_enabled %}ht-module--disabled{% else %}ht-module--active-portal{% endif %}"
+       style="--mod-color:#22d3ee;--icon-bg:rgba(34,211,238,.12);">
+      {% if event.submission_portal_enabled %}
+      <span class="submission-active-badge"><i class="fas fa-circle" style="font-size:.4rem;vertical-align:middle;margin-right:.3rem;"></i>LIVE</span>
+      {% endif %}
+      <div class="ht-module-icon"><i class="fas fa-file-upload"></i></div>
+      <div>
+        <div class="ht-module-title">Project Submission Portal</div>
+        <div class="ht-module-desc">
+          {% if event.submission_portal_enabled %}
+            Teams enter their Team ID here and submit evaluation details — problem statement, solution, tech stack &amp; presentation.
+          {% else %}
+            Enable from Hub Settings below. Once enabled, teams can log in and submit their evaluation details for review.
+          {% endif %}
+        </div>
+      </div>
+      <div class="ht-module-arrow">
+        {% if event.submission_portal_enabled %}Open Portal{% else %}Disabled — Enable in Settings{% endif %}
+        <i class="fas fa-arrow-right"></i>
+      </div>
+    </a>
+  </div>
+
+  <!-- ─── Settings Panel ──────────────────────────────────────────────────── -->
+  <div class="ht-settings-toggle" id="settingsToggleBtn" onclick="toggleSettings()">
+    <i class="fas fa-cog"></i> Hub Settings
+    <i class="fas fa-chevron-down" id="settingsChevron" style="margin-left:.5rem;transition:.25s;"></i>
+  </div>
+    <div class="toggle-row">
+      <div style="flex:1;">
+        <div class="toggle-label">🌐 Allow External Students</div>
+        <div class="toggle-sub">
+          When enabled, students from other colleges can register for this hackathon.
+          They will be able to enter their college details and student IDs manually.
+        </div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="toggleExternal"
+          {% if event.allow_external %}checked{% endif %}
+          onchange="updateHackathonSetting('allow_external', this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="toggle-row">
+      <div style="flex:1;">
+        <div class="toggle-label">📤 Project Submission Portal</div>
+        <div class="toggle-sub">
+          When enabled, the <strong style="color:#22d3ee;">Project Submission Portal</strong> tile becomes active.
+          A volunteer or the team itself can enter the Team ID, auto-fetch team info, and submit the evaluation details
+          (problem statement, solution, software/hardware type, tech stack, and presentation file) to be reviewed by evaluators.
+        </div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="toggleSubmission"
+          {% if event.submission_portal_enabled %}checked{% endif %}
+          onchange="toggleSubmissionPortal(this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="toggle-row">
+      <div style="flex:1;">
+        <div class="toggle-label">🏆 Live Leaderboard Visibility</div>
+        <div class="toggle-sub">
+          When enabled, the <strong style="color:#f97316;">Leaderboard</strong> becomes visible to participants.
+          Keep this disabled during the hackathon and enable it only when you want teams to see the final or intermediate standings.
+        </div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="toggleLeaderboard"
+          {% if event.leaderboard_enabled %}checked{% endif %}
+          onchange="toggleLeaderboardVisibility(this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <!-- Event App Settings -->
+    <div style="margin-top:2rem;padding-top:2rem;border-top:1px solid rgba(255,255,255,.1);">
+      <h3 style="font-size:.9rem;margin-bottom:1.5rem;color:var(--ht-purple);"><i class="fas fa-plug"></i> Event App Configuration</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+        <div>
+          <label style="display:block;font-size:.75rem;color:rgba(255,255,255,.4);margin-bottom:.5rem;">Razorpay Key ID</label>
+          <input type="text" id="eh-rzp-id" value="{{ settings.razorpay_key_id or '' }}" placeholder="rzp_live_..."
+            style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:.75rem;color:#fff;font-size:.85rem;">
+        </div>
+        <div>
+          <label style="display:block;font-size:.75rem;color:rgba(255,255,255,.4);margin-bottom:.5rem;">Razorpay Key Secret</label>
+          <input type="password" id="eh-rzp-secret" value="{{ settings.razorpay_key_secret or '' }}" placeholder="••••••••••••"
+            style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:.75rem;color:#fff;font-size:.85rem;">
+        </div>
+      </div>
+      <div style="margin-top:1.5rem;">
+        <label style="display:block;font-size:.75rem;color:rgba(255,255,255,.4);margin-bottom:.5rem;">SMTP Email Address</label>
+        <input type="email" id="eh-smtp-user" value="{{ settings.smtp_user or '' }}" placeholder="noreply@college.edu"
+          style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:.75rem;color:#fff;font-size:.85rem;">
+      </div>
+      <div style="margin-top:1rem;">
+        <label style="display:block;font-size:.75rem;color:rgba(255,255,255,.4);margin-bottom:.5rem;">SMTP App Password</label>
+        <input type="password" id="eh-smtp-pass" value="{{ settings.smtp_password or '' }}" placeholder="•••• •••• •••• ••••"
+          style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:.75rem;color:#fff;font-size:.85rem;">
+      </div>
+      <button onclick="saveHubSettings()" style="margin-top:2rem;width:100%;background:var(--ht-purple);color:#fff;border:none;padding:1rem;border-radius:12px;font-weight:700;cursor:pointer;transition:.2s;">
+        <i class="fas fa-save"></i> Save Event App Settings
+      </button>
+    </div>
+  </div>
+
+  <div id="settingsMsg" style="display:none;padding:.8rem 1rem;border-radius:12px;font-size:.84rem;margin-top:1rem;"></div>
+  </main>
+</div>
+
+<script>
+function toggleSettings() {
+  const panel = document.getElementById('settingsPanel');
+  const chevron = document.getElementById('settingsChevron');
+  panel.classList.toggle('open');
+  chevron.style.transform = panel.classList.contains('open') ? 'rotate(180deg)' : '';
+}
+
+async function toggleSubmissionPortal(enabled) {
+  const msg = document.getElementById('settingsMsg');
+  msg.style.display = 'none';
+  try {
+    const r = await fetch('/em/api/hackathon/{{ event.id }}/toggle-submission', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token() }}'
+      },
+      body: JSON.stringify({ enabled })
+    });
+    const d = await r.json();
+    if (d.success) {
+      msg.style.display = 'block';
+      msg.style.background = enabled ? 'rgba(16,185,129,.1)' : 'rgba(245,158,11,.08)';
+      msg.style.border = enabled ? '1px solid rgba(16,185,129,.25)' : '1px solid rgba(245,158,11,.2)';
+      msg.style.color = enabled ? '#10b981' : '#f59e0b';
+      msg.textContent = enabled
+        ? '✅ Submission portal is now OPEN. Teams can submit their evaluation details.'
+        : '🔒 Submission portal closed. No further submissions will be accepted.';
+      setTimeout(() => location.reload(), 1800);
+    } else {
+      throw new Error(d.message || 'Update failed');
+    }
+  } catch(e) {
+    msg.style.display = 'block';
+    msg.style.background = 'rgba(239,68,68,.1)';
+    msg.style.border = '1px solid rgba(239,68,68,.25)';
+    msg.style.color = '#f87171';
+    msg.textContent = '❌ ' + e.message;
+    document.getElementById('toggleSubmission').checked = !enabled;
+  }
+}
+
+async function toggleLeaderboardVisibility(enabled) {
+  const msg = document.getElementById('settingsMsg');
+  msg.style.display = 'none';
+  try {
+    const r = await fetch('/em/api/hackathon/{{ event.id }}/toggle-leaderboard', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token() }}'
+      },
+      body: JSON.stringify({ enabled })
+    });
+    const d = await r.json();
+    if (d.success) {
+      msg.style.display = 'block';
+      msg.style.background = enabled ? 'rgba(16,185,129,.1)' : 'rgba(245,158,11,.08)';
+      msg.style.border = enabled ? '1px solid rgba(16,185,129,.25)' : '1px solid rgba(245,158,11,.2)';
+      msg.style.color = enabled ? '#10b981' : '#f59e0b';
+      msg.textContent = enabled
+        ? '✅ Leaderboard is now VISIBLE to participants.'
+        : '🔒 Leaderboard is now HIDDEN from participants.';
+    } else {
+      throw new Error(d.message || 'Update failed');
+    }
+  } catch(e) {
+    msg.style.display = 'block';
+    msg.style.background = 'rgba(239,68,68,.1)';
+    msg.style.border = '1px solid rgba(239,68,68,.25)';
+    msg.style.color = '#f87171';
+    msg.textContent = '❌ ' + e.message;
+    document.getElementById('toggleLeaderboard').checked = !enabled;
+  }
+}
+async function updateHackathonSetting(key, value) {
+  const msg = document.getElementById('settingsMsg');
+  msg.style.display = 'none';
+  try {
+    const r = await fetch('/em/api/event/{{ event.id }}/update-setting', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token() }}'
+      },
+      body: JSON.stringify({ [key]: value })
+    });
+    const d = await r.json();
+    if (d.success) {
+      msg.style.display = 'block';
+      msg.style.background = 'rgba(16,185,129,.1)';
+      msg.style.border = '1px solid rgba(16,185,129,.25)';
+      msg.style.color = '#10b981';
+      msg.textContent = '✅ Setting updated successfully.';
+      setTimeout(() => msg.style.display = 'none', 3000);
+    } else {
+      throw new Error(d.message || 'Update failed');
+    }
+  } catch(e) {
+    msg.style.display = 'block';
+    msg.style.background = 'rgba(239,68,68,.1)';
+    msg.style.border = '1px solid rgba(239,68,68,.25)';
+    msg.style.color = '#f87171';
+    msg.textContent = '❌ ' + e.message;
+    location.reload();
+  }
+}
+
+async function saveHubSettings() {
+  const data = {
+    razorpay_key_id: document.getElementById('eh-rzp-id').value,
+    razorpay_key_secret: document.getElementById('eh-rzp-secret').value,
+    smtp_user: document.getElementById('eh-smtp-user').value,
+    smtp_password: document.getElementById('eh-smtp-pass').value
+  };
+  const msg = document.getElementById('settingsMsg');
+  msg.style.display = 'block';
+  msg.style.background = 'rgba(99,102,241,.1)';
+  msg.style.color = '#fff';
+  msg.textContent = 'Saving...';
+
+  try {
+    const r = await fetch('/em/api/settings/update', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token() }}'
+      },
+      body: JSON.stringify(data)
+    });
+    const d = await r.json();
+    if (d.success) {
+      msg.style.background = 'rgba(16,185,129,.1)';
+      msg.style.border = '1px solid rgba(16,185,129,.25)';
+      msg.style.color = '#10b981';
+      msg.textContent = '✅ Settings saved successfully!';
+      setTimeout(() => msg.style.display = 'none', 3000);
+    } else {
+      throw new Error(d.message);
+    }
+  } catch(e) {
+    msg.style.background = 'rgba(239,68,68,.1)';
+    msg.style.border = '1px solid rgba(239,68,68,.25)';
+    msg.style.color = '#f87171';
+    msg.textContent = '❌ Error: ' + e.message;
+  }
+}
+</script>
+{% endblock %}

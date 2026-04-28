@@ -1,0 +1,202 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<style>
+  .rv-wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1rem 3rem;
+  }
+
+  /* ── Back bar ─────────────────────────────────────── */
+  .rv-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    text-decoration: none;
+    margin-bottom: 1.75rem;
+    transition: color 0.2s;
+  }
+  .rv-back:hover { color: var(--primary); }
+
+  /* ── Header card ──────────────────────────────────── */
+  .rv-header {
+    background: linear-gradient(135deg,
+      rgba(59,130,246,0.12) 0%,
+      rgba(139,92,246,0.08) 100%);
+    border: 1px solid rgba(59,130,246,0.25);
+    border-radius: 18px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .rv-header-left h1 {
+    font-size: 1.4rem;
+    margin: 0 0 0.3rem;
+  }
+  .rv-header-left p {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--text-muted);
+  }
+  .rv-header-left .rv-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+  .rv-meta span { display: flex; align-items: center; gap: 0.3rem; }
+
+  /* ── Download button ──────────────────────────────── */
+  .rv-dl-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.5rem;
+    background: linear-gradient(135deg, var(--primary), #3b82f6);
+    color: #fff;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: opacity 0.2s, transform 0.15s;
+    white-space: nowrap;
+  }
+  .rv-dl-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+
+  /* ── Viewer area ──────────────────────────────────── */
+  .rv-viewer {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    min-height: 75vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* PDF */
+  .rv-iframe {
+    width: 100%;
+    height: 80vh;
+    border: none;
+    display: block;
+  }
+
+  /* Image */
+  .rv-image {
+    max-width: 100%;
+    max-height: 82vh;
+    object-fit: contain;
+    border-radius: 12px;
+    padding: 1rem;
+  }
+
+  /* Unsupported */
+  .rv-unsupported {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-muted);
+  }
+  .rv-unsupported .icon { font-size: 4rem; margin-bottom: 1rem; }
+  .rv-unsupported h3 { margin: 0 0 0.5rem; color: #fff; }
+  .rv-unsupported p  { margin: 0 0 1.5rem; }
+
+  /* Status badge */
+  .rv-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+  .rv-status.approved { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+  .rv-status.pending  { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+
+  @media (max-width: 600px) {
+    .rv-header { padding: 1rem 1.25rem; }
+    .rv-header-left h1 { font-size: 1.15rem; }
+    .rv-iframe { height: 65vh; }
+  }
+</style>
+
+<div class="rv-wrap">
+
+  <!-- Back navigation -->
+  <a href="javascript:history.back()" class="rv-back">&#8592; Back</a>
+
+  <!-- Header -->
+  <div class="rv-header">
+    <div class="rv-header-left">
+      <h1>&#128196; {{ event.title }} — Report</h1>
+      <p>{{ club.name if club else event.club_id }}</p>
+      <div class="rv-meta">
+        {% if event.date %}
+        <span>&#128197; {{ event.date }}</span>
+        {% endif %}
+        {% if event.venue %}
+        <span>&#128205; {{ event.venue }}</span>
+        {% endif %}
+        <span>
+          {% if event.get('report_approved') %}
+            <span class="rv-status approved">&#10003; Report Approved</span>
+          {% else %}
+            <span class="rv-status pending">&#9203; Pending Review</span>
+          {% endif %}
+        </span>
+      </div>
+    </div>
+
+    <!-- Download button -->
+    <a href="{{ report_url }}" download="{{ report_filename }}" class="rv-dl-btn">
+      &#8595; Download Report
+    </a>
+  </div>
+
+  <!-- Viewer -->
+  <div class="rv-viewer">
+    {% if report_ext == 'pdf' %}
+      <!-- embed has far better cross-browser PDF support than iframe -->
+      <embed
+        class="rv-iframe"
+        src="{{ report_url }}"
+        type="application/pdf"
+        title="Report: {{ event.title }}"
+      >
+
+    {% elif report_ext in ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'] %}
+      <img
+        class="rv-image"
+        src="{{ report_url }}"
+        alt="Report for {{ event.title }}"
+      >
+
+    {% else %}
+      <!-- Unsupported file type – prompt download -->
+      <div class="rv-unsupported">
+        <div class="icon">&#128196;</div>
+        <h3>Preview not available</h3>
+        <p>
+          This report is a <strong>.{{ report_ext }}</strong> file and cannot be
+          previewed directly in the browser.
+        </p>
+        <a href="{{ report_url }}" download="{{ report_filename }}" class="rv-dl-btn">
+          &#8595; Download to View
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

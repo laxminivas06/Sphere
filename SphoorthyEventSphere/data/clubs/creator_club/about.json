@@ -1,0 +1,53 @@
+{
+    "id": "creator_club",
+    "name": "Creator Club",
+    "features": {
+        "event_management": true,
+        "registration_system": true,
+        "payment_system": true,
+        "qr_attendance": true,
+        "club_profile": true,
+        "document_workflow": true
+    },
+    "admin_roll": "creator@gmail.com",
+    "about": "",
+    "mission": "",
+    "vision": "",
+    "mentor": {
+        "name": "",
+        "designation": ""
+    },
+    "office_bearers": [
+        {
+            "name": "raghava",
+            "role": "president",
+            "phone": "9059160424",
+            "year": "1st Year",
+            "department": "cs",
+            "photo": "bearer_df069d72_807b6586-0113-4f35-b020-dd11bd6df5ae.JPG"
+        }
+    ],
+    "gallery": [
+        "gallery_c22081e6_807b6586-0113-4f35-b020-dd11bd6df5ae.JPG",
+        "gallery_e04cfad2_Gemini_Generated_Image_35n4iv35n4iv35n4.jpg",
+        "gallery_0fc935fd_24d9ace2_Gemini_Generated_Image_8pqisv8pqisv8pqi.png",
+        "gallery_f7689b92_impact.png",
+        "gallery_902c2d08_FUTURE_TECH_INTENSIVE.png",
+        "gallery_98cb032a_807b6586-0113-4f35-b020-dd11bd6df5ae.JPG",
+        "gallery_400c9396_Gemini_Generated_Image_35n4iv35n4iv35n4.jpg"
+    ],
+    "logo": "logo_01bb5c55_807b6586-0113-4f35-b020-dd11bd6df5ae.JPG",
+    "cover_image": "cover_2e3d473e_Gemini_Generated_Image_35n4iv35n4iv35n4.jpg",
+    "mentors": [
+        {
+            "name": "sharath",
+            "designation": "Main MENTOR",
+            "photo": "mentor_70ebe001_807b6586-0113-4f35-b020-dd11bd6df5ae.JPG"
+        },
+        {
+            "name": "sharath",
+            "designation": "Main MENTOR",
+            "photo": "mentor_e211946f_Gemini_Generated_Image_35n4iv35n4iv35n4.jpg"
+        }
+    ]
+}

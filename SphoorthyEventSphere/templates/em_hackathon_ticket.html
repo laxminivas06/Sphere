@@ -1,0 +1,125 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+:root{--em-purple:#8b5cf6;--em-indigo:#6366f1;--em-teal:#14b8a6;}
+body{background:#07071a;}
+.ticket-page{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:3rem 1rem;background:radial-gradient(ellipse at top left,rgba(99,102,241,.12),transparent 60%),radial-gradient(ellipse at bottom right,rgba(139,92,246,.1),transparent 60%);}
+.ticket-page h2{font-size:.78rem;text-transform:uppercase;letter-spacing:.18em;color:var(--em-indigo);margin-bottom:2rem;font-weight:600;}
+.ticket-wrap{position:relative;width:100%;max-width:680px;}
+.ticket{background:linear-gradient(145deg,#1a1a3e,#0f0f2d);border:1px solid rgba(99,102,241,.3);border-radius:28px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.7),0 0 0 1px rgba(99,102,241,.15),inset 0 1px 0 rgba(255,255,255,.08);}
+.ticket-shimmer{height:4px;background:linear-gradient(90deg,#6366f1,#8b5cf6,#ec4899,#14b8a6,#f59e0b,#6366f1);animation:shimmerSlide 3s linear infinite;background-size:200%;}
+@keyframes shimmerSlide{0%{background-position:0%}100%{background-position:200%}}
+.ticket-top{background:linear-gradient(135deg,rgba(99,102,241,.2),rgba(139,92,246,.12),rgba(20,184,166,.06));padding:2rem 2.2rem 1.5rem;position:relative;overflow:hidden;}
+.event-logo-area{display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;}
+.event-icon{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,rgba(99,102,241,.3),rgba(139,92,246,.2));border:1px solid rgba(99,102,241,.3);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;}
+.event-org{font-size:.78rem;color:rgba(255,255,255,.55);letter-spacing:.05em;}
+.event-name{font-size:clamp(1.2rem,3vw,1.6rem);font-weight:800;line-height:1.25;background:linear-gradient(135deg,#ffffff,rgba(255,255,255,.8));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.perf{display:flex;align-items:center;position:relative;margin:0;}
+.perf-hole{width:28px;height:28px;border-radius:50%;background:#07071a;flex-shrink:0;}
+.perf-hole.left{margin-left:-14px;}
+.perf-hole.right{margin-right:-14px;}
+.perf-line{flex:1;border-top:2px dashed rgba(99,102,241,.25);margin:0 .5rem;}
+.ticket-bottom{display:grid;grid-template-columns:1fr auto;gap:1.5rem;padding:1.75rem 2.2rem 2rem;}
+.ticket-details{display:flex;flex-direction:column;gap:.9rem;}
+.detail-row{display:flex;flex-direction:column;gap:.1rem;}
+.detail-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);}
+.detail-value{font-size:.95rem;font-weight:600;color:#fff;}
+.status-pill{display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .9rem;border-radius:50px;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+.status-paid{background:rgba(16,185,129,.18);color:#10b981;border:1px solid rgba(16,185,129,.3);}
+.status-free{background:rgba(99,102,241,.18);color:#a5b4fc;border:1px solid rgba(99,102,241,.3);}
+.qr-section{display:flex;flex-direction:column;align-items:center;gap:.75rem;}
+.qr-box{background:#fff;border-radius:16px;padding:.75rem;width:130px;height:130px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 30px rgba(0,0,0,.4);}
+.qr-box img{width:110px;height:110px;}
+.qr-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);}
+.ticket-id-strip{background:rgba(0,0,0,.3);border-top:1px solid rgba(255,255,255,.05);padding:.9rem 2.2rem;display:flex;align-items:center;justify-content:space-between;}
+.ticket-id-text{font-family:monospace;font-size:.88rem;color:rgba(255,255,255,.6);letter-spacing:.08em;}
+.actions{display:flex;gap:.85rem;justify-content:center;margin-top:2rem;flex-wrap:wrap;}
+.btn-dl{display:inline-flex;align-items:center;gap:.6rem;padding:.85rem 2rem;border-radius:14px;font-weight:700;font-size:.9rem;cursor:pointer;transition:.25s;text-decoration:none;}
+.btn-dl-primary{background:linear-gradient(135deg,var(--em-indigo),var(--em-purple));color:#fff;border:none;}
+.btn-dl-primary:hover{opacity:.85;transform:translateY(-2px);box-shadow:0 8px 30px rgba(99,102,241,.4);}
+.btn-dl-outline{background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.75);}
+.btn-dl-outline:hover{background:rgba(255,255,255,.07);color:#fff;}
+@media(max-width:540px){.ticket-bottom{grid-template-columns:1fr;}.qr-section{flex-direction:row;align-items:center;}.qr-box{width:100px;height:100px;}.qr-box img{width:80px;height:80px;}}
+</style>
+
+<div class="ticket-page">
+  <div style="text-align:center; margin-bottom:2rem;">
+    <div style="font-size:3rem; margin-bottom:1rem;">🚀</div>
+    <h1 style="margin:0; font-size:1.8rem; font-weight:800;">Hackathon Registration Successful!</h1>
+    <p style="color:var(--em-indigo); font-weight:600; margin-top:0.5rem;">Your team is ready to build!</p>
+  </div>
+
+  <div class="ticket-wrap">
+    <div class="ticket">
+      <div class="ticket-shimmer"></div>
+      <div class="ticket-top">
+        <div class="event-logo-area">
+          <div class="event-icon">🔥</div>
+          <div>
+            <div class="event-org">{{ event.organized_by }}</div>
+            <div class="event-name">{{ event.title }}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:1.5rem;flex-wrap:wrap;">
+          <div><div class="detail-label">Team Name</div><div class="detail-value" style="color:var(--em-teal);">{{ team.team_name }}</div></div>
+          <div><div class="detail-label">Status</div><div class="detail-value"><span class="status-pill status-paid" style="padding:.2rem .5rem; font-size:.6rem;">REGISTERED</span></div></div>
+        </div>
+      </div>
+
+      <div class="perf">
+        <div class="perf-hole left"></div>
+        <div class="perf-line"></div>
+        <div class="perf-hole right"></div>
+      </div>
+
+      <div class="ticket-bottom">
+        <div class="ticket-details">
+          <div class="detail-row">
+            <div class="detail-label">Team Leader</div>
+            <div class="detail-value">{{ team.members[0].name }} ({{ team.leader_id }})</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Team Members</div>
+            <div class="detail-value" style="font-size:0.85rem; font-weight:400; opacity:0.8;">
+              {% for member in team.members %}
+                {{ member.name }}{% if not loop.last %}, {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Payment Status</div>
+            <div>
+              {% if team.payment_status == 'paid' or team.payment_status == 'free' %}
+              <span class="status-pill status-paid"><i class="fas fa-check-circle"></i> {{ team.payment_status|upper }}</span>
+              {% else %}
+              <span class="status-pill status-free" style="background:rgba(245,158,11,.15); color:#f59e0b; border-color:rgba(245,158,11,.3);"><i class="fas fa-clock"></i> {{ team.payment_status|upper }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="qr-section">
+          <div class="qr-box">
+            <img src="/em/api/hackathon/team/{{ team.team_id }}/qr" alt="Team QR Code">
+          </div>
+          <div class="qr-label">Team Entry QR</div>
+        </div>
+      </div>
+
+      <div class="ticket-id-strip">
+        <span class="ticket-id-text">TEAM ID: {{ team.team_id }}</span>
+        <span style="font-size:.72rem;color:rgba(255,255,255,.3);">{{ team.created_at[:10] }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <a href="/em/hackathon/{{ event.id }}/submit" class="btn-dl btn-dl-primary">
+      <i class="fas fa-upload"></i> Go to Submission Portal
+    </a>
+    <a href="/" class="btn-dl btn-dl-outline">
+      <i class="fas fa-home"></i> Back to Home
+    </a>
+  </div>
+</div>
+{% endblock %}

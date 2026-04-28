@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+  .ha-main { padding: 2rem; max-width: 1000px; margin: 0 auto; }
+  .ha-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+  .ha-card { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 16px; padding: 1.5rem; text-align: center; }
+  .ha-val { font-size: 2.5rem; font-weight: 800; color: #8b5cf6; }
+  .ha-lbl { font-size: .8rem; text-transform: uppercase; color: rgba(255,255,255,.5); margin-top: .5rem; }
+</style>
+<div class="ha-main">
+  <a href="/em/hackathon/{{ event.id }}/hub" style="color:rgba(255,255,255,.5);text-decoration:none;"><i class="fas fa-arrow-left"></i> Back to Hub</a>
+  <h2 style="margin-top:1rem;">Analytics - {{ event.title }}</h2>
+
+  <!-- Using a script to fetch analytics or we can compute it on frontend if we pass teams -->
+  <div class="ha-grid" id="stats">
+    Loading...
+  </div>
+</div>
+<script>
+  // Simple analytics computation
+  fetch('/em/api/hackathon/event/{{ event.id }}/teams')
+    .then(r => r.json())
+    .then(d => {
+      const teams = d.teams || [];
+      const totalTeams = teams.length;
+      let totalMembers = 0;
+      let checkedIn = 0;
+      let revenue = 0;
+      let paid = 0;
+      let price = {{ event.ticket_price | default(0) }};
+
+      teams.forEach(t => {
+        totalMembers += t.members ? t.members.length : 0;
+        if(t.checked_in) checkedIn++;
+        if(t.payment_status === 'paid') { paid++; revenue += price; }
+      });
+
+      document.getElementById('stats').innerHTML = `
+        <div class="ha-card"><div class="ha-val">${totalTeams}</div><div class="ha-lbl">Total Teams</div></div>
+        <div class="ha-card"><div class="ha-val" style="color:#10b981;">${totalMembers}</div><div class="ha-lbl">Total Participants</div></div>
+        <div class="ha-card"><div class="ha-val" style="color:#f59e0b;">${checkedIn}</div><div class="ha-lbl">Teams Checked In</div></div>
+        <div class="ha-card"><div class="ha-val" style="color:#ec4899;">₹${revenue}</div><div class="ha-lbl">Est. Revenue</div></div>
+      `;
+    });
+</script>
+{% endblock %}

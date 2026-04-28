@@ -1,0 +1,92 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+    :root {
+        --tf-primary: #3b82f6;
+        --tf-glass: rgba(30, 41, 59, 0.7);
+        --tf-border: rgba(255, 255, 255, 0.1);
+        --tf-text-muted: #94a3b8;
+    }
+    .page-container { max-width: 1100px; margin: 0 auto; padding: 2rem; min-height: 100vh; }
+    .hub-card { 
+        background: var(--tf-glass); 
+        backdrop-filter: blur(12px); 
+        border: 1px solid var(--tf-border); 
+        border-radius: 24px; 
+        padding: 3rem; 
+    }
+    .tf-label { display: block; margin-bottom: 0.5rem; color: var(--tf-text-muted); font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .tf-input { width: 100%; padding: 1rem; border-radius: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--tf-border); color: white; margin-bottom: 2rem; transition: border-color 0.3s; }
+    .tf-input:focus { border-color: var(--tf-primary); outline: none; }
+</style>
+
+<div class="page-container">
+    <div style="margin-bottom: 3rem;">
+        <a href="/em/techfest/{{ event.id }}/hub" style="color: var(--tf-text-muted); text-decoration: none; font-weight: 600;"><i class="fas fa-chevron-left"></i> Back to Hub</a>
+        <h1 style="margin: 1rem 0 0 0; font-size: 2.5rem; font-weight: 800;">Bulk Communication</h1>
+        <p style="color: var(--tf-text-muted);">{{ event.title }} • Broadcast Portal</p>
+    </div>
+
+    <div class="hub-card">
+        <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 3rem;">
+            <div>
+                <label class="tf-label">Recipient Segment</label>
+                <select id="emailTarget" class="tf-input">
+                    <option value="all">All Registrants ({{ registrations|length }})</option>
+                    <option value="spoorthy">Sphoorthy Students Only</option>
+                    <option value="others">External Students Only</option>
+                </select>
+
+                <label class="tf-label">Subject</label>
+                <input type="text" id="emailSubject" class="tf-input" placeholder="Enter email subject...">
+
+                <label class="tf-label">Message Body</label>
+                <textarea id="emailMessage" class="tf-input" rows="8" placeholder="Write your message here..."></textarea>
+
+                <button class="tf-btn tf-btn-primary" style="width: 100%; padding: 1.25rem; font-weight: 700;" onclick="sendBulkEmail(event)">
+                    <i class="fas fa-paper-plane"></i> Dispatch Emails
+                </button>
+            </div>
+            <div style="background: rgba(255,255,255,0.02); border: 1px dashed var(--tf-border); border-radius: 20px; padding: 2rem;">
+                <h4 style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-info-circle" style="color: var(--tf-primary);"></i> Delivery Tips</h4>
+                <ul style="color: var(--tf-text-muted); font-size: 0.9rem; line-height: 1.6; padding-left: 1.2rem;">
+                    <li>Broadcasts are sent via the institutional SMTP server.</li>
+                    <li>Always include a contact person for queries.</li>
+                    <li>Check your links before sending.</li>
+                    <li>Avoid excessive emojis to stay out of spam.</li>
+                </ul>
+                <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--tf-border);">
+                    <p style="font-size: 0.8rem; color: var(--tf-text-muted);">Current Batch Size:</p>
+                    <p style="font-size: 1.2rem; font-weight: 700;">{{ registrations|length }} Recipients</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function sendBulkEmail(event) {
+        const target = document.getElementById('emailTarget').value;
+        const subject = document.getElementById('emailSubject').value;
+        const message = document.getElementById('emailMessage').value;
+        if (!subject || !message) return alert('Subject and message are required.');
+
+        if (!confirm(`Send this broadcast to ${target}?`)) return;
+
+        const btn = event.currentTarget;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Dispatching...';
+        
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        const resp = await fetch(`/em/api/techfest/{{ event.id }}/bulk-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+            body: JSON.stringify({ target, subject, message })
+        });
+        const data = await resp.json();
+        alert(data.message);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Dispatch Emails';
+    }
+</script>
+{% endblock %}

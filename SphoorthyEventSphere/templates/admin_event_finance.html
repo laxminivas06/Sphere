@@ -1,0 +1,178 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+<div class="dashboard-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div style="margin-bottom: 2rem; padding: 0 0.5rem;">
+            <h2 style="font-size: 1.2rem; color: #fff; letter-spacing: 0.05em;">CLUB<span
+                    style="color: var(--primary)">HUB</span></h2>
+            <p style="font-size: 0.75rem; color: var(--text-muted);">Admin Control Center</p>
+        </div>
+
+        <a class="nav-item" href="/admin/club/{{ club.id }}">
+            <i class="fas fa-th-large"></i> <span>Overview</span>
+        </a>
+        <a class="nav-item" href="/admin/events/{{ club.id }}">
+            <i class="fas fa-calendar-alt"></i> <span>Event Registry</span>
+        </a>
+        <a class="nav-item" href="/admin/bulk-email/{{ club.id }}">
+            <i class="fas fa-paper-plane"></i> <span>Communications</span>
+        </a>
+        <a class="nav-item active" href="/admin/finance/{{ club.id }}">
+            <i class="fas fa-wallet"></i> <span>Finance Hub</span>
+        </a>
+        <a class="nav-item" href="/admin/club/{{ club.id }}#eventhub">
+            <i class="fas fa-ticket-alt"></i> <span>Event Hub</span>
+        </a>
+        <a class="nav-item" href="/admin/identity/{{ club.id }}">
+            <i class="fas fa-id-card"></i> <span>Club Identity</span>
+        </a>
+        <a class="nav-item" href="/admin/leaderboard/{{ club.id }}">
+            <i class="fas fa-trophy"></i> <span>Top Attendees</span>
+        </a>
+        <a class="nav-item" href="/admin/elections/{{ club.id }}">
+            <i class="fas fa-vote-yea"></i> <span>Elections Zone</span>
+        </a>
+        <a class="nav-item" href="/admin/reports/{{ club.id }}">
+            <i class="fas fa-archive"></i> <span>Academic Year Reports</span>
+        </a>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header style="margin-bottom: 3rem;">
+            <h1>Finance <span style="color: var(--primary)">Management</span></h1>
+            <p style="color: var(--text-muted)">Update financial figures for <strong>{{ event.title }}</strong></p>
+        </header>
+
+        <!-- Live Summary Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
+            <div class="card glass" style="padding: 2rem; border-radius: 20px; border: 1px solid rgba(16,185,129,0.3);">
+                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem;">Total Revenue</div>
+                <div id="live-revenue" style="font-size: 2.2rem; font-weight: 800; color: var(--success);">
+                    ₹{{ (auto_revenue|int) + (event.extra_income|default(0)|int) }}
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.75rem;">
+                    Auto: ₹{{ auto_revenue }} &nbsp;|&nbsp; Extra: ₹{{ event.extra_income|default(0) }}
+                </div>
+            </div>
+            <div class="card glass" style="padding: 2rem; border-radius: 20px; border: 1px solid rgba(239,68,68,0.3);">
+                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem;">Total Expenditure</div>
+                <div id="live-expenditure" style="font-size: 2.2rem; font-weight: 800; color: var(--danger);">
+                    ₹{{ (event.actual_expenses|default(0)|int) + (event.extra_expense|default(0)|int) }}
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.75rem;">
+                    Actual: ₹{{ event.actual_expenses|default(0) }} &nbsp;|&nbsp; Extra: ₹{{ event.extra_expense|default(0) }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Finance Update Form -->
+        <div class="card glass" style="padding: 3rem; border-radius: 28px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0;">Update Finance Figures</h3>
+                <span style="font-size: 0.75rem; font-weight: 700; color: var(--success); background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); border-radius: 8px; padding: 0.4rem 1rem;">
+                    <i class="fas fa-sync-alt"></i> Real-time Preview
+                </span>
+            </div>
+
+            <div style="background: rgba(139, 92, 246, 0.05); border: 1px solid rgba(139, 92, 246, 0.15); border-radius: 16px; padding: 1.25rem 1.5rem; margin-bottom: 2rem; font-size: 0.9rem; color: var(--text-muted); line-height: 1.5;">
+                <i class="fas fa-info-circle" style="color: var(--primary); margin-right: 0.6rem;"></i>
+                Use the fields below to adjust the financial data for this event. <em>Total Revenue</em> and <em>Total Expenditure</em> will be recalculated automatically.
+            </div>
+
+            <form id="financeForm" style="display: grid; gap: 2rem;">
+                <input type="hidden" id="auto-revenue-val" value="{{ auto_revenue }}">
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem;">
+                    <div class="input-group">
+                        <label style="display: block; margin-bottom: 0.75rem; font-size: 0.9rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Actual Expenses (₹)</label>
+                        <input type="number" id="f-actual" name="actual_expenses" value="{{ event.actual_expenses|default(0) }}"
+                            style="width: 100%; padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); color: #fff; background: rgba(255,255,255,0.03); outline: none; transition: border-color 0.2s;"
+                            oninput="liveUpdate()">
+                    </div>
+                    <div class="input-group">
+                        <label style="display: block; margin-bottom: 0.75rem; font-size: 0.9rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Extra Income (Sponsorships)</label>
+                        <input type="number" id="f-income" name="extra_income" value="{{ event.extra_income|default(0) }}"
+                            style="width: 100%; padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); color: #fff; background: rgba(255,255,255,0.03); outline: none; transition: border-color 0.2s;"
+                            oninput="liveUpdate()">
+                    </div>
+                    <div class="input-group">
+                        <label style="display: block; margin-bottom: 0.75rem; font-size: 0.9rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Extra Expenses (Ad-hoc)</label>
+                        <input type="number" id="f-expense" name="extra_expense" value="{{ event.extra_expense|default(0) }}"
+                            style="width: 100%; padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); color: #fff; background: rgba(255,255,255,0.03); outline: none; transition: border-color 0.2s;"
+                            oninput="liveUpdate()">
+                    </div>
+                </div>
+
+                <div style="margin-top: 1.5rem;">
+                    <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%; padding: 1.25rem; justify-content: center; font-size: 1.1rem; border-radius: 16px;">
+                        <i class="fas fa-save"></i>&nbsp; Save &amp; Log Finance Figures
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+
+<script>
+const AUTO_REV = parseInt(document.getElementById('auto-revenue-val').value) || 0;
+
+function liveUpdate() {
+    const income   = parseInt(document.getElementById('f-income').value)   || 0;
+    const actual   = parseInt(document.getElementById('f-actual').value)   || 0;
+    const expense  = parseInt(document.getElementById('f-expense').value)  || 0;
+
+    document.getElementById('live-revenue').textContent     = '₹' + (AUTO_REV + income);
+    document.getElementById('live-expenditure').textContent = '₹' + (actual + expense);
+}
+
+document.getElementById('financeForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>&nbsp; Updating Records...';
+
+    const payload = {
+        club_id:         '{{ club.id }}',
+        event_id:        '{{ event.id }}',
+        extra_income:    document.getElementById('f-income').value,
+        extra_expense:   document.getElementById('f-expense').value,
+        actual_expenses: document.getElementById('f-actual').value
+    };
+
+    try {
+        const csrf   = document.querySelector('meta[name="csrf-token"]').content;
+        const res    = await fetch('/api/events/update_finance', {
+            method:  'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken':  csrf
+            },
+            body:    JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (result.success) {
+            btn.style.background = '#10b981';
+            btn.style.border     = 'none';
+            btn.innerHTML = '<i class="fas fa-check-circle"></i>&nbsp; Financials Updated Successfully!';
+            showToast('Finance figures updated!', 'success');
+            setTimeout(() => {
+                window.location.href = '/admin/finance/{{ club.id }}';
+            }, 1500);
+        } else {
+            showToast(result.message || 'Update failed', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save"></i>&nbsp; Save &amp; Log Finance Figures';
+        }
+    } catch (err) {
+        showToast('Network error occurred', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i>&nbsp; Save &amp; Log Finance Figures';
+    }
+};
+</script>
+{% endblock %}

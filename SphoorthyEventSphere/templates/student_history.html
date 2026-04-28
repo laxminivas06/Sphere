@@ -1,0 +1,248 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<main class="section">
+    <div class="section-inner">
+        <div style="margin-bottom: 2.5rem;">
+            <h1 class="section-title">Your <span style="color: var(--navy-light);">Participation History</span></h1>
+            <p class="section-sub">Track your engagement and contributions to the college event ecosystem.</p>
+        </div>
+
+        <!-- Quick Stats Grid -->
+        <div class="grid-3" style="margin-bottom: 3rem;">
+            <div class="stat-card-premium">
+                <div class="stat-card-icon" style="background: rgba(45, 61, 186, 0.1); color: var(--navy);">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="stat-card-details">
+                    <div class="stat-card-label">Events Attended</div>
+                    <div class="stat-card-value">{{ stats.attended_count }}</div>
+                </div>
+            </div>
+            <div class="stat-card-premium featured">
+                <div class="stat-card-icon" style="background: rgba(255, 255, 255, 0.2); color: white;">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <div class="stat-card-details">
+                    <div class="stat-card-label">Total Investment</div>
+                    <div class="stat-card-value">₹{{ stats.total_spent }}</div>
+                </div>
+            </div>
+            <div class="stat-card-premium">
+                <div class="stat-card-icon" style="background: rgba(45, 61, 186, 0.1); color: var(--navy);">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-card-details">
+                    <div class="stat-card-label">Clubs Explored</div>
+                    <div class="stat-card-value">{{ stats.unique_clubs }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Section -->
+        <div class="card" style="padding: 0; overflow: hidden;">
+            <div style="padding: 1.5rem 2rem; background: var(--surface); border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--navy); margin: 0;">Participation Timeline</h2>
+                <button class="btn btn-outline" style="padding: 0.5rem 1rem;" onclick="window.print()">
+                    <i class="fas fa-download"></i> Export History
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Event & Category</th>
+                            <th>Club</th>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if registrations %}
+                            {% for r in registrations %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 700; color: var(--navy); margin-bottom: 0.25rem;">{{ r.event_title }}</div>
+                                    <span class="badge badge-navy">{{ r.type }}</span>
+                                </td>
+                                <td style="color: var(--text-secondary); font-weight: 500;">{{ r.club_name }}</td>
+                                <td>{{ r.date }}</td>
+                                <td style="font-weight: 700; color: var(--navy);">₹{{ r.fee }}</td>
+                                <td>
+                                    {% if r.payment_verified %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check-circle"></i> Confirmed
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-warning">
+                                            <i class="fas fa-clock"></i> Pending
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" style="padding: 5rem 2rem; text-align: center; color: var(--text-muted);">
+                                    <i class="fas fa-history" style="font-size: 3rem; margin-bottom: 1.5rem; opacity: 0.1;"></i>
+                                    <p>No event history found yet. Start registering for exciting events!</p>
+                                    <a href="/" class="btn btn-navy" style="margin-top: 1.5rem;">Browse Events</a>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+
+                <!-- Mobile View Cards (Hidden on Desktop) -->
+                <div class="mobile-history-list">
+                    {% if registrations %}
+                        {% for r in registrations %}
+                        <div class="mobile-history-card">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                                <div>
+                                    <div style="font-weight: 700; color: var(--navy); font-size: 1.1rem; margin-bottom: 0.4rem;">{{ r.event_title }}</div>
+                                    <span class="badge badge-navy">{{ r.type }}</span>
+                                </div>
+                                <div style="font-weight: 800; color: var(--navy);">₹{{ r.fee }}</div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                                <div>
+                                    <div style="text-transform: uppercase; font-size: 0.65rem; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Club</div>
+                                    <div style="font-weight: 600;">{{ r.club_name }}</div>
+                                </div>
+                                <div>
+                                    <div style="text-transform: uppercase; font-size: 0.65rem; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Date</div>
+                                    <div style="font-weight: 600;">{{ r.date }}</div>
+                                </div>
+                            </div>
+                            <div style="border-top: 1px solid var(--border-light); padding-top: 0.875rem;">
+                                {% if r.payment_verified %}
+                                    <span class="badge badge-success" style="width: 100%; justify-content: center;">Confirmed</span>
+                                {% else %}
+                                    <span class="badge badge-warning" style="width: 100%; justify-content: center;">Pending Verification</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<style>
+    .stat-card-premium {
+        background: var(--white);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .stat-card-premium:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
+    .stat-card-premium.featured {
+        background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
+        border: none;
+        color: white;
+    }
+    .stat-card-premium.featured .stat-card-label {
+        color: rgba(255, 255, 255, 0.7);
+    }
+    .stat-card-premium.featured .stat-card-value {
+        color: white;
+    }
+    .stat-card-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+    .stat-card-details {
+        display: flex;
+        flex-direction: column;
+    }
+    .stat-card-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        margin-bottom: 0.15rem;
+    }
+    .stat-card-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--navy);
+        line-height: 1.2;
+    }
+
+    .history-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .history-table th {
+        background: var(--surface);
+        color: var(--text-muted);
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        padding: 1rem 2rem;
+        text-align: left;
+    }
+    .history-table td {
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid var(--border-light);
+        font-size: 0.9375rem;
+    }
+    .mobile-history-list {
+        display: none;
+    }
+
+    @media (max-width: 992px) {
+        .history-table th, .history-table td {
+            padding: 1.25rem 1.5rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .stat-card-premium {
+            padding: 1.25rem;
+        }
+        .stat-card-value {
+            font-size: 1.25rem;
+        }
+        .history-table {
+            display: none;
+        }
+        .mobile-history-list {
+            display: block;
+            padding: 1rem;
+        }
+        .mobile-history-card {
+            background: var(--white);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow-sm);
+        }
+        .section-inner {
+            padding: 0;
+        }
+    }
+</style>
+{% endblock %}

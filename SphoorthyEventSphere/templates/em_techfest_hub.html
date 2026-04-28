@@ -1,0 +1,271 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+    :root {
+        --tf-primary: #6366f1;
+        --tf-secondary: #a855f7;
+        --tf-accent: #10b981;
+        --tf-bg: #0f172a;
+        --tf-glass: rgba(30, 41, 59, 0.7);
+        --tf-border: rgba(255, 255, 255, 0.1);
+        --tf-text-muted: #94a3b8;
+    }
+    .hub-container { max-width: 1300px; margin: 0 auto; padding: 2rem; min-height: 100vh; }
+    .hub-card { 
+        background: var(--tf-glass); 
+        backdrop-filter: blur(12px); 
+        border: 1px solid var(--tf-border); 
+        border-radius: 24px; 
+        padding: 2rem; 
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .action-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+    .action-card {
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 3rem 2rem;
+        border: 1px solid var(--tf-border);
+        background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+        text-decoration: none;
+        color: inherit;
+    }
+    .action-card:hover {
+        transform: translateY(-8px);
+        border-color: var(--tf-primary);
+        background: rgba(99, 102, 241, 0.05);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+    .action-icon {
+        width: 72px;
+        height: 72px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+        background: rgba(255,255,255,0.05);
+        transition: all 0.3s;
+    }
+    .action-card:hover .action-icon {
+        background: var(--tf-primary);
+        color: white;
+        transform: scale(1.1);
+    }
+</style>
+
+<div class="hub-container">
+    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem;">
+        <div>
+            <h1 style="margin: 0; font-size: 2.5rem; font-weight: 800; background: linear-gradient(135deg, #fff, #a5b4fc); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">{{ event.title }}</h1>
+            <p style="color: var(--tf-text-muted); margin-top: 0.5rem;"><i class="fas fa-university"></i> {{ event.organized_by }} Management Hub</p>
+        </div>
+        <div style="display: flex; gap: 1rem;">
+            {% if user.role != 'event_admin' %}
+            <a href="/em/dashboard" class="tf-btn tf-btn-outline"><i class="fas fa-arrow-left"></i> Home</a>
+            {% endif %}
+            <a href="/api/logout" class="tf-btn tf-btn-outline" style="color: #f87171; border-color: rgba(239,68,68,0.3);"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <a href="/em/techfest/{{ event.id }}/register" target="_blank" class="tf-btn tf-btn-primary"><i class="fas fa-external-link-alt"></i> Public Page</a>
+        </div>
+    </header>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+        <div class="hub-card">
+            <p style="color: var(--tf-text-muted); font-size: 0.85rem; margin: 0;">Total Registrations</p>
+            <h2 style="font-size: 2.5rem; margin: 0.5rem 0; font-weight: 800;">{{ registrations|length }}</h2>
+            <p style="color: #10b981; font-size: 0.8rem; font-weight: 600;">Active Participation</p>
+        </div>
+        <div class="hub-card">
+            <p style="color: var(--tf-text-muted); font-size: 0.85rem; margin: 0;">Verified Revenue</p>
+            <h2 style="font-size: 2.5rem; margin: 0.5rem 0; font-weight: 800; color: #10b981;">₹{{ registrations|selectattr('payment_status', 'equalto', 'paid')|sum(attribute='amount') if registrations else '0' }}</h2>
+            <p style="font-size: 0.8rem; color: var(--tf-text-muted);">Secure Razorpay Payments</p>
+        </div>
+        <div class="hub-card">
+            <p style="color: var(--tf-text-muted); font-size: 0.85rem; margin: 0;">Active Tracks</p>
+            <h2 style="font-size: 2.5rem; margin: 0.5rem 0; font-weight: 800;">{{ sub_events|length }}</h2>
+            <p style="font-size: 0.8rem; color: var(--tf-text-muted);">Competition Sub-Events</p>
+        </div>
+    </div>
+
+    <h2 style="margin-bottom: 1.5rem; font-size: 1.5rem; font-weight: 700; opacity: 0.9;">Management Modules</h2>
+    <div class="action-grid">
+        <a href="/em/techfest/{{ event.id }}/sub-events" class="hub-card action-card">
+            <div class="action-icon" style="color: #6366f1;"><i class="fas fa-layer-group"></i></div>
+            <h3 style="margin: 0 0 0.5rem 0;">Sub-Events</h3>
+            <p style="color: var(--tf-text-muted); font-size: 0.9rem;">Configure competitions, pricing and team constraints.</p>
+        </a>
+        <a href="/em/techfest/{{ event.id }}/registrations" class="hub-card action-card">
+            <div class="action-icon" style="color: #10b981;"><i class="fas fa-users"></i></div>
+            <h3 style="margin: 0 0 0.5rem 0;">Registrations</h3>
+            <p style="color: var(--tf-text-muted); font-size: 0.9rem;">View participants, filter by college and track payment status.</p>
+        </a>
+        <a href="/em/techfest/{{ event.id }}/attendance" class="hub-card action-card">
+            <div class="action-icon" style="color: #f59e0b;"><i class="fas fa-user-check"></i></div>
+            <h3 style="margin: 0 0 0.5rem 0;">Attendance</h3>
+            <p style="color: var(--tf-text-muted); font-size: 0.9rem;">Monitor internal student check-ins and forward reports.</p>
+        </a>
+        <a href="/em/techfest/{{ event.id }}/bulk-email" class="hub-card action-card">
+            <div class="action-icon" style="color: #3b82f6;"><i class="fas fa-envelope"></i></div>
+            <h3 style="margin: 0 0 0.5rem 0;">Bulk Email</h3>
+            <p style="color: var(--tf-text-muted); font-size: 0.9rem;">Communicate updates and results to all participants.</p>
+        </a>
+        <a href="/em/techfest/{{ event.id }}/evaluators" class="hub-card action-card">
+            <div class="action-icon" style="color: #a855f7;"><i class="fas fa-star"></i></div>
+            <h3 style="margin: 0 0 0.5rem 0;">Evaluation</h3>
+            <p style="color: var(--tf-text-muted); font-size: 0.9rem;">Manage evaluators, scores, and track live leaderboards.</p>
+        </a>
+        <a href="/em/scanner" class="hub-card action-card">
+            <div class="action-icon" style="color: #ec4899;"><i class="fas fa-camera"></i></div>
+            <h3 style="margin: 0 0 0.5rem 0;">QR Scanner</h3>
+            <p style="color: var(--tf-text-muted); font-size: 0.9rem;">Live ticket validation for event entry.</p>
+        </a>
+    </div>
+
+    <div style="margin-top: 4rem; display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem;">
+        <div class="hub-card">
+            <h3 style="margin-top: 0;"><i class="fas fa-chart-pie" style="color: var(--tf-primary);"></i> Department Breakdown</h3>
+            <div style="height: 300px; margin-top: 1.5rem;">
+                <canvas id="deptChart"></canvas>
+            </div>
+        </div>
+        <div class="hub-card">
+            <h3 style="margin-top: 0;"><i class="fas fa-cog" style="color: var(--tf-secondary);"></i> Global Hub Settings</h3>
+            <div style="margin-top: 2rem; display: flex; flex-direction: column; gap: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem; background: rgba(255,255,255,0.03); border-radius: 16px; border: 1px solid var(--tf-border);">
+                    <div>
+                        <p style="margin: 0; font-weight: 600;">External Registrations</p>
+                        <p style="margin: 0; font-size: 0.75rem; color: var(--tf-text-muted);">Allow students from other colleges to register</p>
+                    </div>
+                    <label class="tf-switch">
+                        <input type="checkbox" id="allow-external-toggle" onchange="updateTechfestSetting('allow_external', this.checked)" {{ 'checked' if event.allow_external }}>
+                        <span class="tf-slider"></span>
+                    </label>
+                </div>
+                <button class="tf-btn tf-btn-outline" style="width: 100%; justify-content: center; padding: 1rem;" onclick="exportCSV()"><i class="fas fa-file-export"></i> Export All Data (CSV)</button>
+                
+                <!-- Event App Settings -->
+                <div style="margin-top:2rem;padding-top:2rem;border-top:1px solid var(--tf-border);">
+                    <h4 style="margin:0 0 1.5rem 0;color:var(--tf-primary);font-size:0.9rem;"><i class="fas fa-plug"></i> Event App Configuration</h4>
+                    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+                        <div>
+                            <label style="display:block;font-size:0.7rem;color:var(--tf-text-muted);margin-bottom:0.4rem;">Razorpay Key ID</label>
+                            <input type="text" id="eh-rzp-id" value="{{ settings.razorpay_key_id or '' }}" placeholder="rzp_live_..."
+                                style="width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--tf-border);border-radius:12px;padding:0.75rem;color:#fff;font-size:0.85rem;">
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:0.7rem;color:var(--tf-text-muted);margin-bottom:0.4rem;">Razorpay Key Secret</label>
+                            <input type="password" id="eh-rzp-secret" value="{{ settings.razorpay_key_secret or '' }}" placeholder="••••••••••••"
+                                style="width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--tf-border);border-radius:12px;padding:0.75rem;color:#fff;font-size:0.85rem;">
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:0.7rem;color:var(--tf-text-muted);margin-bottom:0.4rem;">SMTP User</label>
+                            <input type="email" id="eh-smtp-user" value="{{ settings.smtp_user or '' }}" placeholder="noreply@college.edu"
+                                style="width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--tf-border);border-radius:12px;padding:0.75rem;color:#fff;font-size:0.85rem;">
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:0.7rem;color:var(--tf-text-muted);margin-bottom:0.4rem;">SMTP App Password</label>
+                            <input type="password" id="eh-smtp-pass" value="{{ settings.smtp_password or '' }}" placeholder="•••• •••• •••• ••••"
+                                style="width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--tf-border);border-radius:12px;padding:0.75rem;color:#fff;font-size:0.85rem;">
+                        </div>
+                        <button onclick="saveHubSettings()" class="tf-btn tf-btn-primary" style="width:100%;justify-content:center;padding:1rem;">
+                            <i class="fas fa-save"></i> Save Event App
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div id="settingsMsg" style="display:none;padding:1rem;border-radius:12px;font-size:0.8rem;margin-top:1rem;"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const ctx = document.getElementById('deptChart').getContext('2d');
+        const deptData = {};
+        {% for reg in registrations %}
+            const d = '{{ reg.student_details.department }}';
+            deptData[d] = (deptData[d] || 0) + 1;
+        {% endfor %}
+
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(deptData),
+                datasets: [{
+                    data: Object.values(deptData),
+                    backgroundColor: ['#6366f1', '#a855f7', '#10b981', '#3b82f6', '#f43f5e', '#ec4899'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                plugins: { legend: { position: 'right', labels: { color: '#94a3b8' } } },
+                cutout: '70%'
+            }
+        });
+    });
+
+    function exportCSV() {
+        // Simplified export for the hub summary
+        window.location.href = `/em/techfest/{{ event.id }}/registrations`;
+        // Or actually implement the download logic if needed
+    }
+
+    async function updateTechfestSetting(key, value) {
+        const resp = await fetch(`/em/api/techfest/{{ event.id }}/update-setting`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+            body: JSON.stringify({ [key]: value })
+        });
+        if (!(await resp.json()).success) location.reload();
+    }
+
+    async function saveHubSettings() {
+        const data = {
+            razorpay_key_id: document.getElementById('eh-rzp-id').value,
+            razorpay_key_secret: document.getElementById('eh-rzp-secret').value,
+            smtp_user: document.getElementById('eh-smtp-user').value,
+            smtp_password: document.getElementById('eh-smtp-pass').value
+        };
+        const msg = document.getElementById('settingsMsg');
+        msg.style.display = 'block';
+        msg.style.background = 'rgba(99,102,241,0.1)';
+        msg.style.color = '#fff';
+        msg.textContent = 'Saving...';
+
+        try {
+            const r = await fetch('/em/api/settings/update', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify(data)
+            });
+            const d = await r.json();
+            if (d.success) {
+                msg.style.background = 'rgba(16,185,129,0.1)';
+                msg.style.border = '1px solid rgba(16,185,129,0.25)';
+                msg.style.color = '#10b981';
+                msg.textContent = '✅ Settings saved successfully!';
+                setTimeout(() => msg.style.display = 'none', 3000);
+            } else {
+                throw new Error(d.message);
+            }
+        } catch(e) {
+            msg.style.background = 'rgba(239,68,68,0.1)';
+            msg.style.border = '1px solid rgba(239,68,68,0.25)';
+            msg.style.color = '#f87171';
+            msg.textContent = '❌ Error: ' + e.message;
+        }
+    }
+</script>
+{% endblock %}

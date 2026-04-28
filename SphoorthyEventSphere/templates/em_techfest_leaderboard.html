@@ -1,0 +1,82 @@
+{% extends "layout.html" %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='techfest.css') }}">
+<style>
+    .lb-container { max-width: 1000px; margin: 0 auto; padding: 3rem 1.5rem; }
+    .lb-card { background: var(--tf-glass); backdrop-filter: blur(20px); border: 1px solid var(--tf-border); border-radius: 24px; padding: 2.5rem; }
+    .lb-header { text-align: center; margin-bottom: 3rem; }
+    .lb-table { width: 100%; border-collapse: separate; border-spacing: 0 0.75rem; }
+    .lb-table tr { background: rgba(255, 255, 255, 0.03); transition: all 0.3s; }
+    .lb-table tr:hover { transform: scale(1.01); background: rgba(255, 255, 255, 0.06); }
+    .lb-table td, .lb-table th { padding: 1.25rem; text-align: left; }
+    .lb-table th { color: var(--tf-text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; border: none; }
+    .lb-table tr td:first-child { border-radius: 12px 0 0 12px; }
+    .lb-table tr td:last-child { border-radius: 0 12px 12px 0; }
+    .rank-badge { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; }
+    .rank-1 { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; box-shadow: 0 0 15px rgba(251, 191, 36, 0.4); }
+    .rank-2 { background: linear-gradient(135deg, #e2e8f0, #94a3b8); color: #000; }
+    .rank-3 { background: linear-gradient(135deg, #b45309, #78350f); color: #fff; }
+    .score-val { font-size: 1.25rem; font-weight: 800; color: #10b981; }
+</style>
+
+<div class="lb-container">
+    <div style="margin-bottom: 2rem;">
+        <a href="/em/techfest/{{ event.techfest_id }}" class="tf-btn tf-btn-outline"><i class="fas fa-arrow-left"></i> Back to Hub</a>
+    </div>
+
+    <div class="lb-card">
+        <div class="lb-header">
+            <span style="background: rgba(99, 102, 241, 0.15); color: var(--tf-primary); padding: 0.4rem 1rem; border-radius: 99px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">Real-time Rankings</span>
+            <h1 style="margin: 1rem 0 0.5rem; font-size: 2.5rem;">{{ event.name }} <span style="background: linear-gradient(135deg, #fff, #a5b4fc); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Leaderboard</span></h1>
+            <p style="color: var(--tf-text-muted);">Rankings are automatically calculated based on evaluator scores.</p>
+        </div>
+
+        <table class="lb-table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Participant / Team</th>
+                    <th>College</th>
+                    <th>Evaluations</th>
+                    <th>Final Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in rankings %}
+                <tr>
+                    <td>
+                        <div class="rank-badge rank-{{ r.rank if r.rank <= 3 else 'other' }}" style="{{ 'background: rgba(255,255,255,0.05); color: #fff;' if r.rank > 3 else '' }}">
+                            {{ r.rank }}
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-weight: 700; font-size: 1.1rem;">{{ r.name }}</div>
+                        <div style="font-size: 0.75rem; color: var(--tf-text-muted); font-family: monospace;">{{ r.reg_id }}</div>
+                    </td>
+                    <td>
+                        <span style="opacity: 0.8;">{{ r.college }}</span>
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-user-edit" style="font-size: 0.8rem; color: var(--tf-primary);"></i>
+                            <span>{{ r.evaluators }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="score-val">{{ r.score }}</span>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not rankings %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 4rem; color: var(--tf-text-muted);">
+                        <i class="fas fa-trophy" style="font-size: 3rem; opacity: 0.1; display: block; margin-bottom: 1rem;"></i>
+                        No scores have been submitted for this event yet.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

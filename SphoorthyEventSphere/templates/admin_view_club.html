@@ -1,0 +1,159 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<!-- Hero Banner (Simplified for Admin) -->
+<header class="hero" style="position: relative; height: 30vh; min-height: 250px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: url('{% if club.cover_image %}/static/uploads/clubs/{{ club.id }}/details/{{ club.cover_image }}{% else %}https://images.unsplash.com/photo-152305085306e-88e4a6ee8c7e?auto=format&fit=crop&w=1600{% endif %}') center/cover no-repeat;">
+    <div style="position:absolute;inset:0;background:rgba(10,10,30,0.85);"></div>
+    <div class="container" style="position: relative; text-align: center; width: 100%;">
+        {% if club.logo %}
+        <img src="/static/uploads/clubs/{{ club.id }}/details/{{ club.logo }}" alt="{{ club.name }} Logo" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:3px solid var(--primary);margin-bottom:0.5rem;">
+        {% endif %}
+        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Registry: {{ club.name }}</h1>
+        <p style="color: var(--primary); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.8rem;">Super Admin Oversight View</p>
+    </div>
+</header>
+
+<main class="container" style="padding-top: 3rem;">
+    <div class="grid-3" style="grid-template-columns: 2fr 1fr; gap: 2.5rem;">
+
+        <!-- ====== LEFT COLUMN ====== -->
+        <div>
+            <!-- Registry Table -->
+            <section style="margin-bottom: 3rem;">
+                <h2 style="margin-bottom:1.2rem;"><i class="fas fa-clipboard-list" style="color:var(--primary);margin-right:0.5rem;"></i>Event Registry & Financials</h2>
+                <div class="glass" style="overflow-x: auto; padding: 1.5rem; border-radius: 16px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--glass-border); color: var(--text-muted); font-size: 0.85rem;">
+                                <th style="padding: 1rem;">Event Name</th>
+                                <th style="padding: 1rem; text-align: center;">Status</th>
+                                <th style="padding: 1rem; text-align: center;">Docs</th>
+                                <th style="padding: 1rem; text-align: right;">Revenue</th>
+                                <th style="padding: 1rem; text-align: right;">Spent</th>
+                                <th style="padding: 1rem; text-align: center;">Feedback</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for event in events %}
+                            {% set event_slug = event.title | slugify %}
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <td style="padding: 1.2rem;">
+                                    <div style="font-weight: 600;">{{ event.title }}</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted);">{{ event.date }}</div>
+                                </td>
+                                <td style="padding: 1.2rem; text-align: center;">
+                                    {% if event.report_approved %}
+                                        <span class="badge badge-success">Finalized</span>
+                                    {% elif event.report %}
+                                        <span class="badge badge-warning">Review Pending</span>
+                                    {% elif event.event_finished %}
+                                        <span class="badge badge-info">Report Due</span>
+                                    {% else %}
+                                        <span class="badge badge-outline">In Progress</span>
+                                    {% endif %}
+                                </td>
+                                <td style="padding: 1.2rem; text-align: center;">
+                                    {% if event.report %}
+                                        <a href="/static/uploads/clubs/{{ club.id }}/events/{{ event_slug }}/reports/{{ event.report }}" target="_blank" title="Report" style="color:var(--primary);"><i class="fas fa-file-pdf"></i></a>
+                                    {% endif %}
+                                </td>
+                                <td style="padding: 1.2rem; text-align: right; font-weight: 600;">₹{{ event.revenue|default(0) }}</td>
+                                <td style="padding: 1.2rem; text-align: right; font-weight: 600;">₹{{ event.expenditure|default(0) }}</td>
+                                <td style="padding: 1.2rem; text-align: center;">
+                                    <a href="/event/{{ club.id }}/{{ event.id }}" target="_blank" style="font-size:0.8rem; color:var(--text-muted);"><i class="fas fa-external-link-alt"></i></a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr style="border-top: 2px solid var(--glass-border);">
+                                <td colspan="3" style="padding: 1.5rem; text-align: right; text-transform: uppercase; font-size: 0.75rem;">Totals:</td>
+                                <td style="padding: 1.5rem; text-align: right; color: var(--success); font-weight: 800;">
+                                    {% set total_rev = [0] %}
+                                    {% for e in events %}{% if total_rev.append(total_rev.pop() + e.revenue|default(0)|int) %}{% endif %}{% endfor %}
+                                    ₹{{ total_rev[0] }}
+                                </td>
+                                <td style="padding: 1.5rem; text-align: right; color: var(--danger); font-weight: 800;">
+                                    {% set total_spent = [0] %}
+                                    {% for e in events %}{% if total_spent.append(total_spent.pop() + e.expenditure|default(0)|int) %}{% endif %}{% endfor %}
+                                    ₹{{ total_spent[0] }}
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Office Bearers (Registry List) -->
+            <section style="margin-bottom: 3rem;">
+                <h2 style="margin-bottom:1.2rem;"><i class="fas fa-users-cog" style="color:var(--primary);margin-right:0.5rem;"></i>Administrative Personnel</h2>
+                <div class="grid-3" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                    {% for bearer in club.office_bearers %}
+                    <div class="glass" style="padding: 1rem; border-radius: 12px; display: flex; align-items: center; gap: 1rem;">
+                        {% if bearer.photo %}
+                        <img src="/static/uploads/clubs/{{ club.id }}/office_bearers/{{ bearer.photo }}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+                        {% else %}
+                        <div style="width:40px;height:40px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:0.8rem;">{{ bearer.name[0] }}</div>
+                        {% endif %}
+                        <div>
+                            <div style="font-size: 0.9rem; font-weight: 600;">{{ bearer.name }}</div>
+                            <div style="font-size: 0.7rem; color: var(--primary);">{{ bearer.position or bearer.role }}</div>
+                            {% if bearer.year or bearer.department %}
+                            <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.2rem;">{{ bearer.year }}{% if bearer.year and bearer.department %} • {% endif %}{{ bearer.department }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+
+        <!-- ====== RIGHT SIDEBAR ====== -->
+        <aside>
+            <!-- Club Mentor (Registry Block) -->
+            <div class="glass" style="padding: 1.5rem; border-radius: 16px; margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem; font-size: 1rem;"><i class="fas fa-user-shield"></i> Club Mentors</h3>
+                {% set existing_mentors = club.mentors if club.mentors else ([club.mentor] if club.mentor and club.mentor.name else []) %}
+                {% if existing_mentors %}
+                    {% for m in existing_mentors %}
+                    <div style="margin-bottom: 1.5rem; padding-bottom: 1rem; {% if not loop.last %}border-bottom: 1px solid var(--glass-border);{% endif %}">
+                        <div style="text-align: center; margin-bottom: 1rem;">
+                            {% if m.photo %}
+                            <img src="/static/uploads/clubs/{{ club.id }}/mentors/{{ m.photo }}" style="width:60px;height:60px;border-radius:12px;object-fit:cover;border:2px solid var(--primary);">
+                            {% else %}
+                            <div style="width:60px;height:60px;border-radius:12px;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;margin: 0 auto;"><i class="fas fa-user-tie" style="font-size:1.5rem;"></i></div>
+                            {% endif %}
+                        </div>
+                        <div style="font-weight:600; text-align:center;">{{ m.name }}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted); text-align:center; margin-bottom:0.5rem;">{{ m.designation }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <p style="font-size:0.8rem; color:var(--text-muted);">No mentor data registered.</p>
+                {% endif %}
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="glass" style="padding: 1.5rem; border-radius: 16px;">
+                <h3 style="margin-bottom: 1rem; font-size: 1rem;"><i class="fas fa-chart-pie"></i> Activity Stats</h3>
+                <div style="display:flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <span style="font-size:0.8rem; color:var(--text-muted);">Total Events</span>
+                    <span style="font-weight:700;">{{ events|length }}</span>
+                </div>
+                <div style="display:flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <span style="font-size:0.8rem; color:var(--text-muted);">Completed</span>
+                    <span style="font-weight:700; color:var(--success);">{{ completed|length }}</span>
+                </div>
+                <div style="display:flex; justify-content: space-between;">
+                    <span style="font-size:0.8rem; color:var(--text-muted);">Active Registry</span>
+                    <span style="font-weight:700; color:var(--primary);">{{ ongoing|length }}</span>
+                </div>
+            </div>
+        </aside>
+
+    </div>
+</main>
+
+{% endblock %}

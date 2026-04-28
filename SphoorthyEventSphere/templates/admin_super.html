@@ -1,0 +1,597 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+<div class="dashboard-layout">
+    {% include 'sidebar_super.html' %}
+
+    <main class="dashboard-content">
+        <!-- ── HEADER ─────────────────────────────────────────────── -->
+        <header class="reveal active" style="margin-bottom: 3rem;">
+            <div class="section-tag">Administrator Portal</div>
+            <h1 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -0.02em;">
+                Super Admin <span class="gradient-text">Command Center</span>
+            </h1>
+            <p style="color: var(--text-muted); font-size: 1.1rem; max-width: 600px;">
+                Manage global institutional settings, club governance, and system-wide financial monitoring.
+            </p>
+        </header>
+
+        <!-- ── STATS GRID ─────────────────────────────────────────── -->
+        <div class="grid-3 reveal" style="margin-bottom: 3.5rem;">
+            <div class="stat-card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                    <div class="stat-card-label">Total Revenue</div>
+                    <div style="width: 36px; height: 36px; background: rgba(16, 185, 129, 0.1); color: var(--success); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                </div>
+                <div class="stat-card-value" style="color: var(--success);">₹{{ stats.total_revenue }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
+                    <i class="fas fa-arrow-up"></i> +12% from last festival
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                    <div class="stat-card-label">Operational Spending</div>
+                    <div style="width: 36px; height: 36px; background: rgba(239, 68, 68, 0.1); color: var(--danger); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                </div>
+                <div class="stat-card-value" style="color: var(--danger);">₹{{ stats.total_spending }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
+                    Total club logistical expenses
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                    <div class="stat-card-label">Club Network</div>
+                    <div style="width: 36px; height: 36px; background: rgba(99, 102, 241, 0.1); color: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                </div>
+                <div class="stat-card-value">{{ stats.total_clubs }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
+                    Active institutional societies
+                </div>
+            </div>
+        </div>
+
+        <!-- ── CLUBS GOVERNANCE ────────────────────────────────────── -->
+        <section class="reveal" style="margin-bottom: 4rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; gap: 1.5rem;">
+                <div>
+                    <h2 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 0.5rem;">Institutional <span class="gradient-text">Clubs</span></h2>
+                    <p style="color: var(--text-muted); font-size: 0.95rem;">Configure club permissions, features, and administrative access.</p>
+                </div>
+                <button class="btn btn-primary" onclick="toggleModal('clubModal', true)">
+                    <i class="fas fa-plus"></i> Initialize New Club
+                </button>
+            </div>
+
+            {% if clubs %}
+            <div class="dense-grid">
+                {% for c in clubs %}
+                <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-light); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+                    <!-- Club Banner Area -->
+                    <div style="height: 80px; background: linear-gradient(135deg, var(--navy), var(--navy-dark)); position: relative; display: flex; align-items: center; justify-content: center;">
+                        {% if c.cover_image %}
+                        <img src="/static/uploads/clubs/{{ c.id }}/details/{{ c.cover_image }}" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.5;">
+                        {% endif %}
+                        <div style="position: absolute; bottom: -16px; left: 1rem; width: 44px; height: 44px; background: var(--white); border-radius: 10px; padding: 3px; box-shadow: var(--shadow-md); border: 1px solid var(--border-light);">
+                            <div style="width: 100%; height: 100%; border-radius: 8px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                {% if c.logo %}
+                                <img src="/static/uploads/clubs/{{ c.id }}/details/{{ c.logo }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                {% else %}
+                                <i class="fas fa-users" style="color: var(--primary); font-size: 1rem;"></i>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="padding: 1.5rem 1rem 1rem;">
+                        <h3 style="font-size: 0.95rem; font-weight: 800; margin-bottom: 0.15rem; color: var(--navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.name }}</h3>
+                        <p style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <i class="fas fa-shield-alt"></i> {{ c.admin_roll }}
+                        </p>
+
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 1rem;">
+                            {% if c.features.event_management %}<span class="badge badge-success" style="font-size: 0.55rem; padding: 0.15rem 0.4rem;">Events</span>{% endif %}
+                            {% if c.features.payment_system %}<span class="badge badge-warning" style="font-size: 0.55rem; padding: 0.15rem 0.4rem;">Payments</span>{% endif %}
+                            {% if c.features.qr_attendance %}<span class="badge" style="background: var(--navy); color: white; font-size: 0.55rem; padding: 0.15rem 0.4rem;">QR Hub</span>{% endif %}
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; padding-top: 1rem; border-top: 1px solid var(--border-light);">
+                            <a href="/super/registry/{{ c.id }}" class="btn btn-outline" style="justify-content: center; font-size: 0.75rem; padding: 0.4rem;">
+                                <i class="fas fa-file-invoice"></i> Reports
+                            </a>
+                            <button onclick="editClubConfig('{{ c.id }}')" class="btn btn-outline" style="padding: 0.4rem 0.6rem; color: var(--text-muted);">
+                                <i class="fas fa-cog"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="card" style="padding: 5rem; text-align: center; border-style: dashed;">
+                <i class="fas fa-plus-circle" style="font-size: 3rem; color: var(--text-muted); opacity: 0.2; margin-bottom: 1.5rem;"></i>
+                <p style="color: var(--text-muted); font-weight: 600;">No Clubs Initialized</p>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Create a new club dashboard to start managing institutional activities.</p>
+                <button class="btn btn-primary" onclick="toggleModal('clubModal', true)">Setup First Club</button>
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- ── GLOBAL CONFIGURATION ───────────────────────────────── -->
+        <section class="reveal" style="margin-bottom: 4rem;">
+            <div style="margin-bottom: 2rem;">
+                <h2 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 0.5rem;">Communication <span class="gradient-text">Infrastructure</span></h2>
+                <p style="color: var(--text-muted); font-size: 0.95rem;">Configure SMTP and automated email triggers for the entire institution.</p>
+            </div>
+
+            <div class="grid-2">
+                <!-- Global SMTP -->
+                <div class="card" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div style="width: 44px; height: 44px; background: rgba(99, 102, 241, 0.1); color: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                        <div>
+                            <h3 style="font-size: 1.1rem; font-weight: 800; margin: 0;">Global SMTP Fallback</h3>
+                            <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">Primary gateway for all club communications.</p>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; gap: 1rem;">
+                        <div class="form-group">
+                            <label>Gmail Address</label>
+                            <input type="email" id="g_smtp_email" placeholder="events@gmail.com" style="width: 100%;">
+                        </div>
+                        <div class="form-group">
+                            <label>Gmail App Password</label>
+                            <input type="password" id="g_smtp_pass" placeholder="•••• •••• •••• ••••" style="width: 100%;">
+                        </div>
+                        <div class="form-group">
+                            <label>Super Admin Notification Email</label>
+                            <input type="email" id="g_super_admin_email" placeholder="admin@college.edu" style="width: 100%;">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 0.75rem; padding-top: 0.5rem;">
+                        <button onclick="saveGlobalSmtp()" class="btn btn-primary" style="flex: 1; justify-content: center;">Save Configuration</button>
+                        <button onclick="testGlobalSmtp()" class="btn btn-outline" style="padding: 0.75rem 1.25rem;" title="Send Test Email">
+                            <i class="fas fa-vial"></i>
+                        </button>
+                    </div>
+                    <div id="g_smtp_msg" style="font-size: 0.8rem;"></div>
+                </div>
+
+                <!-- Email Legend -->
+                <div class="card" style="background: var(--surface-2); border-color: transparent;">
+                    <h3 style="font-size: 1rem; font-weight: 800; margin-bottom: 1.25rem;">Automated <span class="gradient-text">Triggers</span></h3>
+                    <div style="display: grid; gap: 1rem;">
+                        <div style="display: flex; gap: 1rem;">
+                            <i class="fas fa-ticket-alt" style="color: var(--primary); margin-top: 0.2rem;"></i>
+                            <div>
+                                <div style="font-weight: 700; font-size: 0.85rem;">Registration QR Hub</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">Instant tickets & entry codes.</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 1rem;">
+                            <i class="fas fa-bullhorn" style="color: var(--primary); margin-top: 0.2rem;"></i>
+                            <div>
+                                <div style="font-weight: 700; font-size: 0.85rem;">Event Promotional Blasts</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">Invite past attendees to new events.</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 1rem;">
+                            <i class="fas fa-file-check" style="color: var(--success); margin-top: 0.2rem;"></i>
+                            <div>
+                                <div style="font-weight: 700; font-size: 0.85rem;">Reporting Workflow</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">Alerts for event report submissions.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Per-Club SMTP Table -->
+            <div class="card" style="margin-top: 2rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                    <h3 style="font-size: 1.1rem; font-weight: 800; margin: 0;">Dedicated Club Gateways</h3>
+                    <button onclick="bulkPushSmtp()" class="btn btn-outline" style="font-size: 0.75rem; border-color: var(--primary); color: var(--primary); background: rgba(99, 102, 241, 0.05);">
+                        <i class="fas fa-bolt"></i> Push Global Config to All
+                    </button>
+                </div>
+                
+                <div class="table-responsive">
+                    <table style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Club</th>
+                                <th>SMTP Identity</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clubSmtpTable">
+                            {% for c in clubs %}
+                            <tr id="smtp_row_{{ c.id }}">
+                                <td data-label="Club" style="font-weight: 700;">{{ c.name }}</td>
+                                <td data-label="SMTP Identity">
+                                    <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                                        <input type="email" id="club_smtp_email_{{ c.id }}" value="{{ c.smtp_config.user if c.smtp_config else '' }}" placeholder="Email" style="font-size: 0.75rem; padding: 0.4rem 0.6rem;">
+                                        <input type="password" id="club_smtp_pass_{{ c.id }}" placeholder="App Password" style="font-size: 0.75rem; padding: 0.4rem 0.6rem;">
+                                    </div>
+                                </td>
+                                <td data-label="Status">
+                                    {% if c.smtp_config and c.smtp_config.user %}
+                                    <span class="badge badge-success" style="font-size: 0.65rem;">Active Dedicated</span>
+                                    {% else %}
+                                    <span class="badge" style="background: var(--surface-2); color: var(--text-muted); font-size: 0.65rem;">Using Global</span>
+                                    {% endif %}
+                                </td>
+                                <td data-label="Action" style="text-align: right;">
+                                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                        <button onclick="saveClubSmtp('{{ c.id }}')" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">Save</button>
+                                        <button onclick="testClubSmtp('{{ c.id }}')" class="btn btn-outline" style="padding: 0.4rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-flask"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+
+<!-- Club Modal -->
+<div id="clubModal"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+    <div class="card glass" style="width: 100%; max-width: 600px; padding: 2.5rem;">
+        <h3>Setup New Club Portal</h3>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Initialize a new club with custom feature access.
+        </p>
+        <form id="clubForm">
+            <div class="grid-3" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>Club Name</label>
+                    <input type="text" name="name" id="clubNameInp" placeholder="e.g. Robotics Society" required>
+                </div>
+                <div class="form-group">
+                    <label>Admin Name</label>
+                    <input type="text" id="clubAdminName" placeholder="Admin Name" required>
+                </div>
+            </div>
+            <div class="grid-3" style="grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>Admin Email</label>
+                    <input type="email" id="clubAdminEmail" placeholder="club@admin.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Admin Password</label>
+                    <input type="password" id="clubAdminPass" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone (Optional)</label>
+                    <input type="text" id="clubAdminPhone">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Feature Access (Role-Based Control)</label>
+                <div
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 10px;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                        <input type="checkbox" id="f_event" checked> Event Management
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                        <input type="checkbox" id="f_reg" checked> Registration System
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                        <input type="checkbox" id="f_pay" checked> Payment System
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                        <input type="checkbox" id="f_qr" checked> QR Attendance
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                        <input type="checkbox" id="f_prof" checked> Club Profile
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                        <input type="checkbox" id="f_doc" checked> Document Workflow
+                    </label>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                <button type="button" class="btn btn-outline" onclick="toggleModal('clubModal', false)">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create Club Dashboard</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Club Modal -->
+<div id="editClubModal"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+    <div class="card glass" style="width: 100%; max-width: 600px; padding: 2.5rem;">
+        <h3>Edit Club Configuration</h3>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Update feature access and admin details.</p>
+        <form id="editClubForm">
+            <input type="hidden" id="editClubId">
+            <div class="grid-3" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>Club Name</label>
+                    <input type="text" id="editClubName" required>
+                </div>
+                <div class="form-group">
+                    <label>Admin Name</label>
+                    <input type="text" id="editClubAdminName" required>
+                </div>
+            </div>
+            <div class="grid-3" style="grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>Admin Email</label>
+                    <input type="email" id="editClubAdminEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Admin Phone</label>
+                    <input type="text" id="editClubAdminPhone">
+                </div>
+                <div class="form-group">
+                    <label>New Password (Optional)</label>
+                    <input type="password" id="editClubAdminPass" placeholder="Blank to keep current">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Feature Access</label>
+                <div
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 10px;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                        <input type="checkbox" id="ef_event"> Event Management
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                        <input type="checkbox" id="ef_reg"> Registration System
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                        <input type="checkbox" id="ef_pay"> Payment System
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                        <input type="checkbox" id="ef_qr"> QR Attendance
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                        <input type="checkbox" id="ef_prof"> Club Profile
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                        <input type="checkbox" id="ef_doc"> Document Workflow
+                    </label>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                <button type="button" class="btn btn-outline"
+                    onclick="toggleModal('editClubModal', false)">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Removed extracted modals -->
+
+<script>
+    function toggleModal(id, show) {
+        document.getElementById(id).style.display = show ? 'flex' : 'none';
+    }
+
+    document.getElementById('clubForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const clubName = document.getElementById('clubNameInp').value;
+        const features = {
+            event_management: document.getElementById('f_event').checked,
+            registration_system: document.getElementById('f_reg').checked,
+            payment_system: document.getElementById('f_pay').checked,
+            qr_attendance: document.getElementById('f_qr').checked,
+            club_profile: document.getElementById('f_prof').checked,
+            document_workflow: document.getElementById('f_doc').checked
+        };
+
+        const adminData = {
+            name: document.getElementById('clubAdminName').value,
+            email: document.getElementById('clubAdminEmail').value,
+            password: document.getElementById('clubAdminPass').value,
+            phone: document.getElementById('clubAdminPhone').value
+        };
+
+        const csrf = document.querySelector('meta[name="csrf-token"]').content;
+        const res = await fetch('/api/clubs/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+            body: JSON.stringify({ name: clubName, features: features, admin: adminData })
+        });
+
+        const result = await res.json();
+        if (result.success) {
+            alert('Club Created Successfully!');
+            location.reload();
+        } else {
+            alert(result.message);
+        }
+    }
+
+
+    const clubsData = {{ clubs | tojson | safe }};
+
+    function editClubConfig(clubId) {
+        const c = clubsData.find(x => x.id === clubId);
+        if (!c) return;
+
+        document.getElementById('editClubId').value = c.id;
+        document.getElementById('editClubName').value = c.name;
+        // The c object might have slightly different names depending on how it's populated
+        document.getElementById('editClubAdminName').value = c.admin_name || c.name + " Admin";
+        document.getElementById('editClubAdminEmail').value = c.admin_roll || '';
+        document.getElementById('editClubAdminPhone').value = c.admin_phone || '';
+        document.getElementById('editClubAdminPass').value = '';
+        document.getElementById('editClubAdminPhone').value = c.phone || '';
+        document.getElementById('editClubAdminPass').value = ''; // Reset password field
+
+        // Ensure we search for additional admin info if available
+        const adminEntry = (window.allAdmins || []).find(a => a.email === c.admin_roll);
+        if (adminEntry) {
+            document.getElementById('editClubAdminName').value = adminEntry.name;
+            document.getElementById('editClubAdminPhone').value = adminEntry.phone || '';
+        }
+
+        document.getElementById('ef_event').checked = c.features.event_management;
+        document.getElementById('ef_reg').checked = c.features.registration_system;
+        document.getElementById('ef_pay').checked = c.features.payment_system;
+        document.getElementById('ef_qr').checked = c.features.qr_attendance;
+        document.getElementById('ef_prof').checked = c.features.club_profile;
+        document.getElementById('ef_doc').checked = c.features.document_workflow;
+
+        toggleModal('editClubModal', true);
+    }
+
+    document.getElementById('editClubForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const clubId = document.getElementById('editClubId').value;
+        const features = {
+            event_management: document.getElementById('ef_event').checked,
+            registration_system: document.getElementById('ef_reg').checked,
+            payment_system: document.getElementById('ef_pay').checked,
+            qr_attendance: document.getElementById('ef_qr').checked,
+            club_profile: document.getElementById('ef_prof').checked,
+            document_workflow: document.getElementById('ef_doc').checked
+        };
+
+        const adminData = {
+            name: document.getElementById('editClubAdminName').value,
+            email: document.getElementById('editClubAdminEmail').value,
+            phone: document.getElementById('editClubAdminPhone').value,
+            password: document.getElementById('editClubAdminPass').value
+        };
+
+        const csrf = document.querySelector('meta[name="csrf-token"]').content;
+        const res = await fetch('/api/clubs/update_config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+            body: JSON.stringify({ id: clubId, features: features, admin: adminData })
+        });
+
+        if ((await res.json()).success) {
+            alert('Club Configuration Updated!');
+            location.reload();
+        }
+    }
+    // ── SMTP Helpers ──────────────────────────────────────────────────────────
+    const csrf = () => document.querySelector('meta[name="csrf-token"]').content;
+
+    // Load current global SMTP on page load
+    async function loadGlobalSmtp() {
+        try {
+            const r = await fetch('/api/smtp/get?scope=global');
+            const d = await r.json();
+            if (d.success) {
+                document.getElementById('g_smtp_email').value = d.smtp_email || '';
+                document.getElementById('g_super_admin_email').value = d.super_admin_email || '';
+                if (d.has_password) document.getElementById('g_smtp_pass').placeholder = '••••••••••••••• (saved)';
+            }
+        } catch(e) {}
+    }
+    loadGlobalSmtp();
+
+    async function saveGlobalSmtp() {
+        const email    = document.getElementById('g_smtp_email').value.trim();
+        const pass     = document.getElementById('g_smtp_pass').value.trim();
+        const saEmail  = document.getElementById('g_super_admin_email').value.trim();
+        const msgEl    = document.getElementById('g_smtp_msg');
+        if (!email) { msgEl.textContent = '⚠️ Email is required.'; msgEl.style.color='#f59e0b'; return; }
+
+        // Save super admin email as part of settings
+        const payload = { smtp_email: email, smtp_server: 'smtp.gmail.com', smtp_port: 587,
+                          super_admin_email: saEmail };
+        if (pass) payload.smtp_password = pass;
+
+        msgEl.textContent = 'Saving…'; msgEl.style.color = 'var(--text-muted)';
+        const r = await fetch('/api/settings/update', {
+            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': csrf()},
+            body: JSON.stringify(payload)
+        });
+        const res = await fetch('/api/smtp/update', {
+            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': csrf()},
+            body: JSON.stringify({ scope:'global', smtp_email: email,
+                                   smtp_password: pass || undefined,
+                                   smtp_server:'smtp.gmail.com', smtp_port: 587 })
+        });
+        const d = await res.json();
+        msgEl.textContent = d.success ? '✅ SMTP saved!' : ('❌ ' + d.message);
+        msgEl.style.color = d.success ? '#10b981' : '#f87171';
+    }
+
+    async function testGlobalSmtp() {
+        const email = document.getElementById('g_smtp_email').value.trim();
+        const msgEl = document.getElementById('g_smtp_msg');
+        msgEl.textContent = '🧪 Testing connection…'; msgEl.style.color = 'var(--text-muted)';
+        const r = await fetch('/api/smtp/test', {
+            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': csrf()},
+            body: JSON.stringify({ to_email: email })
+        });
+        const d = await r.json();
+        msgEl.textContent = d.success ? ('✅ ' + d.message) : ('❌ ' + d.message);
+        msgEl.style.color = d.success ? '#10b981' : '#f87171';
+    }
+
+    async function saveClubSmtp(clubId) {
+        const email = document.getElementById(`club_smtp_email_${clubId}`).value.trim();
+        const pass  = document.getElementById(`club_smtp_pass_${clubId}`).value.trim();
+        if (!email || !pass) { alert('Both email and app password are required for a club SMTP.'); return; }
+        const r = await fetch('/api/smtp/update', {
+            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': csrf()},
+            body: JSON.stringify({ scope:'club', club_id: clubId, smtp_email: email,
+                                   smtp_password: pass, smtp_server:'smtp.gmail.com', smtp_port: 587 })
+        });
+        const d = await r.json();
+        alert(d.message);
+        if (d.success) location.reload();
+    }
+
+    async function testClubSmtp(clubId) {
+        const email = document.getElementById(`club_smtp_email_${clubId}`).value.trim();
+        const r = await fetch('/api/smtp/test', {
+            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': csrf()},
+            body: JSON.stringify({ club_id: clubId, to_email: email })
+        });
+        const d = await r.json();
+        alert((d.success ? '✅ ' : '❌ ') + d.message);
+    }
+
+    async function bulkPushSmtp() {
+        const email = document.getElementById('g_smtp_email').value.trim();
+        const pass  = document.getElementById('g_smtp_pass').value.trim();
+        if (!email || !pass) {
+            alert('Please fill in the Global SMTP email and password first.');
+            return;
+        }
+        if (!confirm(`Push this SMTP config (${email}) to ALL clubs?`)) return;
+        const r = await fetch('/api/smtp/bulk-update-clubs', {
+            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': csrf()},
+            body: JSON.stringify({ smtp_email: email, smtp_password: pass,
+                                   smtp_server:'smtp.gmail.com', smtp_port: 587 })
+        });
+        const d = await r.json();
+        alert((d.success ? '✅ ' : '❌ ') + d.message);
+        if (d.success) location.reload();
+    }
+
+
+</script>
+{% endblock %}

@@ -1,0 +1,183 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+    :root {
+        --tf-primary: #a855f7;
+        --tf-glass: rgba(30, 41, 59, 0.7);
+        --tf-border: rgba(255, 255, 255, 0.1);
+        --tf-text-muted: #94a3b8;
+    }
+    .page-container { max-width: 1200px; margin: 0 auto; padding: 2rem; min-height: 100vh; }
+    .hub-card { 
+        background: var(--tf-glass); 
+        backdrop-filter: blur(12px); 
+        border: 1px solid var(--tf-border); 
+        border-radius: 24px; 
+        padding: 2rem; 
+        margin-bottom: 2rem;
+    }
+    .admin-table { width: 100%; border-collapse: separate; border-spacing: 0 0.5rem; }
+    .admin-table tr { background: rgba(255,255,255,0.02); transition: background 0.2s; }
+    .admin-table tr:hover { background: rgba(255,255,255,0.05); }
+    .admin-table th { padding: 1rem; color: var(--tf-text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; text-align: left; }
+    .admin-table td { padding: 1.25rem 1rem; border-top: 1px solid var(--tf-border); border-bottom: 1px solid var(--tf-border); }
+    .admin-table td:first-child { border-left: 1px solid var(--tf-border); border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+    .admin-table td:last-child { border-right: 1px solid var(--tf-border); border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+    .badge-score { background: rgba(168, 85, 247, 0.1); color: #a855f7; padding: 4px 10px; border-radius: 8px; font-weight: 700; }
+</style>
+
+<div class="page-container">
+    <div style="margin-bottom: 3rem; display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+            <a href="/em/techfest/{{ event.id }}/hub" style="color: var(--tf-text-muted); text-decoration: none; font-weight: 600;"><i class="fas fa-chevron-left"></i> Back to Hub</a>
+            <h1 style="margin: 1rem 0 0 0; font-size: 2.5rem; font-weight: 800;">Evaluation Control</h1>
+            <p style="color: var(--tf-text-muted);">{{ event.title }} • Panel & Scoring</p>
+        </div>
+        <button class="tf-btn tf-btn-primary" onclick="document.getElementById('evaluator-modal').style.display='flex'"><i class="fas fa-user-plus"></i> Add Evaluator</button>
+    </div>
+
+    <div class="hub-card">
+        <h3 style="margin-top: 0;">Panel of Judges</h3>
+        <div style="overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr><th>Name</th><th>Phone</th><th>Email</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="evaluators-list">
+                    <!-- Populated via loadEvaluators() -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <h2 style="margin-top: 4rem; margin-bottom: 1.5rem; font-size: 1.5rem; font-weight: 700;">Live Competition Results</h2>
+    {% for se in sub_events %}
+    <div class="hub-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0;">{{ se.name }}</h3>
+            <a href="/em/techfest/{{ se.id }}/leaderboard" class="tf-btn tf-btn-outline" style="font-size: 0.8rem; padding: 0.5rem 1rem;"><i class="fas fa-trophy"></i> View Board</a>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr><th>Participant</th><th>Score</th><th>Rank</th><th>Comments</th></tr>
+                </thead>
+                <tbody id="scores-{{ se.id }}">
+                    <tr><td colspan="4" style="text-align: center; color: var(--tf-text-muted);">Awaiting evaluation data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Modal -->
+<div id="evaluator-modal" class="modal-overlay" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; align-items:center; justify-content:center;">
+    <div class="hub-card" style="width: 100%; max-width: 500px;">
+        <h3 style="margin-top: 0;">New Evaluator</h3>
+        <form id="evaluator-form" onsubmit="saveEvaluator(event)">
+            <div class="tf-form-group">
+                <label class="tf-label">Name</label>
+                <input type="text" name="name" class="tf-input" required style="width: 100%; padding: 0.8rem; border-radius: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--tf-border); color: white; margin-bottom: 1rem;">
+                
+                <label class="tf-label">Phone</label>
+                <input type="text" name="phone" class="tf-input" required style="width: 100%; padding: 0.8rem; border-radius: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--tf-border); color: white; margin-bottom: 1rem;">
+                
+                <label class="tf-label">Email (Identifier)</label>
+                <input type="email" name="email" class="tf-input" required style="width: 100%; padding: 0.8rem; border-radius: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--tf-border); color: white; margin-bottom: 1rem;">
+                
+                <label class="tf-label">Password</label>
+                <input type="password" name="password" class="tf-input" required style="width: 100%; padding: 0.8rem; border-radius: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--tf-border); color: white; margin-bottom: 1.5rem;">
+                
+                <label class="tf-label">Assign to Sub-Events</label>
+                <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--tf-border); border-radius: 10px; padding: 1rem; margin-bottom: 2rem; max-height: 150px; overflow-y: auto;">
+                    {% for se in sub_events if se.sub_event_type in ['ideathon', 'project_expo', 'paper_presentation'] %}
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                        <input type="checkbox" name="assigned_event_ids" value="{{ se.id }}" id="se-{{ se.id }}">
+                        <label for="se-{{ se.id }}" style="font-size: 0.85rem; cursor: pointer;">{{ se.name }} <span style="font-size: 0.7rem; color: var(--tf-text-muted);">({{ se.sub_event_type|title }})</span></label>
+                    </div>
+                    {% else %}
+                    <p style="font-size: 0.8rem; color: var(--tf-text-muted); margin: 0;">No evaluation-based sub-events created yet.</p>
+                    {% endfor %}
+                </div>
+                
+                <div style="display: flex; gap: 1rem;">
+                    <button type="button" class="tf-btn tf-btn-outline" style="flex: 1;" onclick="document.getElementById('evaluator-modal').style.display='none'">Cancel</button>
+                    <button type="submit" class="tf-btn tf-btn-primary" style="flex: 1;">Invite Evaluator</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    async function loadEvaluators() {
+        const resp = await fetch('/em/api/evaluators/list');
+        const data = await resp.json();
+        if (data.success) {
+            const list = document.getElementById('evaluators-list');
+            list.innerHTML = '';
+            const filtered = data.evaluators.filter(ev => ev.assigned_events && ev.assigned_events.includes('{{ event.id }}'));
+            filtered.forEach(ev => {
+                list.innerHTML += `
+                    <tr>
+                        <td><strong>${ev.name}</strong></td>
+                        <td>${ev.phone || '-'}</td>
+                        <td>${ev.email}</td>
+                        <td>
+                            <button class="tf-btn tf-btn-outline" style="padding: 0.4rem; color: #ef4444;" onclick="deleteEvaluator('${ev.id}')"><i class="fas fa-user-minus"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+    }
+
+    async function saveEvaluator(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        data.assigned_event_ids = formData.getAll('assigned_event_ids');
+        data.event_id = '{{ event.id }}';
+        const resp = await fetch('/em/api/evaluators/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
+            body: JSON.stringify(data)
+        });
+        if ((await resp.json()).success) location.reload();
+    }
+
+    async function deleteEvaluator(id) {
+        if (!confirm('Remove evaluator?')) return;
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        const resp = await fetch(`/em/api/evaluators/${id}/delete`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrf }
+        });
+        if ((await resp.json()).success) loadEvaluators();
+    }
+
+    async function loadScores(subEventId) {
+        const resp = await fetch(`/em/api/techfest/scores/${subEventId}`);
+        const data = await resp.json();
+        if (data.success && data.scores.length) {
+            const tbody = document.getElementById(`scores-${subEventId}`);
+            tbody.innerHTML = data.scores.map(s => `
+                <tr>
+                    <td><strong>${s.name}</strong><br><small style="color:var(--tf-text-muted)">${s.reg_id}</small></td>
+                    <td><span class="badge-score">${s.score}</span></td>
+                    <td>#${s.rank}</td>
+                    <td style="font-size:0.85rem; opacity:0.8;">${s.comments || '-'}</td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadEvaluators();
+        {% for se in sub_events %}
+            loadScores('{{ se.id }}');
+        {% endfor %}
+    });
+</script>
+{% endblock %}

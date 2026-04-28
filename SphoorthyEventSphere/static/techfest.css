@@ -1,0 +1,215 @@
+:root {
+    --tf-primary: #2d3dba;
+    --tf-secondary: #4052d7;
+    --tf-accent: #10b981;
+    --tf-bg: #f5f7ff;
+    --tf-glass: #ffffff;
+    --tf-border: rgba(32, 43, 129, 0.12);
+    --tf-text: #0f1440;
+    --tf-text-muted: #7a85b0;
+    
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+}
+
+body.techfest-body {
+    background: var(--tf-bg);
+    color: var(--tf-text);
+    font-family: 'Outfit', sans-serif;
+    margin: 0;
+    min-height: 100vh;
+}
+
+.tf-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+}
+
+.tf-glass-card {
+    background: var(--tf-glass);
+    border: 1px solid var(--tf-border);
+    border-radius: var(--radius-xl);
+    padding: 2.5rem;
+    box-shadow: 0 12px 40px rgba(32, 43, 129, 0.08);
+}
+
+.tf-step-header {
+    margin-bottom: 2rem;
+}
+
+.tf-step-header h2 {
+    color: var(--tf-primary);
+    font-weight: 800;
+}
+
+.tf-step-indicator {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+    position: relative;
+}
+
+.tf-step {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--tf-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    font-weight: 800;
+    font-size: 0.85rem;
+    color: var(--tf-text-muted);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tf-step.active {
+    background: var(--tf-primary);
+    border-color: var(--tf-primary);
+    color: #fff;
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(45, 61, 186, 0.25);
+}
+
+.tf-step.completed {
+    background: var(--tf-secondary);
+    border-color: var(--tf-secondary);
+    color: #fff;
+}
+
+.tf-form-group {
+    margin-bottom: 1.5rem;
+}
+
+.tf-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--tf-text);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.tf-input {
+    width: 100%;
+    background: #fff;
+    border: 1.5px solid rgba(32, 43, 129, 0.2);
+    border-radius: var(--radius-md);
+    padding: 0.875rem 1rem;
+    color: var(--tf-text);
+    font-size: 0.95rem;
+    outline: none;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.tf-input:focus {
+    border-color: var(--tf-primary);
+    box-shadow: 0 0 0 4px rgba(45, 61, 186, 0.1);
+}
+
+.tf-btn {
+    padding: 0.875rem 2rem;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    font-size: 0.95rem;
+}
+
+.tf-btn-primary {
+    background: var(--tf-primary);
+    color: white;
+}
+
+.tf-btn-primary:hover {
+    background: #171f5e;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(45, 61, 186, 0.2);
+}
+
+.tf-btn-outline {
+    background: transparent;
+    border: 1.5px solid var(--tf-border);
+    color: var(--tf-text-secondary);
+}
+
+.tf-btn-outline:hover {
+    background: var(--tf-bg);
+    border-color: var(--tf-primary);
+    color: var(--tf-primary);
+}
+
+.tf-event-card {
+    background: #fff;
+    border: 1.5px solid var(--tf-border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    transition: all 0.2s;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.tf-event-card:hover {
+    border-color: var(--tf-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(32, 43, 129, 0.06);
+}
+
+.tf-event-card.selected {
+    border-color: var(--tf-primary);
+    background: rgba(45, 61, 186, 0.04);
+}
+
+.tf-event-card.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: var(--tf-primary);
+    color: #fff;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+.tf-animation-fade-in {
+    animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--tf-bg);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--tf-border);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--tf-text-muted);
+}

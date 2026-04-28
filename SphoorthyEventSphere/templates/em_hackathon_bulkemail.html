@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+  .hb-main { padding: 2rem; max-width: 800px; margin: 0 auto; }
+  .hb-form { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); padding: 2rem; border-radius: 16px; margin-top: 1.5rem; }
+  .hb-form input, .hb-form textarea { width: 100%; padding: .8rem; margin-top: .5rem; margin-bottom: 1.5rem; background: rgba(0,0,0,.2); border: 1px solid rgba(255,255,255,.2); color: #fff; border-radius: 8px; outline: none; }
+  .btn-pink { background: #ec4899; color: #fff; border: none; padding: .8rem 1.5rem; border-radius: 8px; font-weight: bold; cursor: pointer; }
+</style>
+<div class="hb-main">
+  <a href="/em/hackathon/{{ event.id }}/hub" style="color:rgba(255,255,255,.5);text-decoration:none;"><i class="fas fa-arrow-left"></i> Back to Hub</a>
+  <h2 style="margin-top:1rem;">Bulk Email - {{ event.title }}</h2>
+  <p style="color:rgba(255,255,255,.6);">Send an email broadcast to all registered team leaders.</p>
+
+  <div class="hb-form">
+    <label>Subject Line</label>
+    <input type="text" id="emSubj" placeholder="e.g. Important Update for Hackathon">
+
+    <label>Message Content</label>
+    <textarea id="emMsg" rows="6" placeholder="Type your message here..."></textarea>
+
+    <button class="btn-pink" id="sendBtn" onclick="sendBulk()">Send Broadcast <i class="fas fa-paper-plane"></i></button>
+    <div id="emStatus" style="margin-top:1rem;font-weight:bold;"></div>
+  </div>
+</div>
+<script>
+async function sendBulk() {
+  const subj = document.getElementById('emSubj').value;
+  const msg = document.getElementById('emMsg').value;
+  if(!subj || !msg) return alert("Please fill all fields.");
+
+  const btn = document.getElementById('sendBtn');
+  btn.innerText = "Sending..."; btn.disabled = true;
+
+  try {
+    const r = await fetch('/em/api/hackathon/bulk-email/{{ event.id }}', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({subject: subj, message: msg})
+    });
+    const d = await r.json();
+    document.getElementById('emStatus').innerHTML = d.success ? 
+      `<span style="color:#10b981;">Successfully sent to ${d.sent} teams. (${d.failed} failed)</span>` : 
+      `<span style="color:#ef4444;">Failed to send.</span>`;
+  } catch(e) {
+    document.getElementById('emStatus').innerHTML = `<span style="color:#ef4444;">Error occurred.</span>`;
+  }
+  btn.innerText = "Send Broadcast"; btn.disabled = false;
+}
+</script>
+{% endblock %}

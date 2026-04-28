@@ -1,0 +1,301 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+<div class="dashboard-layout">
+    <!-- Year Navigation Sidebar -->
+    {% include 'sidebar_super.html' %}
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Back Button & Header -->
+        <div style="margin-bottom: 2rem;">
+            <a href="/super/registry" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 12px; padding: 0.6rem 1.2rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); text-decoration: none; transition: 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='var(--text-muted)'">
+                <i class="fas fa-arrow-left"></i> Back to Institutional Registry
+            </a>
+        </div>
+        <div style="display:flex; align-items:center; gap:1.25rem; margin-bottom:2.5rem; flex-wrap:wrap;">
+            {% if club.logo %}
+            <img src="/static/uploads/clubs/{{ club.id }}/details/{{ club.logo }}"
+                style="width:64px; height:64px; border-radius:16px; object-fit:cover; border:2px solid rgba(99,102,241,0.4); box-shadow:0 4px 20px rgba(0,0,0,0.4);"
+                onerror="this.style.display='none'">
+            {% else %}
+            <div style="width:64px;height:64px;border-radius:16px;background:rgba(99,102,241,0.15);border:2px solid rgba(99,102,241,0.3);display:flex;align-items:center;justify-content:center;">
+                <i class="fas fa-users" style="font-size:1.6rem; color:var(--primary);"></i>
+            </div>
+            {% endif %}
+            <div>
+                <h1 style="font-size:1.8rem; font-weight:800; margin-bottom:0.25rem;">{{ club.name }}</h1>
+                <p style="color:var(--text-muted); font-size:0.9rem; margin:0;">
+                    <i class="fas fa-archive" style="margin-right:0.4rem; color:var(--primary);"></i>Annual Reports &amp; Office Bearer Registry
+                </p>
+            </div>
+            <div style="margin-left:auto;">
+                <a href="/api/clubs/{{ club.id }}/download_annual_zip/{{ current_year }}"
+                    class="btn btn-primary" style="font-size:0.88rem; padding:0.65rem 1.25rem; text-decoration:none;"
+                    title="Download {{ current_year }} data as ZIP">
+                    <i class="fas fa-file-archive"></i> Download {{ current_year }} ZIP
+                </a>
+            </div>
+        </div>
+
+
+        {% if years | length == 0 %}
+        <div style="padding:4rem; text-align:center; border:2px dashed rgba(255,255,255,0.08); border-radius:24px; color:var(--text-muted);">
+            <i class="fas fa-archive" style="font-size:3rem; opacity:0.2; display:block; margin-bottom:1rem;"></i>
+            <p>No annual report data available yet for this club.</p>
+            <p style="font-size:0.85rem;">Reports will appear as events and elections are completed.</p>
+        </div>
+        {% endif %}
+
+        {% for year in years | sort(reverse=True) %}
+        <div id="year-{{ year }}" class="year-section {% if loop.first %}active{% endif %}">
+
+            <!-- Year Banner -->
+            <div style="background:linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08)); border:1px solid rgba(99,102,241,0.2); border-radius:20px; padding:1.5rem 2rem; margin-bottom:2rem; display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap;">
+                <div>
+                    <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.3rem;">Academic Year</div>
+                    <div style="font-size:2.2rem; font-weight:900; color:var(--primary); line-height:1;">{{ year }}</div>
+                </div>
+                <div style="display:flex; gap:2rem; flex-wrap:wrap; margin-left:1rem;">
+                    {% set yr_events = [] %}
+                    {% for ev in events %}{% if ev.year|string == year|string %}{% set _ = yr_events.append(ev) %}{% endif %}{% endfor %}
+                    {% set yr_election = elections | selectattr('year', 'equalto', year|string) | first %}
+
+                    <div style="text-align:center;">
+                        <div style="font-size:1.6rem; font-weight:800; color:#fff;">{{ yr_events|length }}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">Total Events</div>
+                    </div>
+                    <div style="text-align:center;">
+                        {% set completed_ev = yr_events | selectattr('report_approved') | list %}
+                        <div style="font-size:1.6rem; font-weight:800; color:#10b981;">{{ completed_ev|length }}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">Reports Filed</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:1.6rem; font-weight:800; color:#f59e0b;">{{ yr_election.nominations|length if yr_election else 0 }}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">Nominees</div>
+                    </div>
+                </div>
+                <!-- Per-year ZIP download -->
+                <div style="margin-left:auto;">
+                    <a href="/api/clubs/{{ club.id }}/download_annual_zip/{{ year }}"
+                        class="btn btn-primary" style="text-decoration:none; font-size:0.82rem; padding:0.6rem 1rem;"
+                        title="Download all {{ year }} reports, posters &amp; office bearer data as ZIP">
+                        <i class="fas fa-file-archive"></i> ZIP {{ year }}
+                    </a>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:2rem; align-items:start;">
+
+                <!-- ── LEFT: Office Bearers ── -->
+                <div>
+                    <div class="section-label"><i class="fas fa-crown"></i> Office Bearers {{ year }}</div>
+
+                    {% set yr_election = elections | selectattr('year', 'equalto', year|string) | first %}
+
+                    {% if yr_election and yr_election.status == 'results_published' %}
+                    <div style="display:grid; gap:0.85rem; margin-bottom:1.5rem;">
+                        {% for pos in yr_election.positions %}
+                            {% set ns = namespace(top_nom=none, max_votes=-1) %}
+                            {% for n in yr_election.nominations %}
+                                {% if n.position == pos %}
+                                    {% set count = namespace(c=0) %}
+                                    {% for v in yr_election.votes %}
+                                        {% if v.votes.get(pos) == n.id %}{% set count.c = count.c + 1 %}{% endif %}
+                                    {% endfor %}
+                                    {% if count.c > ns.max_votes %}{% set ns.max_votes = count.c %}{% set ns.top_nom = n %}{% endif %}
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if ns.top_nom %}
+                            <div class="bearer-card">
+                                <img src="/static/uploads/clubs/{{ club.id }}/elections/{{ yr_election.id }}/{{ ns.top_nom.photo }}"
+                                    style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid rgba(99,102,241,0.4);flex-shrink:0;"
+                                    onerror="this.src='https://ui-avatars.com/api/?name={{ ns.top_nom.name | urlencode }}&background=6366f1&color=fff&size=80'">
+                                <div style="flex:1; min-width:0;">
+                                    <div style="font-weight:700; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ ns.top_nom.name }}</div>
+                                    <div style="font-size:0.78rem; color:var(--primary); margin-bottom:0.25rem;">{{ pos }}</div>
+                                    <div style="font-size:0.72rem; color:var(--text-muted);">{{ ns.top_nom.roll_number }}</div>
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:0.35rem; flex-shrink:0;">
+                                    <a href="/static/uploads/clubs/{{ club.id }}/elections/{{ yr_election.id }}/{{ ns.top_nom.photo }}"
+                                        download class="dl-btn dl-primary" title="Download Photo">
+                                        <i class="fas fa-image"></i> Photo
+                                    </a>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    <!-- Download Bearer Data as CSV Button -->
+                    <button onclick="downloadBearers('{{ year }}', '{{ yr_election.id }}')" class="dl-btn dl-success" style="width:100%; justify-content:center; padding:0.65rem;">
+                        <i class="fas fa-file-csv"></i> Download Office Bearer Data (CSV)
+                    </button>
+
+                    {% elif yr_election %}
+                    <div style="padding:1.5rem; text-align:center; border:1px dashed rgba(255,255,255,0.08); border-radius:12px; color:var(--text-muted); font-size:0.88rem;">
+                        <i class="fas fa-hourglass-half" style="display:block; font-size:1.5rem; opacity:0.4; margin-bottom:0.75rem;"></i>
+                        Election in progress — results not published yet.<br>
+                        <span style="font-size:0.78rem;">Status: <strong style="color:#f59e0b;">{{ yr_election.status | replace('_',' ') | title }}</strong></span>
+                    </div>
+                    {% else %}
+                    <div style="padding:1.5rem; text-align:center; border:1px dashed rgba(255,255,255,0.08); border-radius:12px; color:var(--text-muted); font-size:0.85rem;">
+                        <i class="fas fa-vote-yea" style="display:block; font-size:1.5rem; opacity:0.3; margin-bottom:0.75rem;"></i>
+                        No election conducted for {{ year }}.
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- ── RIGHT: Event Reports ── -->
+                <div>
+                    <div class="section-label"><i class="fas fa-file-alt"></i> Event Reports {{ year }}</div>
+
+                    {% set yr_events = [] %}
+                    {% for ev in events %}{% if ev.year|string == year|string %}{% set _ = yr_events.append(ev) %}{% endif %}{% endfor %}
+
+                    {% if yr_events %}
+                    <div style="display:grid; gap:0.85rem;">
+                        {% for ev in yr_events | sort(attribute='date', reverse=True) %}
+                        {% set ev_slug = ev.title | lower | replace(' ','_') | replace('-','_') %}
+                        <div class="report-card">
+                            <div style="display:flex; align-items:flex-start; gap:0.85rem;">
+                                <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <i class="fas fa-calendar-check" style="font-size:1rem; color:var(--primary);"></i>
+                                </div>
+                                <div style="flex:1; min-width:0;">
+                                    <div style="font-weight:700; font-size:0.9rem; margin-bottom:0.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ ev.title }}</div>
+                                    <div style="font-size:0.75rem; color:var(--text-muted);">{{ ev.date }}</div>
+                                </div>
+                                <!-- Status dot -->
+                                {% if ev.report_approved %}
+                                <span style="width:8px;height:8px;border-radius:50%;background:#10b981;flex-shrink:0;margin-top:0.35rem;" title="Report Approved"></span>
+                                {% elif ev.report %}
+                                <span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;flex-shrink:0;margin-top:0.35rem;" title="Report Pending"></span>
+                                {% else %}
+                                <span style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.2);flex-shrink:0;margin-top:0.35rem;" title="No Report"></span>
+                                {% endif %}
+                            </div>
+
+                            <div style="display:flex; gap:0.6rem; flex-wrap:wrap; padding-top:0.75rem; border-top:1px solid rgba(255,255,255,0.06); margin-top:0.5rem;">
+                                {% if ev.report %}
+                                    {% if ev.report_approved %}
+                                    <a href="/static/uploads/clubs/{{ club.id }}/events/{{ ev_slug }}/reports/{{ ev.report }}"
+                                        download class="dl-btn dl-success" title="Download Official Report">
+                                        <i class="fas fa-file-pdf"></i> Download Report
+                                    </a>
+                                    {% else %}
+                                    <a href="/admin/report/{{ club.id }}/{{ ev.id }}" class="dl-btn dl-primary" target="_blank" title="Review Submission">
+                                        <i class="fas fa-search-plus"></i> Review Report
+                                    </a>
+                                    {% endif %}
+                                {% else %}
+                                <span class="dl-btn dl-muted" style="opacity: 0.6; cursor: default;">
+                                    <i class="fas fa-exclamation-triangle"></i> No Report
+                                </span>
+                                {% endif %}
+
+                                {% if ev.poster %}
+                                <a href="/static/uploads/clubs/{{ club.id }}/events/{{ ev_slug }}/posters/{{ ev.poster }}"
+                                    download class="dl-btn dl-muted">
+                                    <i class="fas fa-image"></i> Poster
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div style="padding:1.5rem; text-align:center; border:1px dashed rgba(255,255,255,0.08); border-radius:12px; color:var(--text-muted); font-size:0.85rem;">
+                        <i class="fas fa-calendar-times" style="display:block; font-size:1.5rem; opacity:0.3; margin-bottom:0.75rem;"></i>
+                        No events recorded for {{ year }}.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Mentor Info -->
+            {% if club.mentor %}
+            <div style="margin-top:2rem; padding:1.25rem 1.5rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; display:flex; align-items:center; gap:1rem;">
+                <div style="width:44px;height:44px;border-radius:12px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-chalkboard-teacher" style="color:#10b981;"></i>
+                </div>
+                <div>
+                    <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;">Faculty Mentor</div>
+                    <div style="font-weight:700;">{{ club.mentor.name }}</div>
+                    {% if club.mentor.designation %}<div style="font-size:0.8rem; color:var(--text-muted);">{{ club.mentor.designation }}</div>{% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+        {% endfor %}
+    </main>
+</div>
+
+<!-- Hidden CSV download data -->
+<script>
+const electionsData = {{ elections | tojson | safe }};
+const clubId = "{{ club.id }}";
+
+function showYear(year, btn) {
+    document.querySelectorAll('.year-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.year-nav-btn').forEach(b => b.classList.remove('active'));
+    const sec = document.getElementById('year-' + year);
+    if (sec) sec.classList.add('active');
+    if (btn) btn.classList.add('active');
+}
+
+function downloadBearers(year, electionId) {
+    const el = electionsData.find(e => e.id === electionId);
+    if (!el || el.status !== 'results_published') {
+        showToast('Results not published yet.', 'warning');
+        return;
+    }
+
+    // Build winner per position
+    const winners = [];
+    for (const pos of el.positions) {
+        let topNom = null, maxVotes = -1;
+        for (const n of el.nominations) {
+            if (n.position !== pos) continue;
+            const count = el.votes.filter(v => v.votes && v.votes[pos] === n.id).length;
+            if (count > maxVotes) { maxVotes = count; topNom = n; }
+        }
+        if (topNom) {
+            winners.push({
+                position: pos,
+                name: topNom.name,
+                roll_number: topNom.roll_number,
+                email: topNom.email,
+                contact: topNom.contact,
+                votes: maxVotes,
+                year: year
+            });
+        }
+    }
+
+    if (winners.length === 0) {
+        showToast('No office bearer data found.', 'error');
+        return;
+    }
+
+    const headers = ['Year', 'Position', 'Name', 'Roll Number', 'Email', 'Contact', 'Votes Received'];
+    const rows = winners.map(w => [w.year, w.position, w.name, w.roll_number, w.email || '', w.contact || '', w.votes]);
+    const csvContent = [headers, ...rows].map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `office_bearers_${clubId}_${year}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast(`Office bearer data for ${year} downloaded!`, 'success');
+}
+
+// ZIP downloads are handled server-side via /api/clubs/<id>/download_annual_zip/<year>
+</script>
+{% endblock %}

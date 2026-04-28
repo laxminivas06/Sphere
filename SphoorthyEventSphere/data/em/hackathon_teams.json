@@ -1,0 +1,46 @@
+[
+    {
+        "team_id": "TEAM-8F1A7E99",
+        "event_id": "a825993f-35b4-483d-9d46-acb7c5a23dc3",
+        "team_name": "nivas",
+        "leader_id": "23N81A62B0",
+        "members": [
+            {
+                "roll_number": "23N81A62B0",
+                "name": "Laxmi Nivas",
+                "email": "morishettylaxminivas@gmail.com",
+                "dept": "AIML",
+                "year": "4th",
+                "college": "Sphoorthy Engineering College",
+                "is_leader": true
+            },
+            {
+                "roll_number": "23N81A0502",
+                "name": "ADDANKI VAISHNAVI",
+                "dept": "AIML",
+                "college": "Sphoorthy Engineering College",
+                "is_leader": false
+            },
+            {
+                "roll_number": "23N81A0503",
+                "name": "ERUKALA AKSHITHA",
+                "dept": "AIML",
+                "college": "Sphoorthy Engineering College",
+                "is_leader": false
+            }
+        ],
+        "project_title": "",
+        "github_url": "",
+        "demo_url": "",
+        "description": "",
+        "submission_file": null,
+        "submitted": false,
+        "submitted_at": null,
+        "created_at": "2026-04-27T22:03:34.267700",
+        "payment_status": "free",
+        "payment_method": "free",
+        "qr_data": "HT|a825993f-35b4-483d-9d46-acb7c5a23dc3|TEAM-8F1A7E99",
+        "checked_in": false,
+        "checked_in_at": null
+    }
+]

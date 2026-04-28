@@ -1,0 +1,156 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+:root{--sub-purple:#8b5cf6;--sub-indigo:#6366f1;--sub-teal:#14b8a6;--sub-gold:#f59e0b;}
+.sub-wrap{max-width:720px;margin:3rem auto;padding:0 1.5rem;}
+.sub-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:24px;padding:2.5rem;}
+.sub-header{display:flex;align-items:center;gap:1rem;margin-bottom:2rem;}
+.form-label{display:block;font-size:.75rem;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.4);margin-bottom:.4rem;}
+.form-input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:.75rem 1rem;color:#fff;font-size:.9rem;outline:none;transition:.2s;box-sizing:border-box;}
+.form-input:focus{border-color:rgba(139,92,246,.5);background:rgba(139,92,246,.07);}
+.form-group{margin-bottom:1.1rem;}
+.team-badge{background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.25);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;}
+.member-chip{display:inline-flex;align-items:center;gap:.35rem;background:rgba(255,255,255,.06);border-radius:20px;padding:.3rem .75rem;font-size:.75rem;margin:.2rem;}
+.member-chip.leader{background:rgba(139,92,246,.15);color:var(--sub-purple);}
+.submit-btn{width:100%;background:linear-gradient(135deg,var(--sub-purple),var(--sub-indigo));border:none;border-radius:14px;padding:1rem;color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:.5rem;}
+.submit-btn:hover{opacity:.88;transform:translateY(-1px);}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.success-box{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:16px;padding:2rem;text-align:center;display:none;}
+.alert-box{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:14px;padding:1rem 1.25rem;font-size:.83rem;color:var(--sub-gold);margin-bottom:1.5rem;}
+</style>
+
+<div class="sub-wrap">
+  <div class="sub-card">
+    <!-- Header -->
+    <div class="sub-header">
+      <div style="width:52px;height:52px;border-radius:16px;background:rgba(139,92,246,.15);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;">📦</div>
+      <div>
+        <h1 style="margin:0;font-size:1.25rem;">Submit Project</h1>
+        <p style="margin:.2rem 0 0;color:rgba(255,255,255,.4);font-size:.83rem;">{{ event.title }}</p>
+      </div>
+    </div>
+
+    {% if not user_team %}
+    <div class="alert-box">
+      <i class="fas fa-exclamation-triangle" style="margin-right:.5rem;"></i>
+      You are not registered in any team for this hackathon. Please register your team first.
+    </div>
+    <a href="/em/events/{{ event.id }}/register" style="display:inline-flex;align-items:center;gap:.5rem;padding:.75rem 1.5rem;background:linear-gradient(135deg,var(--sub-purple),var(--sub-indigo));border:none;border-radius:12px;color:#fff;font-weight:700;text-decoration:none;font-size:.9rem;">
+      <i class="fas fa-users"></i> Register a Team
+    </a>
+    {% else %}
+
+    <!-- Team Info -->
+    <div class="team-badge">
+      <div style="font-size:1.4rem;">👥</div>
+      <div style="flex:1;">
+        <div style="font-weight:700;font-size:.95rem;">{{ user_team.team_name }}</div>
+        <div style="font-size:.75rem;color:rgba(255,255,255,.45);margin-top:.2rem;">
+          {% for m in user_team.members %}
+          <span class="member-chip {% if m.is_leader %}leader{% endif %}">{% if m.is_leader %}<i class="fas fa-crown" style="font-size:.6rem;"></i>{% endif %} {{ m.name or m.roll_number or m.email }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      <div>
+        {% if user_team.submitted %}
+        <span style="background:rgba(16,185,129,.12);color:#10b981;padding:.3rem .75rem;border-radius:8px;font-size:.75rem;font-weight:700;"><i class="fas fa-check-circle"></i> Already Submitted</span>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if user_team.submitted %}
+    <div class="alert-box" style="background:rgba(20,184,166,.07);border-color:rgba(20,184,166,.2);color:var(--sub-teal);">
+      <i class="fas fa-info-circle" style="margin-right:.5rem;"></i>
+      Your team has already submitted a project. You can update it by resubmitting below.
+    </div>
+    {% endif %}
+
+    <!-- Success Box -->
+    <div class="success-box" id="successBox">
+      <div style="font-size:3rem;margin-bottom:.75rem;">🎉</div>
+      <h3 style="color:#10b981;margin:0 0 .35rem;">Project Submitted!</h3>
+      <p style="color:rgba(255,255,255,.5);font-size:.88rem;margin:0;">Your project has been successfully submitted for evaluation.</p>
+    </div>
+
+    <!-- Form -->
+    <form id="submitForm" enctype="multipart/form-data">
+      <input type="hidden" name="event_id" value="{{ event.id }}">
+      <input type="hidden" name="team_id" value="{{ user_team.team_id }}">
+
+      <div class="form-group">
+        <label class="form-label">Project Title *</label>
+        <input type="text" name="project_title" class="form-input" placeholder="e.g. SmartBin — AI Waste Classifier" required value="{{ user_team.project_title or '' }}">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Short Description *</label>
+        <textarea name="description" class="form-input" rows="4" placeholder="Briefly describe your project, the problem it solves, and your approach…" required style="resize:vertical;">{{ user_team.description or '' }}</textarea>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="form-group">
+          <label class="form-label">GitHub Repository URL</label>
+          <input type="url" name="github_url" class="form-input" placeholder="https://github.com/..." value="{{ user_team.github_url or '' }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Live Demo / Video URL</label>
+          <input type="url" name="demo_url" class="form-input" placeholder="https://youtube.com/..." value="{{ user_team.demo_url or '' }}">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Upload Presentation / Report (PDF, PPT — optional)</label>
+        <input type="file" name="submission_file" class="form-input" accept=".pdf,.ppt,.pptx,.doc,.docx,.zip">
+        {% if user_team.submission_file %}
+        <div style="font-size:.75rem;color:rgba(255,255,255,.4);margin-top:.35rem;"><i class="fas fa-paperclip" style="margin-right:.3rem;"></i>Current file: {{ user_team.submission_file }}</div>
+        {% endif %}
+      </div>
+
+      <div id="submitResult" style="display:none;padding:.85rem 1rem;border-radius:12px;font-size:.85rem;margin-bottom:1rem;"></div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">
+        <i class="fas fa-paper-plane"></i> {{ 'Update Submission' if user_team.submitted else 'Submit Project' }}
+      </button>
+    </form>
+
+    <div style="text-align:center;margin-top:1.25rem;">
+      <a href="/em/events/{{ event.id }}" style="color:rgba(255,255,255,.35);font-size:.82rem;text-decoration:none;"><i class="fas fa-arrow-left" style="margin-right:.3rem;"></i>Back to Event</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+document.getElementById('submitForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting…';
+
+  const fd = new FormData(e.target);
+  const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+  const r = await fetch('/em/api/hackathon/submit', {
+    method: 'POST',
+    headers: {'X-CSRFToken': csrf},
+    body: fd
+  });
+  const d = await r.json();
+  const res = document.getElementById('submitResult');
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Project';
+
+  if (d.success) {
+    res.style.display = 'none';
+    document.getElementById('successBox').style.display = 'block';
+    document.getElementById('submitForm').style.opacity = '.4';
+    document.getElementById('submitForm').style.pointerEvents = 'none';
+  } else {
+    res.style.display = 'block';
+    res.style.background = 'rgba(239,68,68,.1)';
+    res.style.border = '1px solid rgba(239,68,68,.25)';
+    res.style.color = '#f87171';
+    res.textContent = '❌ ' + (d.message || 'Submission failed');
+  }
+});
+</script>
+{% endblock %}

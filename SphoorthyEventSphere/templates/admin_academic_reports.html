@@ -1,0 +1,199 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+<div class="dashboard-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+                <div style="margin-bottom: 2rem;">
+            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏠 Main Menu ⏺️</p>
+        </div>
+
+        <a class="nav-item" href="/admin/club/{{ club.id }}">
+            <i class="fas fa-th-large"></i> <span>Overview</span>
+        </a>
+        <a class="nav-item" href="/admin/events/{{ club.id }}">
+            <i class="fas fa-calendar-alt"></i> <span>Event Registry</span>
+        </a>
+        <a class="nav-item" href="/admin/bulk-email/{{ club.id }}">
+            <i class="fas fa-paper-plane"></i> <span>Communications</span>
+        </a>
+        <a class="nav-item" href="/admin/finance/{{ club.id }}">
+            <i class="fas fa-wallet"></i> <span>Finance Hub</span>
+        </a>
+        <a class="nav-item" href="/admin/club/{{ club.id }}#eventhub">
+            <i class="fas fa-ticket-alt"></i> <span>Event Hub</span>
+        </a>
+        <a class="nav-item" href="/admin/identity/{{ club.id }}">
+            <i class="fas fa-id-card"></i> <span>Club Identity</span>
+        </a>
+        <a class="nav-item" href="/admin/leaderboard/{{ club.id }}">
+            <i class="fas fa-trophy"></i> <span>Top Attendees</span>
+        </a>
+        <a class="nav-item" href="/admin/elections/{{ club.id }}">
+            <i class="fas fa-vote-yea"></i> <span>Elections Zone</span>
+        </a>
+        <a class="nav-item active" href="/admin/reports/{{ club.id }}">
+            <i class="fas fa-archive"></i> <span>Academic Year Reports</span>
+        </a>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header style="margin-bottom: 3rem;">
+            <h2 style="margin: 0; font-size: 2.5rem;"><i class="fas fa-archive" style="color: var(--primary); margin-right: 0.8rem;"></i>Academic <span style="color: var(--primary)">Reports</span></h2>
+            <p style="color: var(--text-muted); margin: 0.3rem 0 0;">View, download, and archive previous academic year data including financial summaries.</p>
+        </header>
+
+        {% set years = [] %}
+        {% for e in elections %}
+            {% if e.year and e.year not in years %}{% set _ = years.append(e.year) %}{% endif %}
+        {% endfor %}
+        {% for ev in events %}
+            {% if ev.year and ev.year not in years %}{% set _ = years.append(ev.year) %}{% endif %}
+            {% if not ev.year and ev.date and ev.date[:4] %}
+                {% set yr = ev.date[:4] %}
+                {% if yr not in years %}{% set _ = years.append(yr) %}{% endif %}
+            {% endif %}
+        {% endfor %}
+
+        {% if years|length == 0 %}
+            <div class="card glass" style="padding: 3rem; border-radius: 24px; text-align: center;">
+                <i class="fas fa-folder-open" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                <p style="color: var(--text-muted); font-size: 1.1rem;">No academic data available for this club yet.</p>
+            </div>
+        {% else %}
+            {% for year in years|sort(reverse=True) %}
+
+            {# --- Compute financial totals for this year --- #}
+            {% set yr_rev = namespace(v=0) %}
+            {% set yr_exp = namespace(v=0) %}
+            {% set yr_events_list = [] %}
+            {% for ev in events %}
+                {% set ev_year = ev.year if ev.year else (ev.date[:4] if ev.date else '') %}
+                {% if ev_year == year|string and not ev.get('deleted', false) %}
+                    {% set _ = yr_events_list.append(ev) %}
+                    {% set e_rev = ev.computed_revenue|default(ev.revenue|default(0))|int %}
+                    {% set e_exp = ev.computed_spend|default(ev.expenditure|default(0))|int %}
+                    {% set yr_rev.v = yr_rev.v + e_rev %}
+                    {% set yr_exp.v = yr_exp.v + e_exp %}
+                {% endif %}
+            {% endfor %}
+            {% set yr_net = yr_rev.v - yr_exp.v %}
+
+            <div class="card glass" style="padding: 2rem; border-radius: 24px; margin-bottom: 2rem; border: 1px solid rgba(255,255,255,0.06);">
+                <!-- Year header + financial summary -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2.5rem; flex-wrap: wrap; gap: 1rem;">
+                    <h3 style="font-size: 1.8rem; color: #fff; margin: 0;">
+                        Academic Year <span style="color: var(--primary);">{{ year }}</span>
+                    </h3>
+                    <!-- Financial Summary Pills -->
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                        <div style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); border-radius: 12px; padding: 0.5rem 1.25rem; text-align: center;">
+                            <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px;">Revenue</div>
+                            <div style="font-weight: 800; color: var(--success); font-size: 1.1rem;">₹{{ yr_rev.v }}</div>
+                        </div>
+                        <div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); border-radius: 12px; padding: 0.5rem 1.25rem; text-align: center;">
+                            <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px;">Expenditure</div>
+                            <div style="font-weight: 800; color: var(--danger); font-size: 1.1rem;">₹{{ yr_exp.v }}</div>
+                        </div>
+                        <div style="background: rgba({% if yr_net >= 0 %}16,185,129{% else %}239,68,68{% endif %},0.1); border: 1px solid rgba({% if yr_net >= 0 %}16,185,129{% else %}239,68,68{% endif %},0.25); border-radius: 12px; padding: 0.5rem 1.25rem; text-align: center;">
+                            <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px;">Net Balance</div>
+                            <div style="font-weight: 800; color: {% if yr_net >= 0 %}var(--success){% else %}var(--danger){% endif %}; font-size: 1.1rem;">{% if yr_net >= 0 %}+{% endif %}₹{{ yr_net }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2.5rem;">
+                    <!-- Left Column: Office Bearers & Mentor -->
+                    <div>
+                        <h4 style="margin-bottom: 1.25rem; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-users-cog"></i> Office Bearers &amp; Mentors
+                        </h4>
+                        {% set elec = elections | selectattr('year', 'equalto', year|string) | first %}
+                        {% if elec and elec.status == 'results_published' %}
+                            <div style="display: grid; gap: 1rem;">
+                                {% for pos in elec.positions %}
+                                    {% set ns = namespace(top_nom=none, max_votes=-1) %}
+                                    {% for n in elec.nominations %}
+                                        {% if n.position == pos %}
+                                            {% set count = 0 %}
+                                            {% for v in elec.votes %}
+                                                {% if v.votes.get(pos) == n.id %}
+                                                    {% set count = count + 1 %}
+                                                {% endif %}
+                                            {% endfor %}
+                                            {% if count > ns.max_votes %}
+                                                {% set ns.max_votes = count %}
+                                                {% set ns.top_nom = n %}
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if ns.top_nom %}
+                                    <div style="display: flex; align-items: center; gap: 1.2rem; background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
+                                        <img src="/static/uploads/clubs/{{ club.id }}/elections/{{ elec.id }}/{{ ns.top_nom.photo }}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);">
+                                        <div>
+                                            <div style="font-weight: 700; font-size: 1rem;">{{ ns.top_nom.name }}</div>
+                                            <div style="font-size: 0.8rem; color: var(--primary); font-weight: 600;">{{ pos }}</div>
+                                        </div>
+                                        <a href="/static/uploads/clubs/{{ club.id }}/elections/{{ elec.id }}/{{ ns.top_nom.photo }}" download class="btn btn-outline" style="margin-left: auto; padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 10px;"><i class="fas fa-download"></i> Photo</a>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div style="background: rgba(255,255,255,0.02); border-radius: 16px; padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.9rem; border: 1px dashed rgba(255,255,255,0.1);">
+                                <i class="fas fa-vote-yea" style="font-size: 2rem; margin-bottom: 0.75rem; display: block; opacity: 0.5;"></i>
+                                No finalized election data for this year.
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Right Column: Events & Reports with Finance -->
+                    <div>
+                        <h4 style="margin-bottom: 1.25rem; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-file-invoice-dollar"></i> Event Reports &amp; Financials
+                        </h4>
+                        <div style="display: grid; gap: 1rem;">
+                            {% if yr_events_list|length > 0 %}
+                                {% for ev in yr_events_list %}
+                                {% set ev_slug = ev.title | lower | replace(' ', '_') %}
+                                {% set e_rev = ev.computed_revenue|default(ev.revenue|default(0))|int %}
+                                {% set e_exp = ev.computed_spend|default(ev.expenditure|default(0))|int %}
+                                <div style="background: rgba(255,255,255,0.03); padding: 1.25rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                                        <div style="flex: 1; min-width: 0;">
+                                            <div style="font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 1.05rem;">{{ ev.title }}</div>
+                                            <div style="font-size: 0.8rem; color: var(--text-muted);"><i class="fas fa-calendar-alt"></i> {{ ev.date }}</div>
+                                        </div>
+                                        <div style="display: flex; gap: 0.6rem; align-items: center;">
+                                            {% if ev.report %}
+                                                <a href="/static/uploads/clubs/{{ club.id }}/events/{{ ev_slug }}/reports/{{ ev.report }}" download class="btn btn-primary" style="padding: 0.45rem 0.9rem; font-size: 0.75rem; border-radius: 10px;"><i class="fas fa-download"></i> Report</a>
+                                            {% endif %}
+                                            <a href="/admin/event/finance/{{ club.id }}/{{ ev.id }}" class="btn btn-outline" style="padding: 0.45rem 0.9rem; font-size: 0.75rem; border-radius: 10px; border-color: rgba(139,92,246,0.4); color: #a78bfa;"><i class="fas fa-edit"></i> Finance</a>
+                                        </div>
+                                    </div>
+                                    <!-- Mini finance row -->
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05);">
+                                        <div style="font-size: 0.75rem; color: var(--success);"><i class="fas fa-arrow-up"></i> Revenue: <strong>₹{{ e_rev }}</strong></div>
+                                        <div style="font-size: 0.75rem; color: var(--danger);"><i class="fas fa-arrow-down"></i> Spent: <strong>₹{{ e_exp }}</strong></div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div style="background: rgba(255,255,255,0.02); border-radius: 16px; padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.9rem; border: 1px dashed rgba(255,255,255,0.1);">
+                                    <i class="fas fa-calendar-times" style="font-size: 2rem; margin-bottom: 0.75rem; display: block; opacity: 0.5;"></i>
+                                    No events recorded for this year.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+    </main>
+</div>
+{% endblock %}

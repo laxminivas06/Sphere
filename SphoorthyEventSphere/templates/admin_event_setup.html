@@ -1,0 +1,124 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; padding-top: 2rem;">
+    <header style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">Event <span style="color: var(--primary)">Setup</span></h1>
+            <p style="color: var(--text-muted)">Configure registration details for <strong>{{ event.title }}</strong></p>
+        </div>
+        <a href="/admin" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+    </header>
+
+    <form id="setupForm" class="card glass" style="padding: 2.5rem; border-radius: 20px; border: 1px solid var(--glass-border);">
+        <input type="hidden" name="club_id" value="{{ club.id }}">
+        <input type="hidden" name="event_id" value="{{ event.id }}">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div class="input-group">
+                <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Event Type</label>
+                <select name="event_type" class="glass" style="width: 100%; padding: 0.8rem; border-radius: 10px; border: 1px solid var(--glass-border); color: #fff;" onchange="toggleTeamSize(this.value)">
+                    <option value="individual" {% if event.event_type == 'individual' %}selected{% endif %}>Individual</option>
+                    <option value="team" {% if event.event_type == 'team' %}selected{% endif %}>Team Event</option>
+                </select>
+            </div>
+            <div class="input-group" id="teamSizeBox" style="display: {% if event.event_type == 'team' %}block{% else %}none{% endif %};">
+                <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Max Team Size</label>
+                <input type="number" name="team_size" value="{{ event.team_size or '' }}" class="glass" style="width: 100%; padding: 0.8rem; border-radius: 10px; border: 1px solid var(--glass-border); color: #fff;" placeholder="e.g. 4">
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div class="input-group">
+                <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Payment Type</label>
+                <select name="payment_type" class="glass" style="width: 100%; padding: 0.8rem; border-radius: 10px; border: 1px solid var(--glass-border); color: #fff;" onchange="togglePaymentFields(this.value)">
+                    <option value="free" {% if event.payment_type == 'free' %}selected{% endif %}>Free Registration</option>
+                    <option value="paid" {% if event.payment_type == 'paid' %}selected{% endif %}>Paid Event</option>
+                </select>
+            </div>
+            <div class="input-group payment-fields" style="display: {% if event.payment_type == 'paid' %}block{% else %}none{% endif %};">
+                <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Registration Fee (₹)</label>
+                <input type="number" name="fee" value="{{ event.fee or '' }}" class="glass" style="width: 100%; padding: 0.8rem; border-radius: 10px; border: 1px solid var(--glass-border); color: #fff;" placeholder="e.g. 100">
+            </div>
+        </div>
+
+            <div style="grid-column: span 2; padding: 1.25rem; background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 12px; margin-top: 0.5rem; display: flex; align-items: flex-start; gap: 0.75rem;">
+                <i class="fas fa-shield-alt" style="color: var(--primary); margin-top: 0.2rem;"></i>
+                <div style="font-size: 0.85rem; line-height: 1.5; color: var(--text-muted);">
+                    <strong style="color: #fff;">Institutional Payment Gateway Active</strong><br>
+                    All registration fees will be processed automatically via the college's centralized Razorpay account. No manual UPI IDs or QR codes are required.
+                </div>
+            </div>
+        </div>
+
+        <div class="input-group" style="margin-bottom: 2.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Event Poster</label>
+            <input type="file" name="poster" accept="image/*" class="glass" style="width: 100%; padding: 0.8rem; border-radius: 10px; border: 1px solid var(--glass-border); color: #fff;">
+            {% if event.poster %}
+            <div style="margin-top: 1rem;">
+                <p style="font-size: 0.75rem; color: var(--primary); margin-bottom: 0.5rem;">Current Poster:</p>
+                {% set event_slug = event.title | slugify %}
+                <img src="/static/uploads/clubs/{{ club.id }}/events/{{ event_slug }}/posters/{{ event.poster }}" style="max-width: 200px; border-radius: 10px; border: 1px solid var(--glass-border);">
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="input-group" style="margin-bottom: 2.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Collaborating Clubs (Optional)</label>
+            <select name="collaborating_clubs" multiple class="glass" style="width: 100%; padding: 0.8rem; border-radius: 10px; border: 1px solid var(--glass-border); color: #fff; min-height: 100px;">
+                {% for c in all_clubs %}
+                    {% if c.id != club.id %}
+                        <option value="{{ c.id }}" {% if c.id in event.get('collaborating_clubs', []) %}selected{% endif %}>{{ c.name }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Hold Command (Mac) or Ctrl (Windows) to select multiple.</p>
+        </div>
+
+        <!-- Manual QR Code section removed in favor of Institutional Gateway -->
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; height: 50px; justify-content: center; font-size: 1rem;">
+            <i class="fas fa-save"></i> Save Configuration & Make Live
+        </button>
+    </form>
+</div>
+
+<script>
+function toggleTeamSize(type) {
+    document.getElementById('teamSizeBox').style.display = type === 'team' ? 'block' : 'none';
+}
+function togglePaymentFields(type) {
+    document.querySelectorAll('.payment-fields').forEach(el => {
+        el.style.display = type === 'paid' ? 'block' : 'none';
+    });
+}
+
+document.getElementById('setupForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+    const formData = new FormData(e.target);
+    try {
+        const res = await fetch('/api/events/update_details', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert('Event configuration saved successfully!');
+            window.location.href = '/admin';
+        } else {
+            alert(data.message || 'Error saving configuration');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save"></i> Save Configuration & Make Live';
+        }
+    } catch (err) {
+        alert('An unexpected error occurred.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> Save Configuration & Make Live';
+    }
+};
+</script>
+{% endblock %}

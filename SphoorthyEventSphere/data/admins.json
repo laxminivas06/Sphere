@@ -1,0 +1,58 @@
+[
+    {
+        "name": "Super Admin",
+        "email": "admin@college.edu",
+        "phone": "0000000000",
+        "role": "super_admin",
+        "password": "Nivas"
+    },
+    {
+        "name": "Event Manager",
+        "email": "eventmanager@college.edu",
+        "password": "event123",
+        "phone": "",
+        "role": "event_manager"
+    },
+    {
+        "name": "Sharath V",
+        "email": "creator@gmail.com",
+        "password": "12345",
+        "phone": "",
+        "role": "club_admin"
+    },
+    {
+        "name": "Rishikesh",
+        "email": "freshers@gmail.com",
+        "password": "123456",
+        "role": "event_admin",
+        "phone": "9059160424"
+    },
+    {
+        "name": "sam",
+        "email": "hackathon@gmail.com",
+        "password": "123456",
+        "role": "event_admin",
+        "phone": "09059160424"
+    },
+    {
+        "name": "jagan",
+        "email": "jagan@gmail.com",
+        "password": "123456",
+        "role": "event_admin",
+        "phone": "9059160424"
+    },
+    {
+        "name": "nivas",
+        "email": "jagan1@gmail.com",
+        "password": "123456",
+        "role": "evaluator",
+        "phone": "09059160424"
+    },
+    {
+        "name": "Name",
+        "email": "robotic@gmail.com",
+        "password": "1234",
+        "phone": "",
+        "role": "club_admin"
+    }
+]

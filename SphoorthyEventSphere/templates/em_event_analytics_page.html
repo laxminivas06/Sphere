@@ -1,0 +1,148 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+.ea-wrap{max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem;}
+.ea-back{display:inline-flex;align-items:center;gap:.6rem;color:rgba(255,255,255,.5);font-size:.82rem;text-decoration:none;margin-bottom:2rem;padding:.5rem .9rem;border-radius:10px;border:1px solid rgba(255,255,255,.07);transition:.2s;}
+.ea-back:hover{color:#fff;background:rgba(255,255,255,.05);}
+.ea-header{margin-bottom:2rem;}
+.ea-title{font-size:1.6rem;font-weight:800;}
+.ea-title span{background:linear-gradient(135deg,#8b5cf6,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+/* Stats */
+.ea-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:1rem;margin-bottom:2rem;}
+.ea-stat{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:1rem 1.25rem;text-align:center;}
+.ea-stat-val{font-size:1.7rem;font-weight:800;line-height:1.1;}
+.ea-stat-lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-top:.2rem;}
+/* Chart grid */
+.ea-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem;}
+.ea-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:1.5rem;}
+.ea-card h4{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);margin-bottom:1.25rem;}
+/* Dept table */
+.ea-dept-table{width:100%;border-collapse:collapse;font-size:.83rem;}
+.ea-dept-table th{text-align:left;padding:.75rem 1rem;color:rgba(255,255,255,.4);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid rgba(255,255,255,.06);}
+.ea-dept-table td{padding:.75rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);}
+.ea-dept-table tr:last-child td{border-bottom:none;}
+.ea-progress{height:6px;border-radius:3px;background:rgba(255,255,255,.08);margin-top:.4rem;}
+.ea-progress-bar{height:100%;border-radius:3px;background:linear-gradient(90deg,#6366f1,#8b5cf6);}
+.ea-btn{display:inline-flex;align-items:center;gap:.45rem;padding:.5rem 1rem;border-radius:10px;font-size:.78rem;font-weight:600;cursor:pointer;border:1px solid;transition:.2s;text-decoration:none;}
+.ea-btn-purple{background:rgba(139,92,246,.12);border-color:rgba(139,92,246,.3);color:#8b5cf6;}
+.ea-btn-slate{background:rgba(148,163,184,.07);border-color:rgba(148,163,184,.2);color:#94a3b8;}
+#deptChart,#yearChart{max-height:220px;}
+@media(max-width:700px){.ea-wrap{padding:1rem;}.ea-chart-grid{grid-template-columns:1fr;}.ea-stats{grid-template-columns:1fr 1fr;}}
+</style>
+
+<div class="ea-wrap">
+  <a href="/em/event/{{ event.id }}/hub" class="ea-back"><i class="fas fa-arrow-left"></i> Back to EventUp</a>
+
+  <div class="ea-header">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <h1 class="ea-title"><i class="fas fa-chart-pie" style="color:#8b5cf6;margin-right:.5rem;font-size:1.3rem;"></i>Analytics — <span>{{ event.title }}</span></h1>
+        <p style="color:rgba(255,255,255,.4);font-size:.82rem;margin-top:.2rem;">
+          {% if event.date %}<i class="fas fa-calendar-alt"></i> {{ event.date }} &nbsp;{% endif %}
+          {% if event.venue %}<i class="fas fa-map-marker-alt"></i> {{ event.venue }}{% endif %}
+        </p>
+      </div>
+      <a href="/em/api/club/event/{{ event.id }}/export" class="ea-btn ea-btn-slate"><i class="fas fa-file-csv"></i> Export CSV</a>
+    </div>
+  </div>
+
+  <!-- Stats row -->
+  <div class="ea-stats">
+    <div class="ea-stat" style="border-color:rgba(99,102,241,.2);"><div class="ea-stat-val" style="color:#6366f1;" id="a-total">—</div><div class="ea-stat-lbl">Total Registered</div></div>
+    <div class="ea-stat" style="border-color:rgba(16,185,129,.2);"><div class="ea-stat-val" style="color:#10b981;" id="a-checkin">—</div><div class="ea-stat-lbl">Checked In</div></div>
+    <div class="ea-stat" style="border-color:rgba(245,158,11,.2);"><div class="ea-stat-val" style="color:#f59e0b;" id="a-revenue">—</div><div class="ea-stat-lbl">Revenue</div></div>
+    <div class="ea-stat" style="border-color:rgba(139,92,246,.2);"><div class="ea-stat-val" style="color:#8b5cf6;" id="a-rate">—</div><div class="ea-stat-lbl">Attendance Rate</div></div>
+    <div class="ea-stat" style="border-color:rgba(148,163,184,.2);"><div class="ea-stat-val" style="color:#94a3b8;" id="a-free">—</div><div class="ea-stat-lbl">Free Passes</div></div>
+  </div>
+
+  <!-- Charts -->
+  <div class="ea-chart-grid">
+    <div class="ea-card"><h4>Department Distribution</h4><canvas id="deptChart"></canvas></div>
+    <div class="ea-card"><h4>Year-wise Distribution</h4><canvas id="yearChart"></canvas></div>
+  </div>
+
+  <!-- Payment breakdown -->
+  <div class="ea-card" style="margin-bottom:1.5rem;">
+    <h4>Payment Breakdown</h4>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem;" id="payBreakdown"></div>
+  </div>
+
+  <!-- Dept detail table -->
+  <div class="ea-card">
+    <h4>Department Breakdown</h4>
+    <div style="overflow-x:auto;">
+      <table class="ea-dept-table">
+        <thead><tr><th>Department</th><th>Registered</th><th>Checked In</th><th>Attendance</th><th>Distribution</th></tr></thead>
+        <tbody id="deptTable"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+let dChart=null, yChart=null;
+const P1=['#6366f1','#8b5cf6','#ec4899','#14b8a6','#f59e0b','#10b981','#3b82f6','#f97316'];
+const P2=['#ec4899','#f59e0b','#10b981','#6366f1','#14b8a6'];
+
+function buildChart(id, inst, labels, data, colors){
+  if(inst) inst.destroy();
+  const ctx = document.getElementById(id).getContext('2d');
+  return new Chart(ctx,{
+    type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0,hoverOffset:6}]},
+    options:{plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',boxWidth:12,padding:12,font:{size:11}}}},cutout:'65%'}
+  });
+}
+
+async function load(){
+  const r = await fetch('/em/api/club/event/{{ event.id }}/analytics');
+  const d = await r.json();
+  if(!d.success) return;
+
+  document.getElementById('a-total').textContent   = d.total;
+  document.getElementById('a-checkin').textContent = d.checked_in;
+  document.getElementById('a-revenue').textContent = '₹'+d.revenue;
+  document.getElementById('a-rate').textContent    = d.total?Math.round(d.checked_in/d.total*100)+'%':'0%';
+  document.getElementById('a-free').textContent    = d.free;
+
+  // Charts
+  const depts = d.dept_distribution||{};
+  const years = d.year_distribution||{};
+  dChart = buildChart('deptChart',dChart,Object.keys(depts),Object.values(depts),P1);
+  yChart = buildChart('yearChart',yChart,Object.keys(years),Object.values(years),P2);
+
+  // Payment breakdown
+  document.getElementById('payBreakdown').innerHTML=`
+    <div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);border-radius:12px;padding:1rem;text-align:center;">
+      <div style="font-size:1.6rem;font-weight:800;color:#f59e0b;">${d.paid}</div>
+      <div style="font-size:.72rem;color:rgba(255,255,255,.4);text-transform:uppercase;margin-top:.2rem;">Paid (Online)</div>
+    </div>
+    <div style="background:rgba(20,184,166,.06);border:1px solid rgba(20,184,166,.15);border-radius:12px;padding:1rem;text-align:center;">
+      <div style="font-size:1.6rem;font-weight:800;color:#14b8a6;">${d.free}</div>
+      <div style="font-size:.72rem;color:rgba(255,255,255,.4);text-transform:uppercase;margin-top:.2rem;">Free (Passes)</div>
+    </div>`;
+
+  // Dept table
+  const tickets = d.tickets||[];
+  const total = d.total||1;
+  document.getElementById('deptTable').innerHTML=Object.entries(depts).sort((a,b)=>b[1]-a[1]).map(([dept,count])=>{
+    const ci = tickets.filter(t=>(t.user_dept||'N/A')===dept&&t.checked_in).length;
+    const pct = count?Math.round(ci/count*100):0;
+    const dist = Math.round(count/total*100);
+    return `<tr>
+      <td style="font-weight:600;">${dept}</td>
+      <td style="color:#94a3b8;">${count}</td>
+      <td style="color:#10b981;">${ci}</td>
+      <td><span style="color:${pct>=50?'#10b981':'#f59e0b'};font-weight:700;">${pct}%</span></td>
+      <td style="min-width:120px;">
+        <span style="font-size:.75rem;color:rgba(255,255,255,.4);">${dist}%</span>
+        <div class="ea-progress"><div class="ea-progress-bar" style="width:${dist}%;"></div></div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+load();
+</script>
+{% endblock %}

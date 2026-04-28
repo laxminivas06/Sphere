@@ -1,0 +1,156 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+:root{--att-indigo:#6366f1;--att-teal:#14b8a6;--att-rose:#f43f5e;--att-gold:#f59e0b;}
+.att-main{padding:2.5rem;max-width:1000px;margin:0 auto;}
+.att-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2.5rem;flex-wrap:wrap;gap:1.5rem;}
+.btn-back{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:rgba(255,255,255,.7);text-decoration:none;font-size:.85rem;font-weight:500;transition:.2s;}
+.btn-back:hover{background:rgba(255,255,255,.1);color:#fff;}
+.dept-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:1.5rem;margin-bottom:1.5rem;}
+.dept-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;border-bottom:1px solid rgba(255,255,255,.06);padding-bottom:1rem;}
+.dept-title{font-size:1.25rem;font-weight:800;display:flex;align-items:center;gap:.75rem;}
+.dept-count{background:rgba(99,102,241,.15);color:var(--att-indigo);padding:.2rem .75rem;border-radius:20px;font-size:.85rem;font-weight:700;}
+.student-row{display:grid;grid-template-columns:1fr 2fr 1.5fr 1fr;gap:1rem;padding:.85rem 0;border-bottom:1px dashed rgba(255,255,255,.06);align-items:center;}
+.student-row:last-child{border-bottom:none;padding-bottom:0;}
+.s-col-title{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.4);margin-bottom:.5rem;}
+.s-data{font-size:.9rem;}
+.s-meta{font-size:.75rem;color:rgba(255,255,255,.5);}
+.btn-forward{background:linear-gradient(135deg,var(--att-indigo),#8b5cf6);border:none;border-radius:12px;padding:.85rem 1.75rem;color:#fff;font-weight:700;font-size:1rem;cursor:pointer;display:inline-flex;align-items:center;gap:.6rem;transition:.3s;box-shadow:0 8px 20px -6px rgba(99,102,241,.5);}
+.btn-forward:hover{transform:translateY(-2px);box-shadow:0 12px 25px -8px rgba(99,102,241,.6);}
+.btn-forward:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+@media(max-width:768px){.student-row{grid-template-columns:1fr 1fr;}.att-main{padding:1.25rem;}}
+</style>
+
+<div class="att-main">
+  <div style="margin-bottom:1.5rem;">
+    <a href="/em/hackathon/{{ event.id }}/hub" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Hub</a>
+  </div>
+
+  <div class="att-header">
+    <div>
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.5rem;">
+        <div style="width:50px;height:50px;border-radius:14px;background:rgba(99,102,241,.15);color:var(--att-indigo);display:flex;align-items:center;justify-content:center;font-size:1.5rem;"><i class="fas fa-clipboard-check"></i></div>
+        <h1 style="margin:0;font-size:1.8rem;">Attendance Log</h1>
+      </div>
+      <div style="color:rgba(255,255,255,.5);font-size:.9rem;margin-left:4.2rem;">{{ event.title }}</div>
+    </div>
+    {% if dept_map %}
+    <button class="btn-forward" id="forwardBtn" onclick="forwardAttendance()">
+      <i class="fas fa-paper-plane"></i> Forward to Departments
+    </button>
+    {% endif %}
+  </div>
+
+  {% if not dept_map %}
+  <div style="text-align:center;padding:5rem;color:rgba(255,255,255,.35);border:2px dashed rgba(255,255,255,.08);border-radius:24px;">
+    <i class="fas fa-users-slash" style="font-size:3.5rem;opacity:.2;display:block;margin-bottom:1.25rem;"></i>
+    <div style="font-size:1.2rem;font-weight:700;color:#fff;">No Check-ins Yet</div>
+    <div style="font-size:.9rem;margin-top:.5rem;">Teams need to check-in at the scanner first.</div>
+  </div>
+  {% else %}
+
+  <!-- Global Stats -->
+  <div style="display:flex;gap:1.5rem;margin-bottom:2rem;">
+    <div style="background:rgba(20,184,166,.1);border:1px solid rgba(20,184,166,.2);border-radius:12px;padding:1rem 1.5rem;">
+      <div style="font-size:.75rem;text-transform:uppercase;color:var(--att-teal);margin-bottom:.25rem;font-weight:700;">Total Students Present</div>
+      <div style="font-size:1.8rem;font-weight:800;color:#fff;">
+        {% set total_students = namespace(count=0) %}
+        {% for dept, students in dept_map.items() %}
+          {% set total_students.count = total_students.count + students|length %}
+        {% endfor %}
+        {{ total_students.count }}
+      </div>
+    </div>
+    <div style="background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.2);border-radius:12px;padding:1rem 1.5rem;">
+      <div style="font-size:.75rem;text-transform:uppercase;color:var(--att-indigo);margin-bottom:.25rem;font-weight:700;">Departments</div>
+      <div style="font-size:1.8rem;font-weight:800;color:#fff;">{{ dept_map|length }}</div>
+    </div>
+  </div>
+
+  <!-- Dept Lists -->
+  {% for dept, students in dept_map.items() %}
+  <div class="dept-card">
+    <div class="dept-header">
+      <div class="dept-title">
+        <i class="fas fa-building" style="color:var(--att-indigo);"></i> 
+        Department of {{ dept }}
+      </div>
+      <div class="dept-count">{{ students|length }} Students</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 2fr 1.5fr 1fr;gap:1rem;margin-bottom:.75rem;">
+      <div class="s-col-title">Roll Number</div>
+      <div class="s-col-title">Student Name</div>
+      <div class="s-col-title">Team</div>
+      <div class="s-col-title">Check-in Time</div>
+    </div>
+
+    {% for s in students %}
+    <div class="student-row">
+      <div class="s-data" style="font-weight:700;font-family:monospace;">{{ s.roll_number }}</div>
+      <div class="s-data">{{ s.name }}</div>
+      <div class="s-data">
+        <span style="background:rgba(255,255,255,.05);padding:.2rem .6rem;border-radius:6px;font-size:.8rem;">{{ s.team_name }}</span>
+      </div>
+      <div class="s-meta">
+        {% if s.checked_in_at %}
+          {{ s.checked_in_at.split('T')[1][:5] if 'T' in s.checked_in_at else s.checked_in_at }}
+        {% else %}
+          Verified
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+
+  {% endif %}
+</div>
+
+<!-- Toast -->
+<div id="toast" style="position:fixed;bottom:2rem;right:2rem;z-index:9999;padding:1rem 1.5rem;border-radius:14px;font-weight:600;font-size:.88rem;display:none;"></div>
+
+<script>
+async function forwardAttendance() {
+  const btn = document.getElementById('forwardBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Generating & Sending...';
+
+  try {
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const r = await fetch(`/em/api/hackathon/{{ event.id }}/forward-attendance`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrf
+      }
+    });
+    const d = await r.json();
+    if (d.success) {
+      showToast('✅ ' + d.message);
+      btn.innerHTML = '<i class="fas fa-check"></i> Forwarded Successfully';
+      btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+      btn.style.boxShadow = '0 8px 20px -6px rgba(16,185,129,.5)';
+    } else {
+      showToast('❌ ' + (d.message || 'Failed to forward attendance'), false);
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-paper-plane"></i> Try Again';
+    }
+  } catch (e) {
+    showToast('❌ An error occurred while sending.', false);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Forward to Departments';
+  }
+}
+
+function showToast(msg, ok=true) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = ok ? 'rgba(16,185,129,.15)' : 'rgba(239,68,68,.12)';
+  t.style.color = ok ? '#10b981' : '#f87171';
+  t.style.border = ok ? '1px solid rgba(16,185,129,.3)' : '1px solid rgba(239,68,68,.25)';
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 4500);
+}
+</script>
+{% endblock %}

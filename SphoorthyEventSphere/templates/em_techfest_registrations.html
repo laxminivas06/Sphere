@@ -1,0 +1,109 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+    :root {
+        --tf-primary: #10b981;
+        --tf-glass: rgba(30, 41, 59, 0.7);
+        --tf-border: rgba(255, 255, 255, 0.1);
+        --tf-text-muted: #94a3b8;
+    }
+    .page-container { max-width: 1300px; margin: 0 auto; padding: 2rem; min-height: 100vh; }
+    .hub-card { 
+        background: var(--tf-glass); 
+        backdrop-filter: blur(12px); 
+        border: 1px solid var(--tf-border); 
+        border-radius: 24px; 
+        padding: 2rem; 
+    }
+    .admin-table { width: 100%; border-collapse: separate; border-spacing: 0 0.5rem; }
+    .admin-table tr { background: rgba(255,255,255,0.02); transition: background 0.2s; }
+    .admin-table tr:hover { background: rgba(255,255,255,0.05); }
+    .admin-table th { padding: 1rem; color: var(--tf-text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; text-align: left; }
+    .admin-table td { padding: 1.25rem 1rem; border-top: 1px solid var(--tf-border); border-bottom: 1px solid var(--tf-border); }
+    .admin-table td:first-child { border-left: 1px solid var(--tf-border); border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+    .admin-table td:last-child { border-right: 1px solid var(--tf-border); border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+    .badge-paid { background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; }
+    .badge-pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; }
+</style>
+
+<div class="page-container">
+    <div style="margin-bottom: 3rem; display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+            <a href="/em/techfest/{{ event.id }}/hub" style="color: var(--tf-text-muted); text-decoration: none; font-weight: 600;"><i class="fas fa-chevron-left"></i> Back to Hub</a>
+            <h1 style="margin: 1rem 0 0 0; font-size: 2.5rem; font-weight: 800;">Participant Database</h1>
+            <p style="color: var(--tf-text-muted);">{{ event.title }} • {{ registrations|length }} Total Registrations</p>
+        </div>
+        <button class="tf-btn tf-btn-outline" onclick="exportCSV()"><i class="fas fa-file-export"></i> Export CSV</button>
+    </div>
+
+    <div class="hub-card">
+        <div style="overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Reg ID</th>
+                        <th>Participant</th>
+                        <th>Institution</th>
+                        <th>Dept</th>
+                        <th>Tracks</th>
+                        <th>Payment</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reg in registrations %}
+                    <tr>
+                        <td style="font-family: monospace; font-size: 0.85rem; opacity: 0.7;">{{ reg.reg_id }}</td>
+                        <td>
+                            <div style="font-weight: 600;">{{ reg.student_details.name }}</div>
+                            <div style="font-size: 0.75rem; color: var(--tf-text-muted);">{{ reg.student_details.email }}</div>
+                        </td>
+                        <td>
+                            {% if reg.student_details.is_spoorthy == 'yes' %}
+                            <span style="color: #6366f1; font-weight: 600;">Sphoorthy</span>
+                            {% else %}
+                            <span style="font-size: 0.85rem; opacity: 0.8;">{{ reg.student_details.college_name }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ reg.student_details.department }}</td>
+                        <td><span style="background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px;">{{ reg.selected_events|length }}</span></td>
+                        <td>
+                            {% if reg.payment_status == 'paid' %}
+                            <span class="badge-paid">PAID</span>
+                            {% elif reg.payment_status == 'free' %}
+                            <span style="color: #a855f7; font-weight: 700; font-size: 0.75rem;">FREE</span>
+                            {% else %}
+                            <span class="badge-pending">PENDING</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function exportCSV() {
+        const rows = [];
+        const table = document.querySelector('.admin-table');
+        const header = Array.from(table.querySelectorAll('th')).map(th => th.innerText);
+        rows.push(header.join(','));
+
+        table.querySelectorAll('tbody tr').forEach(tr => {
+            const row = Array.from(tr.querySelectorAll('td')).map(td => {
+                let text = td.innerText.replace(/\n/g, ' ').replace(/,/g, '');
+                return `"${text}"`;
+            });
+            rows.push(row.join(','));
+        });
+
+        const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `TechFest_Registrations_{{ event.id }}.csv`;
+        a.click();
+    }
+</script>
+{% endblock %}

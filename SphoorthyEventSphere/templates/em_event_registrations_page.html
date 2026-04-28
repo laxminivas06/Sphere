@@ -1,0 +1,217 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+:root{--eu-indigo:#6366f1;--eu-teal:#14b8a6;--eu-amber:#f59e0b;--eu-green:#10b981;--eu-pink:#ec4899;}
+.ep-wrap{max-width:1200px;margin:0 auto;padding:2.5rem 1.5rem;}
+.ep-back{display:inline-flex;align-items:center;gap:.6rem;color:rgba(255,255,255,.5);font-size:.82rem;text-decoration:none;margin-bottom:2rem;padding:.5rem .9rem;border-radius:10px;border:1px solid rgba(255,255,255,.07);transition:.2s;}
+.ep-back:hover{color:#fff;background:rgba(255,255,255,.05);}
+.ep-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:2rem;}
+.ep-title{font-size:1.6rem;font-weight:800;}
+.ep-title span{background:linear-gradient(135deg,#06b6d4,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+/* Stats */
+.ep-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:1rem;margin-bottom:2rem;}
+.ep-stat{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:1rem 1.25rem;text-align:center;}
+.ep-stat-val{font-size:1.7rem;font-weight:800;line-height:1.1;}
+.ep-stat-lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-top:.2rem;}
+/* Table */
+.ep-table-wrap{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:18px;overflow:hidden;}
+.ep-table{width:100%;border-collapse:collapse;font-size:.83rem;}
+.ep-table th{text-align:left;padding:.8rem 1rem;color:rgba(255,255,255,.4);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid rgba(255,255,255,.06);}
+.ep-table td{padding:.8rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;}
+.ep-table tr:last-child td{border-bottom:none;}
+.ep-table tr:hover td{background:rgba(99,102,241,.04);}
+.badge{padding:.2rem .6rem;border-radius:6px;font-size:.66rem;font-weight:700;text-transform:uppercase;}
+.badge-paid{background:rgba(245,158,11,.15);color:#f59e0b;}
+.badge-free{background:rgba(16,185,129,.15);color:#10b981;}
+.badge-pending_cash{background:rgba(245,158,11,.12);color:#f59e0b;}
+/* Controls */
+.ep-controls{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;}
+.ep-search{display:flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:.45rem .9rem;}
+.ep-search input{background:none;border:none;outline:none;color:#fff;font-size:.85rem;width:200px;}
+.ep-search i{color:rgba(255,255,255,.3);}
+.ep-select{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:.5rem .9rem;color:#fff;outline:none;font-size:.82rem;}
+.ep-btn{display:inline-flex;align-items:center;gap:.45rem;padding:.5rem 1rem;border-radius:10px;font-size:.78rem;font-weight:600;cursor:pointer;border:1px solid;transition:.2s;text-decoration:none;}
+.ep-btn:hover{opacity:.8;}
+.ep-btn-cyan{background:rgba(6,182,212,.12);border-color:rgba(6,182,212,.3);color:#06b6d4;}
+.ep-btn-teal{background:rgba(20,184,166,.1);border-color:rgba(20,184,166,.3);color:#14b8a6;}
+.ep-btn-green{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.3);color:#10b981;}
+.ep-btn-amber{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.3);color:#f59e0b;}
+.ep-btn-slate{background:rgba(148,163,184,.07);border-color:rgba(148,163,184,.2);color:#94a3b8;}
+/* Pending cash banner */
+.ep-cash-banner{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;}
+/* Responsive table */
+@media(max-width:700px){.ep-wrap{padding:1rem;}.ep-table-wrap{overflow-x:auto;}.ep-stats{grid-template-columns:1fr 1fr;}}
+/* Toast */
+#ep-toast{position:fixed;bottom:2rem;right:2rem;z-index:9999;padding:1rem 1.5rem;border-radius:14px;font-weight:600;font-size:.88rem;display:none;}
+</style>
+
+<div class="ep-wrap">
+  <a href="/em/event/{{ event.id }}/hub" class="ep-back"><i class="fas fa-arrow-left"></i> Back to EventUp</a>
+
+  <div class="ep-header">
+    <div>
+      <h1 class="ep-title"><i class="fas fa-users" style="color:#06b6d4;margin-right:.5rem;font-size:1.3rem;"></i>Registrations — <span>{{ event.title }}</span></h1>
+      <p style="color:rgba(255,255,255,.4);font-size:.82rem;margin-top:.2rem;">
+        {% if event.date %}<i class="fas fa-calendar-alt"></i> {{ event.date }} &nbsp;{% endif %}
+        {% if event.venue %}<i class="fas fa-map-marker-alt"></i> {{ event.venue }}{% endif %}
+      </p>
+    </div>
+    <a href="/em/api/club/event/{{ event.id }}/export" class="ep-btn ep-btn-slate">
+      <i class="fas fa-file-csv"></i> Export CSV
+    </a>
+  </div>
+
+  <!-- Stats -->
+  <div class="ep-stats" id="regStats">
+    <div class="ep-stat" style="border-color:rgba(6,182,212,.2);"><div class="ep-stat-val" style="color:#06b6d4;" id="s-total">—</div><div class="ep-stat-lbl">Total</div></div>
+    <div class="ep-stat" style="border-color:rgba(16,185,129,.2);"><div class="ep-stat-val" style="color:#10b981;" id="s-paid">—</div><div class="ep-stat-lbl">Paid</div></div>
+    <div class="ep-stat" style="border-color:rgba(20,184,166,.2);"><div class="ep-stat-val" style="color:#14b8a6;" id="s-free">—</div><div class="ep-stat-lbl">Free</div></div>
+    <div class="ep-stat" style="border-color:rgba(245,158,11,.2);"><div class="ep-stat-val" style="color:#f59e0b;" id="s-cash">—</div><div class="ep-stat-lbl">Cash Pending</div></div>
+    <div class="ep-stat" style="border-color:rgba(16,185,129,.15);"><div class="ep-stat-val" style="color:#10b981;" id="s-checkin">—</div><div class="ep-stat-lbl">Checked In</div></div>
+  </div>
+
+  <!-- Cash pending banner -->
+  <div class="ep-cash-banner" id="cashBanner" style="display:none;">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;">
+      <i class="fas fa-exclamation-circle" style="color:#f59e0b;font-size:1.2rem;"></i>
+      <span style="font-weight:700;color:#f59e0b;">Pending Cash Payments</span>
+      <span id="cashCount" style="font-size:.78rem;color:rgba(255,255,255,.5);"></span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="ep-table">
+        <thead><tr><th>Ticket ID</th><th>Student</th><th>Amount</th><th>Registered</th><th>Action</th></tr></thead>
+        <tbody id="cashBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="ep-controls" style="margin-bottom:1rem;">
+    <div class="ep-search">
+      <i class="fas fa-search"></i>
+      <input type="text" id="searchInput" placeholder="Search name, roll, ticket ID…" oninput="filterTable()">
+    </div>
+    <select class="ep-select" id="statusFilter" onchange="filterTable()">
+      <option value="">All Status</option>
+      <option value="paid">Paid</option>
+      <option value="free">Free</option>
+    </select>
+  </div>
+
+  <!-- Table -->
+  <div class="ep-table-wrap">
+    <table class="ep-table">
+      <thead>
+        <tr>
+          <th>Ticket ID</th><th>Student</th><th>Dept / Year</th><th>Payment</th><th>Check-in</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="regBody">
+        <tr><td colspan="6" style="text-align:center;padding:3rem;color:rgba(255,255,255,.3);"><i class="fas fa-spinner fa-spin"></i> Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div id="regEmpty" style="display:none;text-align:center;padding:4rem;color:rgba(255,255,255,.3);">
+    <i class="fas fa-users" style="font-size:2.5rem;opacity:.2;display:block;margin-bottom:1rem;"></i>
+    No registrations found.
+  </div>
+</div>
+
+<div id="ep-toast"></div>
+
+<script>
+let ALL_TICKETS = [];
+
+function showToast(msg, ok=true){
+  const t=document.getElementById('ep-toast');
+  t.innerHTML=msg;
+  t.style.background=ok?'rgba(16,185,129,.15)':'rgba(239,68,68,.12)';
+  t.style.color=ok?'#10b981':'#f87171';
+  t.style.border=ok?'1px solid rgba(16,185,129,.3)':'1px solid rgba(239,68,68,.25)';
+  t.style.display='block';
+  setTimeout(()=>t.style.display='none',3500);
+}
+
+async function load(){
+  try{
+    const r = await fetch('/em/api/club/event/{{ event.id }}/tickets');
+    const d = await r.json();
+    if(!d.success) return;
+    ALL_TICKETS = d.tickets || [];
+    computeStats(ALL_TICKETS);
+    renderTable(ALL_TICKETS);
+  } catch(e){ console.error(e); }
+}
+
+function computeStats(tickets){
+  const valid = tickets.filter(t=>t.payment_status!=='failed');
+  document.getElementById('s-total').textContent   = valid.length;
+  document.getElementById('s-paid').textContent    = valid.filter(t=>t.payment_status==='paid').length;
+  document.getElementById('s-free').textContent    = valid.filter(t=>t.payment_status==='free').length;
+  document.getElementById('s-checkin').textContent = valid.filter(t=>t.checked_in).length;
+}
+
+
+function filterTable(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const st = document.getElementById('statusFilter').value;
+  const filtered = ALL_TICKETS.filter(t=>{
+    if(t.payment_status==='failed') return false;
+    if(st && t.payment_status!==st) return false;
+    if(q && !(
+      (t.user_name||'').toLowerCase().includes(q)||
+      (t.user_roll||'').toLowerCase().includes(q)||
+      (t.ticket_id||'').toLowerCase().includes(q)||
+      (t.user_email||'').toLowerCase().includes(q)
+    )) return false;
+    return true;
+  });
+  renderTable(filtered);
+}
+
+function renderTable(tickets){
+  const tbody = document.getElementById('regBody');
+  const empty = document.getElementById('regEmpty');
+  if(!tickets.length){
+    tbody.innerHTML='';
+    empty.style.display='';
+    return;
+  }
+  empty.style.display='none';
+  tbody.innerHTML = tickets.map(t=>`
+    <tr>
+      <td><code style="background:rgba(99,102,241,.1);padding:.2rem .5rem;border-radius:6px;color:#818cf8;font-size:.76rem;">${t.ticket_id}</code></td>
+      <td>
+        <div style="font-weight:600;">${t.user_name}</div>
+        <div style="color:rgba(255,255,255,.4);font-size:.74rem;">${t.user_email||''}</div>
+      </td>
+      <td style="color:rgba(255,255,255,.5);font-size:.8rem;">${t.user_dept||'—'} / ${t.user_year||'—'}</td>
+      <td>${statusBadge(t.payment_status)}</td>
+      <td>${t.checked_in?`<span class="badge" style="background:rgba(16,185,129,.12);color:#10b981;">✓ ${(t.checked_in_at||'').substring(11,16)}</span>`:'<span style="color:rgba(255,255,255,.3);font-size:.78rem;">—</span>'}</td>
+      <td>
+        <div style="display:flex;gap:.35rem;flex-wrap:wrap;">
+          <a href="/em/ticket/${t.ticket_id}" class="ep-btn ep-btn-cyan" target="_blank"><i class="fas fa-eye"></i></a>
+          <a href="/em/api/ticket/${t.ticket_id}/download" class="ep-btn ep-btn-teal" target="_blank"><i class="fas fa-file-pdf"></i></a>
+          <button class="ep-btn ep-btn-slate" onclick="resend('${t.ticket_id}')"><i class="fas fa-envelope"></i></button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function statusBadge(s){
+  if(s==='paid') return '<span class="badge badge-paid">PAID</span>';
+  if(s==='free') return '<span class="badge badge-free">FREE</span>';
+  return `<span class="badge" style="background:rgba(239,68,68,.1);color:#f87171;">${s}</span>`;
+}
+
+
+async function resend(ticketId){
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+  const r = await fetch(`/em/api/ticket/${ticketId}/resend`,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf}});
+  const d = await r.json();
+  showToast(d.success?'✅ Email resent':'❌ '+d.message,d.success);
+}
+
+load();
+</script>
+{% endblock %}

@@ -1,0 +1,538 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="profile-container container">
+    
+    <div class="profile-hero premium-glass">
+        <div class="hero-bg" style="background: var(--primary-gradient); opacity: 0.1; position: absolute; inset: 0; border-radius: inherit; z-index: -1;"></div>
+        <div class="avatar-wrapper">
+            <div class="avatar-preview" id="avatarPreview" style="background-image: url('{% if user.photo %}{{ url_for('static', filename='uploads/students/' + user.roll_number + '/' + user.photo) }}{% else %}https://ui-avatars.com/api/?name={{ user.name|urlencode }}&background=random&size=150{% endif %}');">
+                <div class="avatar-overlay" onclick="document.getElementById('photoInput').click()">
+                    <i class="fas fa-camera"></i>
+                    <span>Change Photo</span>
+                </div>
+            </div>
+            <input type="file" id="photoInput" accept="image/*" style="display: none;" onchange="previewPhoto(this)">
+        </div>
+        <div class="hero-info">
+            <h1>{{ user.name }}</h1>
+            <p class="role-badge"><i class="fas fa-user-graduate"></i> {{ user.department }} Student</p>
+            <p class="roll-number">{{ user.roll_number }}</p>
+        </div>
+        <div style="margin-left: auto;">
+            <a href="/student/profile" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back to Profile</a>
+        </div>
+    </div>
+
+    <div class="profile-grid">
+        <!-- Personal Information Section -->
+        <div class="profile-card premium-glass">
+            <div class="card-header">
+                <h3><i class="fas fa-user-edit"></i> Edit Personal Information</h3>
+                <p>Update your contact details and academic status.</p>
+            </div>
+            <form id="profileForm" class="profile-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" name="name" value="{{ user.name }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Roll Number</label>
+                        <input type="text" value="{{ user.roll_number }}" disabled class="disabled-input">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" name="email" value="{{ user.email }}" placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" name="phone" value="{{ user.phone }}" placeholder="Enter your phone number">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Department</label>
+                        <input type="text" name="department" value="{{ user.department }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Year</label>
+                        <select name="year" required>
+                            <option value="1st" {% if user.year == '1st' %}selected{% endif %}>1st Year</option>
+                            <option value="2nd" {% if user.year == '2nd' %}selected{% endif %}>2nd Year</option>
+                            <option value="3rd" {% if user.year == '3rd' %}selected{% endif %}>3rd Year</option>
+                            <option value="4th" {% if user.year == '4th' %}selected{% endif %}>4th Year</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Section / Class</label>
+                    <input type="text" name="class" value="{{ user.class or '' }}" placeholder="e.g., Section A">
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full" style="margin-top: 1rem;">
+                    <i class="fas fa-save"></i> Save Profile Details
+                </button>
+            </form>
+        </div>
+
+        <!-- Contributions & Achievements -->
+        <div class="profile-card premium-glass">
+            <div class="card-header">
+                <h3><i class="fas fa-trophy"></i> Club Contributions & Achievements</h3>
+                <p>Add your memberships, leadership positions, and achievements.</p>
+            </div>
+            
+            <!-- Adding form on top for easy access -->
+            <div class="add-contribution-inline">
+                <div class="form-group mb-0">
+                    <input type="text" id="newClub" placeholder="Club Name (e.g., GDG)">
+                </div>
+                <div class="form-group mb-0">
+                    <input type="text" id="newPosition" placeholder="Position (e.g., President)">
+                </div>
+                <button type="button" onclick="addContribution()" class="btn btn-primary" style="background: var(--secondary-gradient); border: none;">
+                    <i class="fas fa-plus"></i> Add
+                </button>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.05); margin: 2rem 0;">
+
+            <div id="contributionsList" class="achievements-list main-display">
+                <!-- Javascript will render items here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+:root {
+    --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    --secondary-gradient: linear-gradient(135deg, #14b8a6 0%, #0ea5e9 100%);
+}
+
+.profile-container {
+    padding-top: 6rem;
+    padding-bottom: 5rem;
+    max-width: 1000px;
+}
+
+/* Hero Section */
+.profile-hero {
+    position: relative;
+    border-radius: 32px;
+    padding: 3rem;
+    margin-bottom: 3rem;
+    border: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.02);
+    backdrop-filter: blur(20px);
+    display: flex;
+    align-items: center;
+    gap: 2.5rem;
+    overflow: hidden;
+}
+
+.avatar-wrapper {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    overflow: hidden;
+    border: 4px solid rgba(255,255,255,0.1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.avatar-preview {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    transition: 0.3s;
+}
+
+.avatar-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    opacity: 0;
+    transition: 0.3s;
+    cursor: pointer;
+    backdrop-filter: blur(2px);
+}
+
+.avatar-wrapper:hover .avatar-overlay {
+    opacity: 1;
+}
+
+.avatar-overlay i {
+    font-size: 1.5rem;
+}
+
+.hero-info h1 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    margin: 0 0 0.5rem 0;
+}
+
+.role-badge {
+    display: inline-block;
+    padding: 0.4rem 1rem;
+    background: rgba(99, 102, 241, 0.15);
+    color: #a5b4fc;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.roll-number {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    font-family: monospace;
+    letter-spacing: 2px;
+}
+
+/* Grid Layout */
+.profile-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+}
+
+.profile-card {
+    border-radius: 32px;
+    padding: 3rem;
+    border: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.02);
+    backdrop-filter: blur(20px);
+}
+
+.card-header {
+    margin-bottom: 2rem;
+}
+
+.card-header h3 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.card-header p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group.mb-0 { margin-bottom: 0; }
+
+.form-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.form-group input, .form-group select {
+    width: 100%;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 0.9rem 1.2rem;
+    color: #fff;
+    font-size: 1rem;
+    transition: 0.3s;
+}
+
+.form-group input:focus {
+    border-color: var(--primary);
+    outline: none;
+    background: rgba(255,255,255,0.05);
+}
+
+.disabled-input {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: rgba(255,255,255,0.01) !important;
+}
+
+.btn-full {
+    width: 100%;
+    padding: 1.1rem;
+    font-weight: 800;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    transition: 0.3s;
+}
+
+/* Contributions Inline Form */
+.add-contribution-inline {
+    display: grid;
+    grid-template-columns: 2fr 2fr auto;
+    gap: 1rem;
+    align-items: center;
+    background: rgba(255,255,255,0.02);
+    padding: 1.5rem;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+/* Main Display Contributions */
+.achievements-list.main-display {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.achievement-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: rgba(255,255,255,0.03);
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.05);
+    position: relative;
+    transition: 0.3s;
+}
+
+.achievement-item:hover {
+    background: rgba(255,255,255,0.06);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.achievement-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 15px;
+    background: var(--primary-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.achievement-info h4 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    padding-right: 1.5rem;
+}
+
+.achievement-info p {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+}
+
+.remove-contrib {
+    position: absolute;
+    right: 1.25rem;
+    top: 1.5rem;
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.2);
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.remove-contrib:hover {
+    color: #ef4444;
+    transform: scale(1.2);
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    padding: 3rem;
+    text-align: center;
+    color: var(--text-muted);
+    border: 2px dashed rgba(255,255,255,0.1);
+    border-radius: 20px;
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .profile-hero {
+        flex-direction: column;
+        text-align: center;
+        padding: 2.5rem 1.5rem;
+    }
+    .hero-info { margin-bottom: 1rem; }
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    .add-contribution-inline {
+        grid-template-columns: 1fr;
+    }
+    .achievements-list.main-display {
+        grid-template-columns: 1fr;
+    }
+    .profile-card {
+        padding: 2rem 1.5rem;
+    }
+}
+</style>
+
+<script>
+let contributions = {{ (user.contributions if user.contributions else []) | tojson }};
+let photoFile = null;
+
+function previewPhoto(input) {
+    if (input.files && input.files[0]) {
+        photoFile = input.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('avatarPreview').style.backgroundImage = `url('${e.target.result}')`;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function addContribution() {
+    const club = document.getElementById('newClub').value.trim();
+    const pos = document.getElementById('newPosition').value.trim();
+    
+    if(!club || !pos) {
+        alert("Please enter both club name and position");
+        return;
+    }
+    
+    contributions.push({ club_name: club, position: pos });
+    document.getElementById('newClub').value = '';
+    document.getElementById('newPosition').value = '';
+    renderContributions();
+    
+    // Automatically save profile when contribution is added
+    submitProfileData(false);
+}
+
+function removeContribution(index) {
+    if(confirm("Remove this achievement?")) {
+        contributions.splice(index, 1);
+        renderContributions();
+        submitProfileData(false);
+    }
+}
+
+function renderContributions() {
+    const list = document.getElementById('contributionsList');
+    list.innerHTML = ''; // Clear previous content
+    
+    if(contributions.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'empty-state';
+        emptyState.innerHTML = '<p>No contributions or achievements added yet.</p>';
+        list.appendChild(emptyState);
+        return;
+    }
+    
+    contributions.forEach((c, i) => {
+        const item = document.createElement('div');
+        item.className = 'achievement-item';
+        
+        const icon = document.createElement('div');
+        icon.className = 'achievement-icon';
+        icon.innerHTML = '<i class="fas fa-medal"></i>';
+        
+        const info = document.createElement('div');
+        info.className = 'achievement-info';
+        
+        const h4 = document.createElement('h4');
+        h4.textContent = c.club_name;
+        
+        const p = document.createElement('p');
+        p.textContent = c.position;
+        
+        info.appendChild(h4);
+        info.appendChild(p);
+        
+        const btn = document.createElement('button');
+        btn.className = 'remove-contrib';
+        btn.innerHTML = '<i class="fas fa-times"></i>';
+        btn.onclick = () => removeContribution(i);
+        
+        item.appendChild(icon);
+        item.appendChild(info);
+        item.appendChild(btn);
+        
+        list.appendChild(item);
+    });
+}
+
+// Initial render
+renderContributions();
+
+async function submitProfileData(showSuccessAlert = true) {
+    const form = document.getElementById('profileForm');
+    const formData = new FormData(form);
+    
+    // Add contributions as JSON string
+    formData.append('contributions', JSON.stringify(contributions));
+    
+    // Add photo if changed
+    if (photoFile) {
+        formData.append('photo', photoFile);
+    }
+    
+    try {
+        const res = await fetch('/api/student/update_profile', {
+            method: 'POST',
+            headers: { 
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: formData
+        });
+        const result = await res.json();
+        if(result.success) {
+            if(showSuccessAlert) {
+                window.location.href = '/student/profile';
+            }
+        } else {
+            alert("Error: " + result.message);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("An error occurred while saving profile.");
+    }
+}
+
+document.getElementById('profileForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    submitProfileData(true);
+});
+</script>
+{% endblock %}

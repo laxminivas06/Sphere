@@ -1,0 +1,338 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<style>
+    /* ─── EVENT DETAIL THEME ─────────────────────────────────────── */
+    .detail-hero {
+        position: relative;
+        min-height: 400px;
+        display: flex;
+        align-items: flex-end;
+        overflow: hidden;
+        background: var(--navy);
+    }
+
+    .hero-bg {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+    }
+
+    .hero-bg img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.4;
+        filter: saturate(1.2) brightness(0.8);
+    }
+
+    .hero-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, var(--navy) 0%, rgba(15, 20, 64, 0.4) 100%);
+        z-index: 1;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        padding: 4rem 5%;
+        max-width: var(--container-xl);
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .detail-container {
+        max-width: var(--container-xl);
+        margin: -4rem auto 4rem;
+        padding: 0 5%;
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 3rem;
+        position: relative;
+        z-index: 10;
+    }
+
+    .detail-main {
+        background: var(--white);
+        border-radius: var(--radius-xl);
+        padding: 2.5rem;
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--border-light);
+    }
+
+    .detail-sidebar {
+        position: sticky;
+        top: 100px;
+        height: fit-content;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 3rem;
+    }
+
+    .info-tile {
+        background: var(--surface-2);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: transform 0.2s;
+    }
+
+    .info-tile:hover {
+        transform: translateY(-2px);
+        border-color: var(--navy-mid);
+    }
+
+    .info-tile-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        background: var(--white);
+        color: var(--navy);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .info-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+    }
+
+    .info-value {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--navy);
+    }
+
+    .description-box {
+        color: var(--text-secondary);
+        line-height: 1.8;
+        font-size: 1rem;
+        white-space: pre-line;
+    }
+
+    .ticket-card {
+        background: var(--white);
+        border-radius: var(--radius-xl);
+        padding: 2rem;
+        box-shadow: var(--shadow-lg);
+        border: 1.5px solid var(--navy-mid);
+        position: relative;
+    }
+
+    .ticket-card::before {
+        content: '';
+        position: absolute;
+        top: -1.5px;
+        left: -1.5px;
+        right: -1.5px;
+        height: 8px;
+        background: var(--navy);
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    }
+
+    .price-display {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .price-amount {
+        font-size: 2.5rem;
+        font-weight: 900;
+        color: var(--navy);
+        display: block;
+    }
+
+    .price-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+
+    .cap-info {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: var(--text-secondary);
+    }
+
+    .cap-bar {
+        height: 8px;
+        background: var(--surface-2);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    .cap-fill {
+        height: 100%;
+        background: var(--navy);
+        border-radius: 4px;
+    }
+
+    @media (max-width: 992px) {
+        .detail-container {
+            grid-template-columns: 1fr;
+            margin-top: -2rem;
+        }
+        .detail-sidebar {
+            position: static;
+        }
+    }
+</style>
+
+<div class="detail-hero">
+    <div class="hero-bg">
+        {% if event.banner %}
+        <img src="/static/uploads/em/banners/{{ event.banner }}" alt="Banner">
+        {% endif %}
+    </div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+        <div class="section-tag" style="background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.3);">
+            {{ event.event_category|replace('_', ' ')|title }}
+        </div>
+        <h1 style="color: #fff; font-size: clamp(1.8rem, 5vw, 3.2rem); font-weight: 800; margin-top: 1rem;">{{ event.title }}</h1>
+        <p style="color: rgba(255,255,255,0.8); margin-top: 1rem; font-size: 1.1rem;">
+            <i class="fas fa-university" style="margin-right: 0.5rem;"></i> Organized by {{ event.organized_by or 'Institutional Committee' }}
+        </p>
+    </div>
+</div>
+
+<div class="detail-container">
+    <div class="detail-main reveal">
+        <h3 class="form-section-label" style="margin-top: 0;">Event Schedule & Location</h3>
+        <div class="info-grid">
+            <div class="info-tile">
+                <div class="info-tile-icon"><i class="far fa-calendar-alt"></i></div>
+                <div>
+                    <div class="info-label">Date</div>
+                    <div class="info-value">{{ event.date }}</div>
+                </div>
+            </div>
+            <div class="info-tile">
+                <div class="info-tile-icon"><i class="far fa-clock"></i></div>
+                <div>
+                    <div class="info-label">Time</div>
+                    <div class="info-value">{{ event.time or 'TBA' }}</div>
+                </div>
+            </div>
+            <div class="info-tile">
+                <div class="info-tile-icon"><i class="fas fa-map-marker-alt"></i></div>
+                <div>
+                    <div class="info-label">Venue</div>
+                    <div class="info-value">{{ event.venue }}</div>
+                </div>
+            </div>
+            <div class="info-tile">
+                <div class="info-tile-icon"><i class="fas fa-users"></i></div>
+                <div>
+                    <div class="info-label">Team Type</div>
+                    <div class="info-value">{{ 'Team Event' if event.get('max_team_size', 1)|int > 1 else 'Individual' }}</div>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="form-section-label">About the Event</h3>
+        <div class="description-box">
+            {{ event.description }}
+        </div>
+
+        <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1.5px solid var(--border-light);">
+            <a href="/em/events" class="btn btn-outline" style="color: var(--navy); border-color: var(--border-mid);">
+                <i class="fas fa-arrow-left"></i> Back to all events
+            </a>
+        </div>
+    </div>
+
+    <div class="detail-sidebar reveal">
+        <div class="ticket-card">
+            <div class="price-display">
+                <span class="price-label">{{ 'REGISTRATION FEE' if event.event_type == 'paid' else 'ADMISSION' }}</span>
+                {% if event.event_type == 'paid' %}
+                <span class="price-amount">₹{{ event.ticket_price }}</span>
+                {% else %}
+                <span class="price-amount" style="color: #10b981;">FREE</span>
+                {% endif %}
+            </div>
+
+            {% if event.max_capacity and event.event_category != 'hackathon' %}
+            <div class="cap-info">
+                <span><i class="fas fa-ticket-alt"></i> Tickets Available</span>
+                <span>{{ reg_count }}/{{ event.max_capacity }}</span>
+            </div>
+            <div class="cap-bar">
+                <div class="cap-fill" style="width: {{ [(reg_count|int / event.max_capacity|int * 100)|int, 100]|min }}%;"></div>
+            </div>
+            {% endif %}
+
+            <div style="display: grid; gap: 0.75rem;">
+                {% if not user %}
+                <a href="/em/events/{{ event.id }}/register" class="btn btn-navy" style="width: 100%; justify-content: center; height: 56px; font-size: 1.1rem;">
+                    Register Now
+                </a>
+                {% else %}
+                    {% if event.event_category == 'hackathon' %}
+                        {% if user_team %}
+                        <div class="alert alert-success" style="padding: 1.25rem; text-align: center;">
+                            <i class="fas fa-users fa-2x" style="display: block; margin-bottom: 0.5rem;"></i>
+                            <strong>Team Registered: {{ user_team.team_name }}</strong>
+                        </div>
+                        <a href="/em/hackathon/{{ event.id }}/submit" class="btn btn-navy" style="width: 100%; justify-content: center;">
+                            Manage Submission
+                        </a>
+                        {% else %}
+                        <a href="/em/events/{{ event.id }}/register" class="btn btn-navy" style="width: 100%; justify-content: center; height: 56px;">
+                            Register a Team
+                        </a>
+                        {% endif %}
+                    {% else %}
+                        {% if is_registered and user_ticket %}
+                        <div class="alert alert-success" style="padding: 1.25rem; text-align: center;">
+                            <i class="fas fa-check-circle fa-2x" style="display: block; margin-bottom: 0.5rem;"></i>
+                            <strong>You're Registered!</strong>
+                            <p style="font-size: 0.8rem; margin-top: 0.25rem;">ID: {{ user_ticket.ticket_id }}</p>
+                        </div>
+                        <a href="/em/ticket/{{ user_ticket.ticket_id }}" class="btn btn-navy" style="width: 100%; justify-content: center;">
+                            View Ticket
+                        </a>
+                        {% else %}
+                        <a href="/em/events/{{ event.id }}/register" class="btn btn-navy" style="width: 100%; justify-content: center; height: 56px;">
+                            {% if event.event_type == 'paid' %}Proceed to Pay ₹{{ event.ticket_price }}{% else %}Register Now (Free){% endif %}
+                        </a>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
+                <div style="display: grid; gap: 0.75rem;">
+                    <div style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.75rem; color: var(--text-muted);">
+                        <i class="fas fa-shield-alt" style="color: #10b981;"></i> Securely processed by Institutional Gateway
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.75rem; color: var(--text-muted);">
+                        <i class="fas fa-qrcode" style="color: var(--navy);"></i> Instant QR Ticket Delivery
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}

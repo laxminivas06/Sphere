@@ -1,0 +1,182 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+.ad-wrap{max-width:900px;margin:0 auto;padding:2.5rem 1.5rem;}
+.ad-back{display:inline-flex;align-items:center;gap:.6rem;color:rgba(255,255,255,.5);font-size:.82rem;text-decoration:none;margin-bottom:2rem;padding:.5rem .9rem;border-radius:10px;border:1px solid rgba(255,255,255,.07);transition:.2s;}
+.ad-back:hover{color:#fff;background:rgba(255,255,255,.05);}
+.ad-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:2rem;}
+.ad-title{font-size:1.6rem;font-weight:800;}
+.ad-title span{background:linear-gradient(135deg,#f59e0b,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+/* Info banner */
+.ad-info{padding:.85rem 1.25rem;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.18);border-radius:14px;font-size:.82rem;color:#f59e0b;margin-bottom:2rem;display:flex;align-items:center;gap:.75rem;}
+/* Admin cards */
+.ad-grid{display:flex;flex-direction:column;gap:.75rem;margin-bottom:2rem;}
+.ad-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:1.25rem 1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;transition:.2s;}
+.ad-card:hover{border-color:rgba(245,158,11,.25);}
+.ad-avatar{width:44px;height:44px;border-radius:12px;background:rgba(245,158,11,.15);display:flex;align-items:center;justify-content:center;color:#f59e0b;font-size:1.1rem;flex-shrink:0;}
+.ad-info-col{flex:1;}
+.ad-name{font-weight:700;font-size:.95rem;}
+.ad-email{font-size:.78rem;color:rgba(255,255,255,.45);margin-top:.1rem;}
+.ad-actions{display:flex;gap:.5rem;}
+/* Buttons */
+.ad-btn{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .9rem;border-radius:8px;font-size:.77rem;font-weight:600;cursor:pointer;border:1px solid;transition:.2s;}
+.ad-btn:hover{opacity:.8;}
+.ad-btn-primary{background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.3);color:#f59e0b;}
+.ad-btn-danger{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#f87171;}
+/* Form */
+.ad-form-box{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:20px;padding:2rem;margin-bottom:2rem;}
+.ad-form-box h3{font-size:1rem;font-weight:700;margin-bottom:1.25rem;color:#f59e0b;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.85rem;}
+.field label{display:block;font-size:.73rem;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.4);margin-bottom:.35rem;}
+.field input{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:.7rem 1rem;color:#fff;font-size:.88rem;outline:none;transition:.2s;box-sizing:border-box;}
+.field input:focus{border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.06);}
+.ad-submit{background:linear-gradient(135deg,#f59e0b,#f97316);border:none;border-radius:12px;padding:.8rem 2rem;color:#fff;font-weight:700;font-size:.9rem;cursor:pointer;transition:.2s;margin-top:.5rem;}
+.ad-submit:hover{opacity:.85;}
+/* Empty */
+.ad-empty{text-align:center;padding:3.5rem;color:rgba(255,255,255,.3);border:2px dashed rgba(255,255,255,.07);border-radius:18px;}
+/* Credentials modal */
+.cred-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;justify-content:center;align-items:center;padding:1rem;}
+.cred-box{background:#0f0f2d;border:1px solid rgba(245,158,11,.25);border-radius:22px;padding:2rem;width:100%;max-width:440px;}
+#ep-toast{position:fixed;bottom:2rem;right:2rem;z-index:9999;padding:1rem 1.5rem;border-radius:14px;font-weight:600;font-size:.88rem;display:none;}
+@media(max-width:600px){.ad-wrap{padding:1rem;}.form-grid{grid-template-columns:1fr;}}
+</style>
+
+<div class="ad-wrap">
+  <a href="/em/event/{{ event.id }}/hub" class="ad-back"><i class="fas fa-arrow-left"></i> Back to EventUp</a>
+
+  <div class="ad-header">
+    <div>
+      <h1 class="ad-title"><i class="fas fa-user-shield" style="color:#f59e0b;margin-right:.5rem;font-size:1.3rem;"></i>Event Admins — <span>{{ event.title }}</span></h1>
+      <p style="color:rgba(255,255,255,.4);font-size:.82rem;margin-top:.2rem;">
+        {% if event.date %}<i class="fas fa-calendar-alt"></i> {{ event.date }} &nbsp;{% endif %}
+        {% if event.venue %}<i class="fas fa-map-marker-alt"></i> {{ event.venue }}{% endif %}
+      </p>
+    </div>
+  </div>
+
+  <div class="ad-info">
+    <i class="fas fa-info-circle"></i>
+    Event admins can verify cash payments, scan QR codes at the entrance, and view registrations for this event. They use email + password to log in.
+  </div>
+
+  <!-- Add Admin Form -->
+  <div class="ad-form-box">
+    <h3><i class="fas fa-plus-circle" style="margin-right:.4rem;"></i>Add Event Admin</h3>
+    <form id="adminForm">
+      <div class="form-grid" style="margin-bottom:.85rem;">
+        <div class="field"><label>Full Name *</label><input type="text" id="aName" placeholder="Admin Name" required></div>
+        <div class="field"><label>Phone</label><input type="text" id="aPhone" placeholder="Phone number"></div>
+      </div>
+      <div class="form-grid" style="margin-bottom:.85rem;">
+        <div class="field"><label>Email (Login ID) *</label><input type="email" id="aEmail" placeholder="admin@college.edu" required></div>
+        <div class="field"><label>Password *</label><input type="password" id="aPass" placeholder="Set a password" required></div>
+      </div>
+      <button type="submit" class="ad-submit"><i class="fas fa-user-plus" style="margin-right:.5rem;"></i>Create Admin</button>
+      <div id="formMsg" style="display:none;margin-top:.75rem;padding:.7rem 1rem;border-radius:10px;font-size:.85rem;"></div>
+    </form>
+  </div>
+
+  <!-- Admin List -->
+  <h3 style="font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.35);margin-bottom:1rem;">Current Admins (<span id="adminCount">0</span>)</h3>
+  <div id="adminGrid" class="ad-grid"></div>
+  <div id="adminEmpty" class="ad-empty" style="display:none;">
+    <i class="fas fa-user-shield" style="font-size:2.5rem;opacity:.2;display:block;margin-bottom:1rem;"></i>
+    No admins assigned yet. Use the form above to add one.
+  </div>
+</div>
+
+<!-- Credentials popup -->
+<div id="credModal" class="cred-modal">
+  <div class="cred-box">
+    <h3 style="margin-bottom:1rem;color:#f59e0b;"><i class="fas fa-key" style="margin-right:.5rem;"></i>Admin Created</h3>
+    <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:1.5rem;">Share these credentials with the admin. They will use these to log in.</p>
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:1.25rem;font-size:.88rem;margin-bottom:1.5rem;">
+      <div style="margin-bottom:.5rem;"><span style="color:rgba(255,255,255,.4);">Login Email:</span> <strong id="credEmail" style="color:#f59e0b;"></strong></div>
+      <div><span style="color:rgba(255,255,255,.4);">Password:</span> <strong id="credPass" style="color:#f59e0b;"></strong></div>
+    </div>
+    <button onclick="document.getElementById('credModal').style.display='none'" style="width:100%;background:linear-gradient(135deg,#f59e0b,#f97316);border:none;border-radius:10px;padding:.8rem;color:#fff;font-weight:700;cursor:pointer;">Got it, thanks!</button>
+  </div>
+</div>
+
+<div id="ep-toast"></div>
+
+<script>
+function showToast(msg,ok=true){
+  const t=document.getElementById('ep-toast');
+  t.innerHTML=msg;t.style.background=ok?'rgba(16,185,129,.15)':'rgba(239,68,68,.12)';
+  t.style.color=ok?'#10b981':'#f87171';t.style.border=ok?'1px solid rgba(16,185,129,.3)':'1px solid rgba(239,68,68,.25)';
+  t.style.display='block';setTimeout(()=>t.style.display='none',3500);
+}
+
+async function loadAdmins(){
+  const r = await fetch('/em/api/club/event/{{ event.id }}/admins');
+  const d = await r.json();
+  const grid = document.getElementById('adminGrid');
+  const empty = document.getElementById('adminEmpty');
+  const admins = d.admins||[];
+  document.getElementById('adminCount').textContent = admins.length;
+  if(!admins.length){ grid.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display='none';
+  grid.innerHTML=admins.map(a=>`
+    <div class="ad-card">
+      <div class="ad-avatar"><i class="fas fa-user-shield"></i></div>
+      <div class="ad-info-col">
+        <div class="ad-name">${a.name}</div>
+        <div class="ad-email">${a.email}${a.phone?' · '+a.phone:''}</div>
+      </div>
+      <div class="ad-actions">
+        <button class="ad-btn ad-btn-danger" onclick="removeAdmin('${a.id}','${a.name.replace(/'/g,"\\'")}')">
+          <i class="fas fa-user-minus"></i> Remove
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+document.getElementById('adminForm').onsubmit = async(e)=>{
+  e.preventDefault();
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+  const body = {
+    event_id:'{{ event.id }}',
+    name: document.getElementById('aName').value,
+    email: document.getElementById('aEmail').value,
+    password: document.getElementById('aPass').value,
+    phone: document.getElementById('aPhone').value
+  };
+  const r = await fetch('/em/api/club/admins/create',{
+    method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf},
+    body:JSON.stringify(body)
+  });
+  const d = await r.json();
+  const msg = document.getElementById('formMsg');
+  msg.style.display='block';
+  if(d.success){
+    msg.style.background='rgba(16,185,129,.1)';msg.style.color='#10b981';msg.style.border='1px solid rgba(16,185,129,.25)';
+    msg.textContent='✅ '+d.message;
+    // Show credentials popup
+    document.getElementById('credEmail').textContent = body.email;
+    document.getElementById('credPass').textContent  = body.password;
+    document.getElementById('credModal').style.display='flex';
+    e.target.reset();
+    loadAdmins();
+  } else {
+    msg.style.background='rgba(239,68,68,.1)';msg.style.color='#f87171';msg.style.border='1px solid rgba(239,68,68,.25)';
+    msg.textContent='❌ '+(d.message||'Failed');
+  }
+  setTimeout(()=>msg.style.display='none',5000);
+};
+
+async function removeAdmin(id, name){
+  if(!confirm(`Remove "${name}" from this event?`)) return;
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+  const r = await fetch(`/em/api/club/admins/${id}/remove`,{
+    method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf},
+    body:JSON.stringify({event_id:'{{ event.id }}'})
+  });
+  const d = await r.json();
+  showToast(d.success?'✅ Admin removed':'❌ '+d.message,d.success);
+  if(d.success) loadAdmins();
+}
+
+loadAdmins();
+</script>
+{% endblock %}

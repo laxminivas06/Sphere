@@ -1,0 +1,49 @@
+<aside class="sidebar">
+    <div style="margin-bottom: 2rem;">
+        <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏠 Main Menu ⏺️</p>
+        <a href="/admin" class="nav-item {% if request.path == '/admin' %}active{% endif %}">
+            <i class="fas fa-tools"></i>
+            <span>Clubs Setup & Config</span>
+        </a>
+        <a href="/super/approvals" class="nav-item {% if request.path == '/super/approvals' %}active{% endif %}">
+            <i class="fas fa-check-circle"></i>
+            <span>Approvals</span>
+        </a>
+        <a href="/super/master" class="nav-item {% if request.path == '/super/master' %}active{% endif %}">
+            <i class="fas fa-database"></i>
+            <span>Master DB</span>
+        </a>
+    </div>
+
+    <div>
+        <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏛️ Governance</p>
+        <a href="/super/registry" class="nav-item {% if request.path == '/super/registry' %}active{% endif %}">
+            <i class="fas fa-folder-open"></i>
+            <span>Institutional Registry</span>
+        </a>
+        <a href="/super/leaderboard" class="nav-item {% if request.path == '/super/leaderboard' %}active{% endif %}">
+            <i class="fas fa-trophy"></i>
+            <span>Global Leaderboard</span>
+        </a>
+        <a href="/admin/contacts" class="nav-item {% if request.path == '/admin/contacts' %}active{% endif %}">
+            <i class="fas fa-address-book"></i>
+            <span>Contacts</span>
+        </a>
+        <a href="/super/settings" class="nav-item {% if request.path == '/super/settings' %}active{% endif %}">
+            <i class="fas fa-cog"></i>
+            <span>Global Settings</span>
+        </a>
+        <div class="nav-item" onclick="location.reload()">
+            <i class="fas fa-sync-alt"></i>
+            <span>Refresh</span>
+        </div>
+    </div>
+
+    <div style="margin-top: 1rem;">
+        <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: #8b5cf6; margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🎭 College Events</p>
+        <a href="/em/dashboard" class="nav-item {% if request.path.startswith('/em/') %}active{% endif %}" style="background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);">
+            <i class="fas fa-ticket-alt" style="color: #8b5cf6;"></i>
+            <span>Event Manager</span>
+        </a>
+    </div>
+</aside>

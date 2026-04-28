@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech Fest Admin Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='techfest.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .tf-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--tf-border);
+            padding-bottom: 1rem;
+        }
+        .tf-tab {
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--tf-text-muted);
+        }
+        .tf-tab.active {
+            background: var(--tf-primary);
+            color: white;
+        }
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .admin-table th, .admin-table td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid var(--tf-border);
+        }
+        .admin-table th { color: var(--tf-text-muted); font-size: 0.8rem; text-transform: uppercase; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: #1e293b;
+            padding: 2rem;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="techfest-body">
+    <div class="tf-container" style="max-width: 1200px;">
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem;">
+            <div>
+                <h1 style="margin: 0;">Tech Fest Management</h1>
+                <p style="color: var(--tf-text-muted);">Admin Control Center</p>
+            </div>
+            <a href="/dashboard" class="tf-btn tf-btn-outline">Back to Main Dashboard</a>
+        </header>
+
+        <div class="tf-tabs">
+            <div class="tf-tab active" onclick="switchTab('dashboard')">Dashboard</div>
+            <div class="tf-tab" onclick="switchTab('events')">Events</div>
+            <div class="tf-tab" onclick="switchTab('registrations')">Registrations</div>
+            <div class="tf-tab" onclick="switchTab('settings')">Settings</div>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="tab-dashboard" class="tf-tab-content">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 3rem;">
+                <div class="tf-glass-card" style="padding: 1.5rem;">
+                    <p style="color: var(--tf-text-muted); font-size: 0.8rem; margin: 0;">Total Registrations</p>
+                    <h2 style="font-size: 2rem; margin: 0.5rem 0;">{{ registrations|length }}</h2>
+                </div>
+                <div class="tf-glass-card" style="padding: 1.5rem;">
+                    <p style="color: var(--tf-text-muted); font-size: 0.8rem; margin: 0;">Total Events</p>
+                    <h2 style="font-size: 2rem; margin: 0.5rem 0;">{{ events|length }}</h2>
+                </div>
+                <div class="tf-glass-card" style="padding: 1.5rem;">
+                    <p style="color: var(--tf-text-muted); font-size: 0.8rem; margin: 0;">Spoorthy Students</p>
+                    <h2 style="font-size: 2rem; margin: 0.5rem 0;">{{ registrations|selectattr('student_details.is_spoorthy', 'equalto', 'yes')|list|length }}</h2>
+                </div>
+                <div class="tf-glass-card" style="padding: 1.5rem;">
+                    <p style="color: var(--tf-text-muted); font-size: 0.8rem; margin: 0;">Other Colleges</p>
+                    <h2 style="font-size: 2rem; margin: 0.5rem 0;">{{ registrations|selectattr('student_details.is_spoorthy', 'equalto', 'no')|list|length }}</h2>
+                </div>
+            </div>
+
+            <div class="tf-glass-card">
+                <h3>Active Tech Fests</h3>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Fest Name</th>
+                            <th>Year</th>
+                            <th>Month</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tf in techfests %}
+                        <tr>
+                            <td>{{ tf.name }}</td>
+                            <td>{{ tf.year }}</td>
+                            <td>{{ tf.month }}</td>
+                            <td><span style="color: {{ '#10b981' if tf.status == 'active' else '#ef4444' }}">{{ tf.status }}</span></td>
+                            <td>
+                                <button class="tf-btn tf-btn-outline" style="padding: 0.3rem 0.8rem; font-size: 0.8rem;">Edit</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <button class="tf-btn tf-btn-primary" style="margin-top: 2rem;" onclick="openTFModal()">Create New Edition</button>
+            </div>
+        </div>
+
+        <!-- Events Tab -->
+        <div id="tab-events" class="tf-tab-content" style="display: none;">
+            <div class="tf-glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3>Managed Events</h3>
+                    <button class="tf-btn tf-btn-primary" style="padding: 0.5rem 1rem;" onclick="openEventModal()">Add Event</button>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Event Name</th>
+                            <th>Team Size</th>
+                            <th>Fee</th>
+                            <th>Participation</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ev in events %}
+                        <tr>
+                            <td>{{ ev.name }}</td>
+                            <td>{{ ev.min_team_size }}-{{ ev.max_team_size }}</td>
+                            <td>₹{{ ev.registration_fee }}</td>
+                            <td>{{ registrations|selectattr('selected_events', 'defined')|selectattr('selected_events', 'any', 'event_id', 'equalto', ev.id)|list|length }}</td>
+                            <td>
+                                <button class="tf-btn tf-btn-outline" style="padding: 0.3rem 0.8rem; font-size: 0.8rem;" onclick="openEditEvent('{{ ev.id }}')">Edit</button>
+                                <button class="tf-btn tf-btn-outline" style="padding: 0.3rem 0.8rem; font-size: 0.8rem; color: #ef4444;" onclick="deleteEvent('{{ ev.id }}')">Delete</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Registrations Tab -->
+        <div id="tab-registrations" class="tf-tab-content" style="display: none;">
+            <div class="tf-glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3>Student Registrations</h3>
+                    <button class="tf-btn tf-btn-outline">Export to CSV</button>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Reg ID</th>
+                            <th>Name</th>
+                            <th>College</th>
+                            <th>Events</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reg in registrations %}
+                        <tr>
+                            <td style="font-family: monospace; font-size: 0.8rem;">{{ reg.reg_id }}</td>
+                            <td>
+                                <strong>{{ reg.student_details.name }}</strong><br>
+                                <span style="font-size: 0.75rem; color: var(--tf-text-muted);">{{ reg.student_details.roll_number or 'N/A' }}</span>
+                            </td>
+                            <td>{{ 'Spoorthy' if reg.student_details.is_spoorthy == 'yes' else reg.student_details.college_name }}</td>
+                            <td>
+                                <ul style="margin: 0; padding-left: 1rem; font-size: 0.8rem;">
+                                    {% for se in reg.selected_events %}
+                                    <li>{{ se.name }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                            <td>
+                                <span class="badge-{{ reg.payment_status }}" style="padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; background: {{ 'rgba(16,185,129,0.1)' if reg.payment_status == 'paid' else 'rgba(245,158,11,0.1)' }}; color: {{ '#10b981' if reg.payment_status == 'paid' else '#f59e0b' }};">
+                                    {{ reg.payment_status }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="tf-btn tf-btn-outline" style="padding: 0.3rem 0.8rem; font-size: 0.8rem;" onclick="viewTicket('{{ reg.reg_id }}')">View QR</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="tab-settings" class="tf-tab-content" style="display: none;">
+            <div class="tf-glass-card" style="margin-bottom: 2rem;">
+                <h3>Department Management</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <div>
+                        <h4>UG Departments</h4>
+                        <div id="ug-depts-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+                            {% for d in departments.UG %}
+                            <span class="tf-btn tf-btn-outline" style="font-size: 0.8rem; padding: 0.2rem 0.5rem;">{{ d }} <span style="margin-left: 5px; cursor: pointer;" onclick="removeDept('UG', '{{ d }}')">×</span></span>
+                            {% endfor %}
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" id="new-ug-dept" class="tf-input" placeholder="New UG Dept" style="padding: 0.5rem;">
+                            <button class="tf-btn tf-btn-primary" style="padding: 0.5rem 1rem;" onclick="addDept('UG')">Add</button>
+                        </div>
+                    </div>
+                    <div>
+                        <h4>PG Departments</h4>
+                        <div id="pg-depts-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+                            {% for d in departments.PG %}
+                            <span class="tf-btn tf-btn-outline" style="font-size: 0.8rem; padding: 0.2rem 0.5rem;">{{ d }} <span style="margin-left: 5px; cursor: pointer;" onclick="removeDept('PG', '{{ d }}')">×</span></span>
+                            {% endfor %}
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" id="new-pg-dept" class="tf-input" placeholder="New PG Dept" style="padding: 0.5rem;">
+                            <button class="tf-btn tf-btn-primary" style="padding: 0.5rem 1rem;" onclick="addDept('PG')">Add</button>
+                        </div>
+                    </div>
+                </div>
+                <button class="tf-btn tf-btn-primary" style="margin-top: 2rem;" onclick="saveDepartments()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tech Fest Edition Modal -->
+    <div id="tf-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modal-title">Tech Fest Edition</h2>
+            <div class="tf-form-group">
+                <label class="tf-label">Edition Name</label>
+                <input type="text" id="tf-name" class="tf-input" placeholder="e.g. Pragati Tech Fest 2026">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="tf-form-group">
+                    <label class="tf-label">Year</label>
+                    <input type="text" id="tf-year" class="tf-input" placeholder="2026">
+                </div>
+                <div class="tf-form-group">
+                    <label class="tf-label">Month</label>
+                    <input type="text" id="tf-month" class="tf-input" placeholder="October">
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+                <button class="tf-btn tf-btn-outline" onclick="closeModal('tf-modal')">Cancel</button>
+                <button class="tf-btn tf-btn-primary" onclick="saveTechFest()">Save Fest</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Modal -->
+    <div id="event-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="event-modal-title">Sub-Event Details</h2>
+            <input type="hidden" id="ev-id">
+            <div class="tf-form-group">
+                <label class="tf-label">Event Name</label>
+                <input type="text" id="ev-name" class="tf-input" placeholder="e.g. Blind Code">
+            </div>
+            <div class="tf-form-group">
+                <label class="tf-label">Description</label>
+                <textarea id="ev-description" class="tf-input" style="height: 80px;" placeholder="Event description..."></textarea>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="tf-form-group">
+                    <label class="tf-label">Payment Type</label>
+                    <select id="ev-payment-type" class="tf-input" onchange="toggleFeeInput()">
+                        <option value="free">Free</option>
+                        <option value="paid">Paid</option>
+                    </select>
+                </div>
+                <div class="tf-form-group" id="fee-group" style="display: none;">
+                    <label class="tf-label">Registration Fee (₹)</label>
+                    <input type="number" id="ev-fee" class="tf-input" placeholder="0">
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="tf-form-group">
+                    <label class="tf-label">Min Team Size</label>
+                    <input type="number" id="ev-min-team" class="tf-input" value="1">
+                </div>
+                <div class="tf-form-group">
+                    <label class="tf-label">Max Team Size</label>
+                    <input type="number" id="ev-max-team" class="tf-input" value="1">
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+                <button class="tf-btn tf-btn-outline" onclick="closeModal('event-modal')">Cancel</button>
+                <button class="tf-btn tf-btn-primary" onclick="saveEvent()">Save Event</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentDepartments = {{ departments|tojson }};
+        const allEvents = {{ events|tojson }};
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tf-tab-content').forEach(c => c.style.display = 'none');
+            document.querySelectorAll('.tf-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tab).style.display = 'block';
+            event.target.classList.add('active');
+        }
+
+        function openTFModal() { document.getElementById('tf-modal').style.display = 'flex'; }
+        function openEventModal() { 
+            document.getElementById('event-modal-title').innerText = 'Add New Event';
+            document.getElementById('ev-id').value = '';
+            document.getElementById('ev-name').value = '';
+            document.getElementById('ev-description').value = '';
+            document.getElementById('ev-payment-type').value = 'free';
+            document.getElementById('ev-fee').value = '0';
+            document.getElementById('ev-min-team').value = '1';
+            document.getElementById('ev-max-team').value = '1';
+            toggleFeeInput();
+            document.getElementById('event-modal').style.display = 'flex'; 
+        }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function toggleFeeInput() {
+            const type = document.getElementById('ev-payment-type').value;
+            document.getElementById('fee-group').style.display = type === 'paid' ? 'block' : 'none';
+        }
+
+        function openEditEvent(id) {
+            const ev = allEvents.find(e => e.id === id);
+            if (!ev) return;
+            document.getElementById('event-modal-title').innerText = 'Edit Event: ' + ev.name;
+            document.getElementById('ev-id').value = ev.id;
+            document.getElementById('ev-name').value = ev.name;
+            document.getElementById('ev-description').value = ev.description || '';
+            document.getElementById('ev-payment-type').value = ev.payment_type || (ev.registration_fee > 0 ? 'paid' : 'free');
+            document.getElementById('ev-fee').value = ev.registration_fee || 0;
+            document.getElementById('ev-min-team').value = ev.min_team_size || 1;
+            document.getElementById('ev-max-team').value = ev.max_team_size || 1;
+            toggleFeeInput();
+            document.getElementById('event-modal').style.display = 'flex';
+        }
+
+        async function saveEvent() {
+            const data = {
+                id: document.getElementById('ev-id').value,
+                name: document.getElementById('ev-name').value,
+                description: document.getElementById('ev-description').value,
+                payment_type: document.getElementById('ev-payment-type').value,
+                registration_fee: document.getElementById('ev-fee').value,
+                min_team_size: document.getElementById('ev-min-team').value,
+                max_team_size: document.getElementById('ev-max-team').value,
+            };
+
+            if (!data.name) return Swal.fire('Error', 'Event name is required', 'error');
+
+            try {
+                const resp = await fetch('/api/techfest/event/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const res = await resp.json();
+                if (res.success) {
+                    Swal.fire('Success', 'Event saved successfully', 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('Error', res.message || 'Failed to save event', 'error');
+                }
+            } catch (e) {
+                Swal.fire('Error', 'Network error', 'error');
+            }
+        }
+
+        async function deleteEvent(id) {
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: "This will remove the event from Tech Fest!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'Yes, delete it!'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const resp = await fetch('/api/techfest/event/delete/' + id, { method: 'POST' });
+                    if ((await resp.json()).success) {
+                        Swal.fire('Deleted!', 'Event has been removed.', 'success').then(() => location.reload());
+                    }
+                } catch (e) {
+                    Swal.fire('Error', 'Failed to delete event', 'error');
+                }
+            }
+        }
+
+        function addDept(type) {
+            const input = document.getElementById('new-' + type.toLowerCase() + '-dept');
+            const val = input.value.trim();
+            if (val && !currentDepartments[type].includes(val)) {
+                currentDepartments[type].push(val);
+                renderDepts();
+                input.value = '';
+            }
+        }
+
+        function removeDept(type, val) {
+            currentDepartments[type] = currentDepartments[type].filter(d => d !== val);
+            renderDepts();
+        }
+
+        function renderDepts() {
+            ['UG', 'PG'].forEach(type => {
+                const container = document.getElementById(type.toLowerCase() + '-depts-list');
+                container.innerHTML = '';
+                currentDepartments[type].forEach(d => {
+                    const span = document.createElement('span');
+                    span.className = 'tf-btn tf-btn-outline';
+                    span.style.fontSize = '0.8rem';
+                    span.style.padding = '0.2rem 0.5rem';
+                    span.innerHTML = `${d} <span style="margin-left: 5px; cursor: pointer;" onclick="removeDept('${type}', '${d}')">×</span>`;
+                    container.appendChild(span);
+                });
+            });
+        }
+
+        async function saveDepartments() {
+            const resp = await fetch('/api/techfest/departments/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(currentDepartments)
+            });
+            if ((await resp.json()).success) Swal.fire('Success', 'Departments updated', 'success');
+        }
+    </script>
+</body>
+</html>

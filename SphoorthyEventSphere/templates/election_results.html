@@ -1,0 +1,81 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<main class="container" style="max-width: 900px; padding: 2rem 1rem;">
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <div style="display: inline-block; padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 50%; margin-bottom: 1rem;">
+            <i class="fas fa-trophy" style="font-size: 3rem; color: #10b981;"></i>
+        </div>
+        <h2 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Official <span style="color: var(--primary)">Results</span></h2>
+        <p style="color: var(--text-muted); font-size: 1.1rem;">{{ election.title }} - {{ club.name }}</p>
+        <div style="margin-top: 1rem;">
+            <span class="badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-size: 0.8rem; padding: 0.5rem 1rem;"><i class="fas fa-check-circle"></i> VERIFIED & PUBLISHED</span>
+        </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 3rem;">
+        {% for pos in election.positions %}
+        <div class="card glass" style="padding: 2.5rem; border-radius: 24px; position: relative; overflow: hidden;">
+            <div style="position: absolute; top: -20px; right: -20px; text-align: center; opacity: 0.03; z-index: 0;">
+                <i class="fas fa-user-tie" style="font-size: 10rem;"></i>
+            </div>
+            
+            <h3 style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); position: relative; z-index: 1;">
+                <span style="color: var(--primary);">Position:</span> {{ pos }}
+            </h3>
+            
+            {% set results_dict = election.results.get(pos, {}) %}
+            {% set nominees = [] %}
+            {% for nom in election.nominations if nom.position == pos %}
+                {% set _ = nominees.append({'nominee': nom, 'votes': results_dict.get(nom.id, 0)}) %}
+            {% endfor %}
+            
+            {% if nominees %}
+                {% set sorted_nominees = nominees | sort(attribute='votes', reverse=True) %}
+                <div style="display: grid; gap: 1rem; position: relative; z-index: 1;">
+                    {% for item in sorted_nominees %}
+                    {% set is_winner = loop.first and item.votes > 0 %}
+                    <div style="padding: 1.5rem; border-radius: 16px; display: flex; align-items: center; justify-content: space-between; background: {% if is_winner %}radial-gradient(circle at left, rgba(16, 185, 129, 0.15), rgba(0,0,0,0.2)){% else %}rgba(0,0,0,0.2){% endif %}; border: 1px solid {% if is_winner %}rgba(16, 185, 129, 0.3){% else %}rgba(255,255,255,0.05){% endif %};">
+                        
+                        <div style="display: flex; align-items: center; gap: 1.5rem;">
+                            <!-- Ranking number -->
+                            <div style="width: 30px; text-align: center; font-size: 1.2rem; font-weight: 800; color: {% if is_winner %}#10b981{% else %}var(--text-muted){% endif %};">
+                                #{{ loop.index }}
+                            </div>
+                            
+                            <img src="/static/uploads/clubs/{{ club.id }}/elections/{{ election.id }}/{{ item.nominee.photo }}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid {% if is_winner %}#10b981{% else %}transparent{% endif %};">
+                            
+                            <div>
+                                <div style="font-weight: 600; font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+                                    {{ item.nominee.name }}
+                                    {% if is_winner %}
+                                    <i class="fas fa-crown" style="color: #f59e0b; font-size: 1rem;" title="Winner"></i>
+                                    {% endif %}
+                                </div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted);">{{ item.nominee.roll_number }}</div>
+                            </div>
+                        </div>
+
+                        <div style="text-align: right;">
+                            <div style="font-size: 1.8rem; font-weight: 800; color: {% if is_winner %}#10b981{% else %}#fff{% endif %}; line-height: 1;">
+                                {{ item.votes }}
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.2rem;">
+                                {% if item.votes == 1 %}Vote{% else %}Votes{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="color: var(--text-muted); font-style: italic; position: relative; z-index: 1;">No nominations received for this position.</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div style="text-align: center; margin-top: 3rem;">
+        <a href="/" class="btn btn-outline"><i class="fas fa-home"></i> Back to Home</a>
+    </div>
+</main>
+{% endblock %}

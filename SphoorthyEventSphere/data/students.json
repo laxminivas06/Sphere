@@ -1,0 +1,871 @@
+[
+    {
+        "roll_number": "23N81A0501",
+        "dob": "2005-07-10",
+        "name": "KARNATI MADHUMITHA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0502",
+        "dob": "2005-09-26",
+        "name": "ADDANKI VAISHNAVI",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0503",
+        "dob": "2006-07-08",
+        "name": "ERUKALA AKSHITHA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0504",
+        "dob": "2005-03-30",
+        "name": "ASUPALLY GREESHMA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0505",
+        "dob": "2006-03-18",
+        "name": "HALEEMA SADIYA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0506",
+        "dob": "2005-09-11",
+        "name": "GANDHAM KAVYA SUDHA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0507",
+        "dob": "2003-10-12",
+        "name": "MALOTH DIVYA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0508",
+        "dob": "2005-12-24",
+        "name": "AMIREDDY VARSHITHA REDDY",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0509",
+        "dob": "2005-05-17",
+        "name": "AERU BHAVANI",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0510",
+        "dob": "2004-07-27",
+        "name": "NADIPOLLA ASHWITHA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0511",
+        "dob": "2006-02-04",
+        "name": "SOWDHARY CHIDRUPI REDDY",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0512",
+        "dob": "2006-01-10",
+        "name": "KONDA MEHER SAMRAKSH",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0513",
+        "dob": "2004-07-12",
+        "name": "MOHD JASER",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0514",
+        "dob": "2005-03-28",
+        "name": "SILIVERU VAMSHI",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0515",
+        "dob": "2005-03-28",
+        "name": "SRIRAM SRUJAN",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0516",
+        "dob": "2005-11-04",
+        "name": "PALLAPU RAMTEJA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0517",
+        "dob": "2005-04-11",
+        "name": "MUKKALA OMKAAR",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0518",
+        "dob": "2006-05-15",
+        "name": "GADDAM YASHWANTH KUMAR",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0519",
+        "dob": "2005-01-26",
+        "name": "VONGURI PRAVEEN",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0520",
+        "dob": "2005-08-05",
+        "name": "MOHAMMED SAIFULLAH KHAN",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0521",
+        "dob": "2005-10-24",
+        "name": "Gopu yashwanth reddy",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0522",
+        "dob": "2006-09-03",
+        "name": "JOEL JOSE",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0523",
+        "dob": "2005-05-13",
+        "name": "GURRAM HARI CHANDRA PRASAD",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0524",
+        "dob": "2005-11-15",
+        "name": "CHILKAMARRI ALEKHYA REDDY",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0525",
+        "dob": "2005-08-12",
+        "name": "BELLAMKONDA HARSHITHA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0527",
+        "dob": "2004-07-11",
+        "name": "A.ANUSHKA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0528",
+        "dob": "2006-04-09",
+        "name": "BAIKANI SWATHI",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0529",
+        "dob": "2006-03-29",
+        "name": "RANGINENI SAISRI",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0530",
+        "dob": "2006-01-03",
+        "name": "VALLEPU SANJANA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0531",
+        "dob": "2005-12-22",
+        "name": "SEELAM SOWMYA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0532",
+        "dob": "2003-09-14",
+        "name": "GADDAM LAKSHMI NARASIMHA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0533",
+        "dob": "2005-06-27",
+        "name": "CHAVVA RITHIK",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0534",
+        "dob": "2006-01-18",
+        "name": "NITISH KUMAR TIWARI",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0535",
+        "dob": "2005-07-31",
+        "name": "ALKARI NIKHIL RAJ",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0536",
+        "dob": "2004-10-27",
+        "name": "GEDDADA SURENDRA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0537",
+        "dob": "2006-01-01",
+        "name": "SALVERU SAIMANOJ",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0538",
+        "dob": "2005-07-15",
+        "name": "TANDRA SHIVA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0539",
+        "dob": "2005-12-31",
+        "name": "VARIKUPPLA ANIL",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0540",
+        "dob": "2005-09-08",
+        "name": "MUDAVATH.KALYANRAM",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0541",
+        "dob": "2006-03-01",
+        "name": "RAMAVATH PAVAN",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0542",
+        "dob": "2006-02-01",
+        "name": "BODDU ANIL YADAV",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0543",
+        "dob": "2005-11-23",
+        "name": "PULIGILLA RITHIK RAO",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0544",
+        "dob": "2004-01-07",
+        "name": "CHINNABATHULA BALU",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0545",
+        "dob": "2005-05-12",
+        "name": "K.SAI KARTHIKEYA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0546",
+        "dob": "2005-10-11",
+        "name": "EEREDDY JAHNAVI REDDY",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0547",
+        "dob": "2006-03-28",
+        "name": "CHIRA DEEKSHA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0548",
+        "dob": "2005-11-15",
+        "name": "SAKA INDU",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0549",
+        "dob": "2005-08-16",
+        "name": "T.BHAVANA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0550",
+        "dob": "2006-02-02",
+        "name": "THIRUPATHI ARCHANA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0551",
+        "dob": "2006-01-06",
+        "name": "PUSTHAKALA MANASA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0552",
+        "dob": "2005-01-19",
+        "name": "RAMAVATH HARIKA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0553",
+        "dob": "2005-09-14",
+        "name": "GARDAS SUDHEEKSHA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0554",
+        "dob": "2005-10-08",
+        "name": "MEDASANI SOWCHITYA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0555",
+        "dob": "2006-03-10",
+        "name": "THOTA SIRI",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0556",
+        "dob": "2006-03-08",
+        "name": "MUTHYALA VENKATA RISHITHA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0557",
+        "dob": "2005-12-25",
+        "name": "MEDIDA JOSEPH EMMANUEL",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0558",
+        "dob": "2006-06-24",
+        "name": "MANCHE CHARAN KUMAR",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0559",
+        "dob": "2006-05-03",
+        "name": "BANDARI SRICHARAN YADAV",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0560",
+        "dob": "2005-10-29",
+        "name": "CHAKALI SRIRAM",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0561",
+        "dob": "2004-10-27",
+        "name": "MUNDLA SAJAN NIHAR",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0562",
+        "dob": "2003-06-10",
+        "name": "Dyarangula Rahul",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0564",
+        "dob": "2004-09-22",
+        "name": "MANCHA HARSHA VARDHAN",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0565",
+        "dob": "2003-05-12",
+        "name": "B PRITHAM RAJ",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0566",
+        "dob": "2003-12-03",
+        "name": "SHAIK MOHAMMAD AKHIL ANSARI",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0567",
+        "dob": "2006-03-02",
+        "name": "S.RAM CHARAN REDDY",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0568",
+        "dob": "2006-03-07",
+        "name": "VISHAL VISHWAKARMA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0569",
+        "dob": "2004-11-12",
+        "name": "NEDHURAM. DEEPIKA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0570",
+        "dob": "2005-11-24",
+        "name": "MARRI.MIKITHA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0571",
+        "dob": "2005-11-09",
+        "name": "SURYAPALLY SRAVANI",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0572",
+        "dob": "2005-12-29",
+        "name": "MARRI SRAVANI",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0573",
+        "dob": "2006-11-29",
+        "name": "KOMALOLU POOJITHA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0574",
+        "dob": "2005-04-20",
+        "name": "TADAKALA MANISHA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0575",
+        "dob": "2006-12-13",
+        "name": "SHAIK SHAREENA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0576",
+        "dob": "2005-07-31",
+        "name": "Marri Rishika",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0577",
+        "dob": "2005-04-06",
+        "name": "GONGADA PUJITHA",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0578",
+        "dob": "2006-09-04",
+        "name": "SHIVANATHRI ROHINI",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0579",
+        "dob": "2006-05-06",
+        "name": "VATTEM PUJADEVI",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0580",
+        "dob": "2005-10-31",
+        "name": "MADARAM SAINATH GOUD",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0581",
+        "dob": "2005-08-13",
+        "name": "GOUNDLA SATHWIK",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0582",
+        "dob": "2005-10-13",
+        "name": "DHARANI KOTA SAI GOWTHAM",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0583",
+        "dob": "2004-12-11",
+        "name": "DASARI BHARGAV",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0584",
+        "dob": "2005-02-25",
+        "name": "DYAPA KARTHIK SAGAR",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0585",
+        "dob": "2005-02-28",
+        "name": "GOSUKONDA MADHU",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0586",
+        "dob": "2004-01-01",
+        "name": "Nagoju Abhinavsai",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A0587",
+        "dob": "2004-05-25",
+        "name": "BADARLA SAI RAJ SIVA SWAPNIL",
+        "email": "",
+        "phone": "",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student"
+    },
+    {
+        "roll_number": "23N81A62B0",
+        "dob": "2006-10-06",
+        "name": "Laxmi Nivas",
+        "email": "morishettylaxminivas@gmail.com",
+        "phone": "09059160424",
+        "department": "AIML",
+        "year": "4th",
+        "role": "student",
+        "class": "C",
+        "contributions": [
+            {
+                "club_name": "cretor club",
+                "position": "president"
+            }
+        ],
+        "password": "2006-10-06",
+        "photo": "avatar_eec6b2a5_anurag-logo.png"
+    }
+]

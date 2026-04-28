@@ -1,0 +1,395 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+<div class="dashboard-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+                <div style="margin-bottom: 2rem;">
+            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏠 Main Menu ⏺️</p>
+        </div>
+
+        <a class="nav-item" href="/admin/club/{{ club.id }}">
+            <i class="fas fa-th-large"></i> <span>Overview</span>
+        </a>
+        <a class="nav-item" href="/admin/events/{{ club.id }}">
+            <i class="fas fa-calendar-alt"></i> <span>Event Registry</span>
+        </a>
+        <a class="nav-item" href="/admin/bulk-email/{{ club.id }}">
+            <i class="fas fa-paper-plane"></i> <span>Communications</span>
+        </a>
+        <a class="nav-item" href="/admin/finance/{{ club.id }}">
+            <i class="fas fa-wallet"></i> <span>Finance Hub</span>
+        </a>
+        <a class="nav-item" href="/admin/club/{{ club.id }}#eventhub">
+            <i class="fas fa-ticket-alt"></i> <span>Event Hub</span>
+        </a>
+        <a class="nav-item" href="/admin/identity/{{ club.id }}">
+            <i class="fas fa-id-card"></i> <span>Club Identity</span>
+        </a>
+        <a class="nav-item" href="/admin/leaderboard/{{ club.id }}">
+            <i class="fas fa-trophy"></i> <span>Top Attendees</span>
+        </a>
+        <a class="nav-item active" href="/admin/elections/{{ club.id }}">
+            <i class="fas fa-vote-yea"></i> <span>Elections Zone</span>
+        </a>
+        <a class="nav-item" href="/admin/reports/{{ club.id }}">
+            <i class="fas fa-archive"></i> <span>Academic Year Reports</span>
+        </a>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header style="margin-bottom: 3rem;">
+            <h1>Elections <span style="color: var(--primary)">Zone</span></h1>
+            <p style="color: var(--text-muted)">Manage your club's digital election system for this academic year.</p>
+        </header>
+
+        {% set current_year = now().year if now else 2026 %}
+        {% set this_year_election = elections | selectattr('year', 'equalto', current_year|string) | first %}
+
+        {% if this_year_election %}
+        <!-- Already has election this year -->
+        <div class="card glass" style="padding: 2.5rem; border-radius: 28px; margin-bottom: 3rem; text-align: center; border-color: rgba(16,185,129,0.3);">
+            <i class="fas fa-check-circle" style="font-size: 3.5rem; color: #10b981; margin-bottom: 1.5rem; display: block;"></i>
+            <h3 style="margin-bottom: 0.75rem;">This Year's Election is Active</h3>
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">One election per academic year is permitted.</p>
+            <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 16px; display: inline-block;">
+                <p style="margin: 0; font-size: 1rem;">
+                    <strong style="color:#fff;">{{ this_year_election.title }}</strong> — Status:
+                    <span style="color: var(--primary); font-weight: 700;">{{ this_year_election.status | replace('_',' ') | title }}</span>
+                </p>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 1.5rem;">Contact the Super Admin to request a reset if needed.</p>
+        </div>
+        {% else %}
+        <!-- Create New Election Form -->
+        <div class="card glass" style="padding: 3rem; border-radius: 28px; margin-bottom: 3rem; border: 1px solid rgba(99,102,241,0.25);">
+            <h3 style="margin-bottom: 0.5rem;"><i class="fas fa-plus-circle" style="color:var(--primary); margin-right:0.6rem;"></i>Start New Election ({{ current_year }})</h3>
+            <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:2.5rem;">Initialize the election process. Nominations will open immediately upon creation.</p>
+
+            <form id="createElectionForm" style="display: grid; gap: 2rem; max-width: 700px;">
+                <input type="hidden" id="electionYear" value="{{ current_year }}">
+                <input type="hidden" id="clubIdForElection" value="{{ club.id }}">
+
+                <!-- Positions -->
+                <div>
+                    <label style="display: block; margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">
+                        <i class="fas fa-list-ul" style="margin-right:0.4rem;"></i>Available Positions <span style="color:#ef4444;">*</span>
+                    </label>
+                    <div id="positionsContainer" style="display: grid; gap: 0.75rem; margin-bottom: 1rem;">
+                        <div class="position-row" style="display: flex; gap: 0.75rem;">
+                            <input type="text" class="form-input position-input" placeholder="e.g. President" required>
+                        </div>
+                        <div class="position-row" style="display: flex; gap: 0.75rem;">
+                            <input type="text" class="form-input position-input" placeholder="e.g. Vice President">
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline" onclick="addPositionField()" style="font-size: 0.82rem; padding: 0.5rem 1.25rem; border-radius: 10px;">
+                        <i class="fas fa-plus"></i> Add Another Position
+                    </button>
+                </div>
+
+                <!-- Department restriction -->
+                <div>
+                    <label style="display: block; margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">
+                        <i class="fas fa-filter" style="margin-right:0.4rem;"></i>Restrict to Department <span style="font-weight:400; text-transform: none; letter-spacing: normal;">(optional)</span>
+                    </label>
+                    <input type="text" id="electionDept" placeholder="e.g. AIML — leave blank for all departments" class="form-input" style="padding: 1rem;">
+                </div>
+
+                <!-- Submit -->
+                <div style="margin-top: 1rem;">
+                    <button type="submit" id="createElectionBtn" class="btn btn-primary" style="font-size: 1.1rem; padding: 1.25rem 3rem; border-radius: 14px; width: 100%;">
+                        <i class="fas fa-bolt"></i> Initialize Election &amp; Open Nominations
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Past & Current Elections List -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+            <h3 style="margin-bottom: 0; font-size: 1.5rem;">Elections History</h3>
+            <span style="font-size: 0.9rem; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 0.4rem 1rem; border-radius: 20px;">{{ elections | length }} Total Conducted</span>
+        </div>
+
+        <div id="electionsContainer" style="display: grid; gap: 2rem;">
+            {% for el in elections | sort(attribute='createdAt', reverse=True) %}
+            {% set status_color = '#f59e0b' if el.status == 'nominations_open' else ('#10b981' if el.status == 'voting_started' else ('#6366f1' if el.status == 'voting_closed' else '#94a3b8')) %}
+            <div class="card glass election-card" style="padding: 2.5rem; border-radius: 32px; border: 1px solid rgba(255,255,255,0.08);" data-election-id="{{ el.id }}">
+                <!-- Title row -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1.5rem;">
+                    <div>
+                        <h4 style="font-size: 1.5rem; margin-bottom: 0.6rem;">{{ el.title }}</h4>
+                        <span class="badge" style="background: rgba(255, 255, 255, 0.05); color: {{ status_color }}; border: 1px solid {{ status_color }}44; padding: 0.5rem 1rem; border-radius: 10px; font-weight: 700;">
+                            <i class="fas fa-circle" style="font-size:0.6rem; vertical-align:middle; margin-right:0.5rem;"></i>
+                            {{ el.status | replace('_', ' ') | title }}
+                        </span>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
+                        {% if el.status == 'nominations_open' %}
+                        <button class="btn btn-outline" style="color: #f59e0b; border-color: rgba(245,158,11,0.4); padding: 0.75rem 1.5rem; border-radius: 12px;"
+                            onclick="changeElectionStatus('{{ el.id }}', 'voting_started')">
+                            <i class="fas fa-play"></i> Start Voting Phase
+                        </button>
+                        {% elif el.status == 'voting_started' %}
+                        <button class="btn btn-primary" style="padding: 0.75rem 1.5rem; border-radius: 12px;" onclick="changeElectionStatus('{{ el.id }}', 'voting_closed')">
+                            <i class="fas fa-stop"></i> Terminate Voting
+                        </button>
+                        {% elif el.status == 'voting_closed' %}
+                        <button class="btn btn-primary" onclick="openAttendanceModal('{{ el.id }}')"
+                            style="background: #10b981; border: none; padding: 0.75rem 1.5rem; border-radius: 12px;">
+                            <i class="fas fa-file-csv"></i> Finalize with Attendance
+                        </button>
+                        {% endif %}
+                        {% if el.status == 'results_published' %}
+                        <a href="/elections/results/{{ club.id }}/{{ el.id }}" target="_blank"
+                            class="btn btn-outline" style="color: #10b981; border-color: rgba(16,185,129,0.4); padding: 0.75rem 1.5rem; border-radius: 12px;">
+                            <i class="fas fa-trophy"></i> Published Results
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Stats row -->
+                <div style="display: flex; gap: 2.5rem; font-size: 0.95rem; color: var(--text-muted); margin-bottom: 2rem; flex-wrap: wrap; background: rgba(0,0,0,0.1); padding: 1rem 1.5rem; border-radius: 16px;">
+                    <span><i class="fas fa-users" style="margin-right:0.5rem; color:var(--primary);"></i> <strong>{{ el.nominations | length }}</strong> Nominations</span>
+                    <span><i class="fas fa-vote-yea" style="margin-right:0.5rem; color:#10b981;"></i> <strong>{{ el.votes | length }}</strong> Votes Cast</span>
+                    <span><i class="fas fa-calendar-alt" style="margin-right:0.5rem; color:#f59e0b;"></i> Academic Year <strong>{{ el.year }}</strong></span>
+                    {% if el.allowed_dept %}
+                    <span><i class="fas fa-filter" style="margin-right:0.5rem;"></i> {{ el.allowed_dept }} Only</span>
+                    {% endif %}
+                </div>
+
+                <!-- Nominees Grid -->
+                {% if el.nominations %}
+                <div>
+                    <h5 style="margin-bottom: 1.25rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); border-left: 3px solid var(--primary); padding-left: 0.75rem;">Registered Nominees</h5>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+                        {% for nom in el.nominations %}
+                        <div style="padding: 1.25rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; display: flex; align-items: center; gap: 1.25rem; transition: background 0.2s;">
+                            <img src="/static/uploads/clubs/{{ club.id }}/elections/{{ el.id }}/{{ nom.photo }}"
+                                style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); flex-shrink:0;"
+                                onerror="this.src='https://ui-avatars.com/api/?name={{ nom.name | urlencode }}&background=6366f1&color=fff&size=100'">
+                            <div style="min-width:0;">
+                                <div style="font-weight: 700; font-size: 1.05rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color: #fff;">{{ nom.name }}</div>
+                                <div style="font-size: 0.85rem; color: var(--primary); font-weight: 600; margin-top: 0.2rem;">{{ nom.position }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div style="padding: 2rem; background: rgba(255,255,255,0.02); border-radius: 20px; text-align: center; color: var(--text-muted); font-size: 0.95rem; border: 1px dashed rgba(255,255,255,0.1);">
+                    <i class="fas fa-inbox" style="margin-bottom: 0.5rem; display: block; opacity: 0.4; font-size: 1.5rem;"></i> No nominations recorded.
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div style="padding: 5rem 2rem; text-align: center; color: var(--text-muted); border: 2px dashed rgba(255,255,255,0.08); border-radius: 32px; background: rgba(255,255,255,0.01);">
+                <i class="fas fa-vote-yea" style="font-size: 4rem; opacity:0.15; margin-bottom:1.5rem; display:block;"></i>
+                <h3 style="color: rgba(255,255,255,0.3);">No Elections Conducted</h3>
+                <p style="max-width: 400px; margin: 0.5rem auto 0;">Start your club's first digital election using the form above.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</div>
+
+<!-- Upload Attendance Modal -->
+<div id="attendanceModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); backdrop-filter: blur(10px); z-index:2000; justify-content:center; align-items:center; padding:1.5rem;">
+    <div class="card glass" style="width:100%; max-width:520px; padding:4rem; text-align:center; border-radius:40px; border: 1px solid rgba(16,185,129,0.3);">
+        <i class="fas fa-file-csv" style="font-size:4rem; color:#10b981; margin-bottom:2rem; display:block;"></i>
+        <h3 style="margin-bottom:0.75rem; font-size: 1.8rem;">Physical Tally</h3>
+        <p style="color:var(--text-muted); margin-bottom:2.5rem; font-size:0.95rem; line-height:1.7;">
+            Upload the physical attendance CSV to validate votes. Required columns: <code style="background:rgba(255,255,255,0.1); padding:0.2rem 0.5rem; border-radius:6px; color: #fff;">roll_number</code> and
+            <code style="background:rgba(255,255,255,0.1); padding:0.2rem 0.5rem; border-radius:6px; color: #fff;">status</code>.
+        </p>
+
+        <form id="attendanceUploadForm">
+            <input type="hidden" id="attendanceElectionId">
+            <div style="margin-bottom:2.5rem;">
+                <label class="btn btn-outline" style="width:100%; cursor:pointer; padding:3rem; border-style:dashed; border-width:2px; border-radius:24px; justify-content:center; flex-direction:column; gap:0.75rem; background: rgba(255,255,255,0.02);">
+                    <i class="fas fa-cloud-upload-alt" style="font-size:2rem; color:var(--primary);"></i>
+                    <span id="attendanceFileName" style="font-size:1rem; font-weight: 600;">Select Attendance CSV</span>
+                    <input type="file" id="attendanceFile" accept=".csv" style="display:none;"
+                        onchange="document.getElementById('attendanceFileName').innerText = this.files[0].name" required>
+                </label>
+            </div>
+            <div style="display:flex; gap:1rem;">
+                <button type="button" class="btn btn-outline" onclick="closeAttendanceModal()" style="flex:1; padding: 1rem; border-radius: 14px;">Cancel</button>
+                <button type="submit" id="tallyBtn" class="btn btn-primary" style="flex:2; background:#10b981; justify-content:center; border-radius: 14px;">
+                    <i class="fas fa-calculator"></i> Tally &amp; Publish
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .election-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .election-card:hover { border-color: rgba(139,92,246,0.3) !important; transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+    
+    .form-input {
+        width: 100%;
+        padding: 1rem 1.25rem;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 14px;
+        color: white;
+        outline: none;
+        font-family: 'Outfit', sans-serif;
+        transition: all 0.3s;
+        font-size: 1rem;
+    }
+    .form-input:focus { border-color: var(--primary); background: rgba(255,255,255,0.07); box-shadow: 0 0 0 4px rgba(99,102,241,0.1); }
+</style>
+
+<script>
+// ── Add Position Field ──────────────────────────────
+function addPositionField() {
+    const container = document.getElementById('positionsContainer');
+    const row = document.createElement('div');
+    row.className = 'position-row';
+    row.style.cssText = 'display:flex; gap:0.75rem;';
+    row.innerHTML = `
+        <input type="text" class="form-input position-input" placeholder="Enter New Position">
+        <button type="button" class="btn btn-outline"
+            style="padding:0 1.25rem; color:#ef4444; border-color:rgba(239,68,68,0.25); flex-shrink:0; border-radius: 14px;"
+            onclick="this.parentElement.remove()">
+            <i class="fas fa-trash"></i>
+        </button>
+    `;
+    container.appendChild(row);
+    row.querySelector('input').focus();
+}
+
+// ── Create Election ─────────────────────────────────
+const createForm = document.getElementById('createElectionForm');
+if (createForm) {
+    createForm.onsubmit = async (ev) => {
+        ev.preventDefault();
+        const btn = document.getElementById('createElectionBtn');
+        const year    = document.getElementById('electionYear').value;
+        const clubId  = document.getElementById('clubIdForElection').value;
+        const dept    = document.getElementById('electionDept').value.trim();
+
+        const positions = [...document.querySelectorAll('.position-input')]
+            .map(i => i.value.trim())
+            .filter(Boolean);
+
+        if (positions.length === 0) {
+            showToast('Please specify at least one position.', 'error');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Initializing Digital Election...';
+
+        try {
+            const res  = await fetch('/api/elections/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    club_id: clubId,
+                    year: year,
+                    positions: positions.join(','),
+                    allowed_dept: dept
+                })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                showToast('Election initialized! Candidates can now nominate themselves.', 'success', 5000);
+                setTimeout(() => location.reload(), 1200);
+            } else {
+                showToast(data.message || 'Failed to create election.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-bolt"></i> Initialize Election &amp; Open Nominations';
+            }
+        } catch (e) {
+            showToast('Network error. Please try again.', 'error');
+            btn.disabled = false;
+        }
+    };
+}
+
+// ── Change Status ───────────────────────────────────
+async function changeElectionStatus(electionId, newStatus) {
+    const actionLabel = {
+        voting_started: 'transition to voting phase',
+        voting_closed:  'terminate active voting'
+    }[newStatus] || 'update the election status';
+
+    if (!confirm(`Are you sure you want to ${actionLabel}? This action is permanent.`)) return;
+
+    try {
+        const res  = await fetch('/api/elections/change_status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ election_id: electionId, status: newStatus })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showToast('Election phase updated successfully.', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(data.message || 'Status transition failed.', 'error');
+        }
+    } catch (e) {
+        showToast('Network error occurred.', 'error');
+    }
+}
+
+// ── Attendance Modal ────────────────────────────────
+function openAttendanceModal(electionId) {
+    document.getElementById('attendanceElectionId').value = electionId;
+    document.getElementById('attendanceModal').style.display = 'flex';
+}
+function closeAttendanceModal() {
+    document.getElementById('attendanceModal').style.display = 'none';
+}
+
+document.getElementById('attendanceUploadForm').onsubmit = async (ev) => {
+    ev.preventDefault();
+    const btn  = document.getElementById('tallyBtn');
+    const file = document.getElementById('attendanceFile').files[0];
+
+    if (!file) {
+        showToast('Please select the attendance CSV.', 'warning');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing Tally...';
+
+    const formData = new FormData();
+    formData.append('club_id',     '{{ club.id }}');
+    formData.append('election_id', document.getElementById('attendanceElectionId').value);
+    formData.append('attendance',  file);
+
+    try {
+        const res  = await fetch('/api/elections/upload_attendance', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (data.success) {
+            showToast('Attendance validated and results published!', 'success', 5000);
+            setTimeout(() => location.reload(), 1200);
+        } else {
+            showToast(data.message || 'Tally failed.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-calculator"></i> Tally &amp; Publish';
+        }
+    } catch (e) {
+        showToast('Error uploading file.', 'error');
+        btn.disabled = false;
+    }
+};
+</script>
+{% endblock %}

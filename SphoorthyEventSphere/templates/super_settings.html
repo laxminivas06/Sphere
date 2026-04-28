@@ -1,0 +1,227 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+<div class="dashboard-layout">
+    <aside class="sidebar">
+        <div style="margin-bottom: 2rem;">
+            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏠 Main Menu ⏺️</p>
+            <a href="/admin" class="nav-item">
+                <i class="fas fa-tools"></i>
+                <span>Clubs Setup & Config</span>
+            </a>
+            <a href="/super/approvals" class="nav-item">
+                <i class="fas fa-check-circle"></i>
+                <span>Approvals</span>
+            </a>
+            <a href="/super/master" class="nav-item">
+                <i class="fas fa-database"></i>
+                <span>Master DB</span>
+            </a>
+        </div>
+
+        <div>
+            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏛️ Governance</p>
+            <a href="/super/registry" class="nav-item">
+                <i class="fas fa-folder-open"></i>
+                <span>Institutional Registry</span>
+            </a>
+            <a href="/super/leaderboard" class="nav-item">
+                <i class="fas fa-trophy"></i>
+                <span>Global Leaderboard</span>
+            </a>
+            <a href="/admin/contacts" class="nav-item">
+                <i class="fas fa-address-book"></i>
+                <span>Contacts</span>
+            </a>
+            <a href="/super/settings" class="nav-item active">
+                <i class="fas fa-cog"></i>
+                <span>Global Settings</span>
+            </a>
+            <div class="nav-item" onclick="location.reload()">
+                <i class="fas fa-sync-alt"></i>
+                <span>Refresh</span>
+            </div>
+        </div>
+
+        <div style="margin-top: 1rem;">
+            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: #8b5cf6; margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🎭 College Events</p>
+            <a href="/em/dashboard" class="nav-item" style="background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);">
+                <i class="fas fa-ticket-alt" style="color: #8b5cf6;"></i>
+                <span>Event Manager</span>
+            </a>
+
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2>Global System Settings</h2>
+        </div>
+        
+        <div class="grid-2">
+            <!-- Payment Gateway -->
+            <div class="glass" style="border-radius: 24px; padding: 2.5rem; margin-bottom: 2.5rem;">
+                <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-credit-card" style="color: var(--primary);"></i> Payment Gateway
+                </h3>
+                <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.95rem;">
+                    Configure the college-wide <strong>Razorpay</strong> credentials.
+                </p>
+                
+                <form id="razorpaySettingsForm">
+                    <div style="display: grid; gap: 1.5rem;">
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Razorpay Key ID</label>
+                            <input type="text" id="rzp_key_id" name="razorpay_key_id" class="form-input" placeholder="rzp_test_..." required>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Razorpay Key Secret</label>
+                            <input type="password" id="rzp_key_secret" name="razorpay_key_secret" class="form-input" placeholder="Your secret key" required>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 12px; font-size: 0.85rem; color: var(--text-muted);">
+                            <i class="fas fa-info-circle" style="color: var(--primary); margin-right: 0.4rem;"></i>
+                            Updating these keys will immediately affect active events.
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: max-content;">Save Gateway Keys</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- SMTP Settings -->
+            <div class="glass" style="border-radius: 24px; padding: 2.5rem; margin-bottom: 2.5rem;">
+                <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-envelope" style="color: var(--primary);"></i> Institutional SMTP
+                </h3>
+                <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.95rem;">Configure the global mail server for system notifications.</p>
+                <form id="smtpSettingsForm">
+                    <div style="display: grid; gap: 1.5rem;">
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">SMTP Server</label>
+                                <input type="text" id="smtp_host" name="smtp_host" class="form-input" placeholder="e.g. smtp.gmail.com" required>
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Port</label>
+                                <input type="number" id="smtp_port" name="smtp_port" class="form-input" placeholder="587" value="587" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">SMTP Username (Email)</label>
+                            <input type="text" id="smtp_user" name="smtp_user" class="form-input" placeholder="your-email@gmail.com" required>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">SMTP Password / App Password</label>
+                            <input type="password" id="smtp_pass" name="smtp_pass" class="form-input" placeholder="••••••••" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: max-content;">Save Mail Settings</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="glass" style="border-radius: 24px; padding: 2.5rem; margin-bottom: 2.5rem;">
+            <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i> Election Zone Configuration
+            </h3>
+            <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.95rem;">Set the geographical boundary inside which students are allowed to cast their votes.</p>
+            <form id="globalSettingsForm">
+                <div style="display: grid; gap: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;">
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Campus Latitude</label>
+                            <input type="text" id="setting_lat" name="campus_lat" class="form-input" placeholder="e.g. 17.123456" required>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Campus Longitude</label>
+                            <input type="text" id="setting_lng" name="campus_lng" class="form-input" placeholder="e.g. 78.123456" required>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Allowed Radius (meters)</label>
+                            <input type="number" id="setting_radius" name="campus_radius" class="form-input" placeholder="e.g. 500" value="500" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: max-content;">Save Location Logic</button>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Fetch Settings
+        fetch('/api/settings')
+        .then(res => res.json())
+        .then(data => {
+            if(data.success && data.settings) {
+                const s = data.settings;
+                // Location settings
+                document.getElementById('setting_lat').value = s.campus_lat || '';
+                document.getElementById('setting_lng').value = s.campus_lng || '';
+                document.getElementById('setting_radius').value = s.campus_radius || '500';
+                // Razorpay settings
+                document.getElementById('rzp_key_id').value = s.razorpay_key_id || '';
+                document.getElementById('rzp_key_secret').value = s.rzp_key_secret || s.razorpay_key_secret || '';
+                // SMTP settings
+                document.getElementById('smtp_host').value = s.smtp_host || '';
+                document.getElementById('smtp_port').value = s.smtp_port || '587';
+                document.getElementById('smtp_user').value = s.smtp_user || '';
+                document.getElementById('smtp_pass').value = s.smtp_pass || '';
+            }
+        });
+    });
+
+    async function saveSettings(payload, btn) {
+        const originalText = btn.innerText;
+        btn.disabled = true; btn.innerText = "Saving...";
+        
+        const res = await fetch('/api/settings/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        if (res.ok) {
+            alert("Settings updated successfully!");
+        } else {
+            alert("Failed to save settings. Please check permissions.");
+        }
+        btn.disabled = false; btn.innerText = originalText;
+    }
+
+    document.getElementById('globalSettingsForm').onsubmit = (ev) => {
+        ev.preventDefault();
+        const payload = {
+            campus_lat: document.getElementById('setting_lat').value,
+            campus_lng: document.getElementById('setting_lng').value,
+            campus_radius: document.getElementById('setting_radius').value
+        };
+        saveSettings(payload, ev.target.querySelector('button'));
+    };
+
+    document.getElementById('razorpaySettingsForm').onsubmit = (ev) => {
+        ev.preventDefault();
+        const payload = {
+            razorpay_key_id: document.getElementById('rzp_key_id').value,
+            razorpay_key_secret: document.getElementById('rzp_key_secret').value
+        };
+        saveSettings(payload, ev.target.querySelector('button'));
+    };
+
+    document.getElementById('smtpSettingsForm').onsubmit = (ev) => {
+        ev.preventDefault();
+        const payload = {
+            smtp_host: document.getElementById('smtp_host').value,
+            smtp_port: document.getElementById('smtp_port').value,
+            smtp_user: document.getElementById('smtp_user').value,
+            smtp_pass: document.getElementById('smtp_pass').value
+        };
+        saveSettings(payload, ev.target.querySelector('button'));
+    };
+</script>
+{% endblock %}

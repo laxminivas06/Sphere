@@ -1,0 +1,171 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<main class="section">
+    <div class="section-inner">
+        <!-- Profile Header / Hero -->
+        <div class="card reveal active profile-hero">
+            <div class="profile-avatar-wrap">
+                <div class="profile-avatar">
+                    <img src="{% if user.photo %}/static/uploads/students/{{ user.roll_number }}/{{ user.photo }}{% else %}https://ui-avatars.com/api/?name={{ user.name|urlencode }}&background=202B81&color=fff&size=150{% endif %}" 
+                         alt="{{ user.name }}">
+                </div>
+            </div>
+            
+            <div class="profile-info">
+                <div class="badge badge-navy" style="margin-bottom: 0.75rem;">
+                    <i class="fas fa-user-graduate"></i> {{ user.department }} Student
+                </div>
+                <h1 class="profile-name">{{ user.name }}</h1>
+                <p class="profile-roll">{{ user.roll_number }}</p>
+            </div>
+
+            <div class="profile-actions">
+                <a href="/student/profile/edit" class="btn btn-navy">
+                    <i class="fas fa-edit"></i> Edit Profile
+                </a>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 2rem;" class="reveal">
+            <!-- Contributions (Moved to First) -->
+            <div class="card">
+                <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--navy);">Club Contributions</h3>
+                
+                <div style="display: grid; gap: 1rem;">
+                    {% if user.contributions and user.contributions|length > 0 %}
+                        {% for c in user.contributions %}
+                        <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border-radius: var(--radius-md); background: var(--surface); border: 1px solid var(--border-light);">
+                            <div style="width: 44px; height: 44px; background: var(--navy); color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                                <i class="fas fa-medal"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight: 700; color: var(--navy);">{{ c.club_name }}</div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted);">{{ c.position }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div style="padding: 3rem 1.5rem; text-align: center; border: 2px dashed var(--border-mid); border-radius: var(--radius-lg);">
+                            <i class="fas fa-award" style="font-size: 2.5rem; color: var(--text-muted); opacity: 0.2; margin-bottom: 1rem; display: block;"></i>
+                            <p style="font-size: 0.875rem; color: var(--text-muted); margin: 0;">No active contributions found yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Personal Info (Moved to Second) -->
+            <div class="card">
+                <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--navy);">Personal Information</h3>
+                
+                <div style="display: grid; gap: 1.25rem;">
+                    <div class="stat-card" style="background: var(--surface-2); border: none;">
+                        <div class="stat-card-label">Official Email</div>
+                        <div style="font-weight: 600; color: var(--text-primary); word-break: break-all;">{{ user.email or 'Not provided' }}</div>
+                    </div>
+                    <div class="stat-card" style="background: var(--surface-2); border: none;">
+                        <div class="stat-card-label">Contact Number</div>
+                        <div style="font-weight: 600; color: var(--text-primary);">{{ user.phone or 'Not provided' }}</div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="stat-card" style="background: var(--surface-2); border: none;">
+                            <div class="stat-card-label">Current Year</div>
+                            <div style="font-weight: 600; color: var(--text-primary);">{{ user.year }} Year</div>
+                        </div>
+                        <div class="stat-card" style="background: var(--surface-2); border: none;">
+                            <div class="stat-card-label">Section</div>
+                            <div style="font-weight: 600; color: var(--text-primary);">{{ user.class or 'Not assigned' }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<style>
+    .profile-hero {
+        padding: 2.5rem;
+        margin-bottom: 2.5rem;
+        display: flex;
+        align-items: center;
+        gap: 2.5rem;
+        flex-wrap: wrap;
+    }
+    .profile-avatar-wrap {
+        position: relative;
+        flex-shrink: 0;
+    }
+    .profile-avatar {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 4px solid var(--surface-2);
+        box-shadow: var(--shadow-md);
+        background: var(--surface);
+    }
+    .profile-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .profile-info {
+        flex: 1;
+        min-width: 280px;
+    }
+    .profile-name {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--navy);
+        margin-bottom: 0.25rem;
+        line-height: 1.2;
+    }
+    .profile-roll {
+        font-size: 1.1rem;
+        color: var(--text-muted);
+        font-family: monospace;
+        letter-spacing: 0.1em;
+    }
+    .profile-actions {
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+        .profile-hero {
+            padding: 2rem;
+            flex-direction: column;
+            text-align: center;
+            gap: 1.5rem;
+        }
+        .profile-info {
+            min-width: unset;
+            width: 100%;
+        }
+        .profile-name {
+            font-size: 1.75rem;
+        }
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+        }
+        .profile-actions {
+            width: 100%;
+        }
+        .profile-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .profile-hero {
+            padding: 1.5rem;
+        }
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+        }
+    }
+</style>
+{% endblock %}
