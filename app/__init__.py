@@ -12,7 +12,7 @@ def create_app():
     # Use environment variable for secret key in production; fallback for development only
     app.secret_key = os.environ.get('SECRET_KEY', 'supersecretkeyucef-change-in-production')
     app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
-    app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10 MB max upload size
+    app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50 MB max upload size
     app.register_blueprint(api, url_prefix='/api')
     app.register_blueprint(em, url_prefix='/em')
 
@@ -56,7 +56,43 @@ def create_app():
     @app.context_processor
     def user_processor():
         from flask import session
-        return dict(user=session.get('user'))
+        user = session.get('user')
+        is_contributor = False
+        club_contributions = []
+        if user and user.get('role') == 'student':
+            clubs = DB.get_clubs()
+            user_name = user.get('name', '').lower().strip()
+            user_roll = user.get('roll_number', '').lower().strip()
+            for c in clubs:
+                for ob in c.get('office_bearers', []):
+                    ob_name = ob.get('name', '').lower().strip()
+                    ob_roll = ob.get('roll_number', '').lower().strip()
+                    if (user_roll and ob_roll and user_roll == ob_roll) or (not ob_roll and user_name and ob_name and user_name == ob_name):
+                        # Get status from the student's contribution record in students.json
+                        # Note: user dict in session might not have the latest status, so we check DB if needed
+                        # but for now we can assume it's in the ob record or just default to Active
+                        # Actually, better to check students.json since we just updated it there.
+                        students = DB.load_json('students.json')
+                        s_data = next((s for s in students if s.get('roll_number', '').lower() == user_roll), None)
+                        status = 'Active'
+                        tenure = ''
+                        events = 0
+                        if s_data and 'contributions' in s_data:
+                            c_data = next((cont for cont in s_data['contributions'] if cont.get('club_id') == c.get('id')), None)
+                            if c_data:
+                                status = c_data.get('status', 'Active')
+                                tenure = c_data.get('tenure_year', '')
+                                events = c_data.get('events_organized', 0)
+
+                        club_contributions.append({
+                            'role': ob.get('role', 'Member'),
+                            'club_name': c.get('name', 'Club'),
+                            'status': status,
+                            'tenure_year': tenure,
+                            'events_organized': events
+                        })
+                        break # Only add one role per club to avoid duplicates
+        return dict(user=user, is_club_contributor=is_contributor, club_contributions=club_contributions)
 
     @app.route('/select-institution/<inst_id>')
     def select_institution(inst_id):
@@ -627,11 +663,30 @@ def create_app():
         # In a real app we might have a list of faculty who attended. 
         # For now let's just pass the data we have.
         
+        # Get all admin signatures for the report
+        admins = DB.get_admins()
+        signatures = {}
+        for a in admins:
+            role = a.get('role', '').lower()
+            if 'principal' in role: signatures['principal'] = a.get('signature', '')
+            if 'secretary' in role: signatures['secretary'] = a.get('signature', '')
+            if 'chief' in role and 'coordinator' in role: signatures['chief'] = a.get('signature', '')
+            if 'ao' in role: signatures['ao'] = a.get('signature', '')
+            if 'fm' in role or 'finance' in role: signatures['fm'] = a.get('signature', '')
+
+        # Add club mentor signature if available
+        club_mentors = club.get('mentors', [])
+        if club_mentors and club_mentors[0].get('signature'):
+            signatures['club_mentor'] = club_mentors[0]['signature']
+        elif club.get('mentor', {}).get('signature'): # Check legacy location
+            signatures['club_mentor'] = club['mentor']['signature']
+
         return render_template('report_generator.html', 
             user=user, 
             club=club, 
             event=event, 
-            student_count=student_count
+            student_count=student_count,
+            sigs=signatures
         )
 
     @app.route('/admin/reports/<club_id>')
@@ -662,7 +717,8 @@ def create_app():
     @app.route('/super/registry')
     def super_registry_page():
         user = session.get('user')
-        if not user or user.get('role') != 'chief_coordinator':
+        APPROVAL_ROLES = ('principal', 'secretary', 'ao', 'fm')
+        if not user or (user.get('role') != 'chief_coordinator' and user.get('role') not in APPROVAL_ROLES):
             return redirect(url_for('login_page'))
 
         import datetime
@@ -699,7 +755,8 @@ def create_app():
     @app.route('/super/registry/<club_id>')
     def super_club_registry_page(club_id):
         user = session.get('user')
-        if not user or user.get('role') != 'chief_coordinator':
+        APPROVAL_ROLES = ('principal', 'secretary', 'ao', 'fm')
+        if not user or (user.get('role') != 'chief_coordinator' and user.get('role') not in APPROVAL_ROLES):
             return redirect(url_for('login_page'))
 
         club = DB.get_club_by_id(club_id)
@@ -745,8 +802,11 @@ def create_app():
     @app.route('/super/approvals')
     def super_approvals_page():
         user = session.get('user')
+        if not user: return redirect(url_for('login_page'))
         APPROVAL_ROLES = ('principal', 'secretary', 'ao', 'fm')
-        if not user or (user.get('role') != 'chief_coordinator' and user.get('role') not in APPROVAL_ROLES):
+        if user.get('role') != 'chief_coordinator':
+            if user.get('role') in APPROVAL_ROLES:
+                return redirect('/admin/event-approvals')
             return redirect(url_for('login_page'))
         events = DB.get_events()
         ob_requests = DB.get_office_bearer_requests()
@@ -756,7 +816,11 @@ def create_app():
     @app.route('/super/master')
     def super_master_page():
         user = session.get('user')
-        if not user or user.get('role') != 'chief_coordinator':
+        if not user: return redirect(url_for('login_page'))
+        APPROVAL_ROLES = ('principal', 'secretary', 'ao', 'fm')
+        if user.get('role') != 'chief_coordinator':
+            if user.get('role') in APPROVAL_ROLES:
+                return redirect('/admin/event-approvals')
             return redirect(url_for('login_page'))
         return render_template('super_master_db.html', user=user)
 
@@ -764,7 +828,11 @@ def create_app():
     @app.route('/super/settings')
     def super_settings_page():
         user = session.get('user')
-        if not user or user.get('role') != 'chief_coordinator':
+        if not user: return redirect(url_for('login_page'))
+        APPROVAL_ROLES = ('principal', 'secretary', 'ao', 'fm')
+        if user.get('role') != 'chief_coordinator':
+            if user.get('role') in APPROVAL_ROLES:
+                return redirect('/admin/event-approvals')
             return redirect(url_for('login_page'))
         return render_template('super_settings.html', user=user)
 
@@ -772,7 +840,8 @@ def create_app():
     @app.route('/super/leaderboard')
     def super_leaderboard_page():
         user = session.get('user')
-        if not user or user.get('role') != 'chief_coordinator':
+        APPROVAL_ROLES = ('principal', 'secretary', 'ao', 'fm')
+        if not user or (user.get('role') != 'chief_coordinator' and user.get('role') not in APPROVAL_ROLES):
             return redirect(url_for('login_page'))
             
         # Get all students and calculate their total event attendance
@@ -983,68 +1052,153 @@ def create_app():
             return redirect(url_for('login_page'))
 
         role = user.get('role')
-        APPROVAL_ROLES = ('principal', 'secretary', 'ao', 'fm')
-        allowed = ('chief_coordinator', 'club_admin')
-        
-        if role not in allowed and not role.endswith('_admin') and role not in APPROVAL_ROLES:
+        # Only Institutional official roles allowed
+        ALLOWED_ROLES = ('principal', 'secretary', 'ao', 'fm', 'chief_coordinator')
+        if role not in ALLOWED_ROLES:
             return 'Unauthorized', 403
 
-        # Fetch all events with a pending approval status or pending report verification
         all_events = DB.get_events()
-        # Stages from APPROVAL_STAGES + report approval
-        pending_stages = ['pending_principal', 'pending_chief_coordinator', 'pending_ao_fm', 'pending_secretary', 'pending_report_approval']
-        pending_events = []
+        
+        # Metrics
+        metrics = {
+            'event':  {'pending': 0, 'incoming': 0, 'completed': 0},
+            'report': {'pending': 0, 'incoming': 0, 'completed': 0}
+        }
+
+        # Workflow Chains
+        PRE_EVENT_CHAIN = ['pending_fm', 'pending_ao', 'pending_chief_coordinator', 'pending_secretary', 'pending_principal']
+        REPORT_CHAIN    = ['pending_report_chief_coordinator', 'pending_report_principal']
+
+        # Event Lists
+        perms =   {'pending': [], 'incoming': [], 'completed': []}
+        reports = {'pending': [], 'incoming': [], 'completed': []}
+
+        my_pre_status = 'pending_' + role
+        my_rep_status = 'pending_report_' + role
+
         for e in all_events:
-            app_status = e.get('approval_status')
-            ev_status = e.get('event_status')
-            if (app_status in pending_stages or ev_status == 'pending_report_approval') and not e.get('deleted'):
-                club = DB.get_club_by_id(e.get('club_id', ''))
-                e['_club_name'] = club['name'] if club else e.get('club_id', 'Unknown')
-                e['club_id'] = e.get('club_id', '') # Ensure club_id is available
-                # Use ev_status if it's report approval, otherwise app_status
-                e['_display_status'] = 'pending_report_approval' if ev_status == 'pending_report_approval' else app_status
-                pending_events.append(e)
+            if e.get('deleted'): continue
+            
+            club = DB.get_club_by_id(e.get('club_id', ''))
+            e['_club_name'] = club['name'] if club else 'Unknown Club'
+            
+            # 1. PRE-EVENT TRACKING (Permission Letter)
+            app_status = e.get('approval_status', 'draft')
+            is_pre_turn = False
+            
+            if app_status in PRE_EVENT_CHAIN:
+                if app_status == my_pre_status:
+                    e['_type'] = 'Permission Letter'
+                    e['_display_status'] = app_status
+                    perms['pending'].append(e.copy())
+                    metrics['event']['pending'] += 1
+                    is_pre_turn = True
+                elif my_pre_status in PRE_EVENT_CHAIN:
+                    my_idx = PRE_EVENT_CHAIN.index(my_pre_status)
+                    cur_idx = PRE_EVENT_CHAIN.index(app_status)
+                    if cur_idx < my_idx:
+                        e['_type'] = 'Permission Letter'
+                        e['_display_status'] = app_status
+                        perms['incoming'].append(e.copy())
+                        metrics['event']['incoming'] += 1
+                        is_pre_turn = True
+            
+            # Check if already approved pre-event
+            if not is_pre_turn and e.get('approver_signatures', {}).get(role):
+                e['_type'] = 'Permission Letter'
+                e['_display_status'] = 'Approved'
+                perms['completed'].append(e.copy())
+                metrics['event']['completed'] += 1
+
+            # 2. POST-EVENT TRACKING (Report Verification)
+            rep_status = e.get('report_workflow_status', 'draft')
+            is_rep_turn = False
+            
+            if rep_status in REPORT_CHAIN:
+                if rep_status == my_rep_status:
+                    e['_type'] = 'Event Report'
+                    e['_display_status'] = rep_status
+                    reports['pending'].append(e.copy())
+                    metrics['report']['pending'] += 1
+                    is_rep_turn = True
+                elif my_rep_status in REPORT_CHAIN:
+                    my_idx = REPORT_CHAIN.index(my_rep_status)
+                    cur_idx = REPORT_CHAIN.index(rep_status)
+                    if cur_idx < my_idx:
+                        e['_type'] = 'Event Report'
+                        e['_display_status'] = rep_status
+                        reports['incoming'].append(e.copy())
+                        metrics['report']['incoming'] += 1
+                        is_rep_turn = True
+            
+            # Check if already verified report
+            if not is_rep_turn and e.get('report_approvals', {}).get(role):
+                e['_type'] = 'Event Report'
+                e['_display_status'] = 'Verified'
+                reports['completed'].append(e.copy())
+                metrics['report']['completed'] += 1
 
         # Stage metadata for UI labels
-        stages_meta = [
-            {'key': 'pending_principal',         'label': 'Principal',          'icon': 'fa-user-tie',      'color': '#6366f1'},
-            {'key': 'pending_chief_coordinator', 'label': 'Chief Coordinator',  'icon': 'fa-shield-halved', 'color': '#f59e0b'},
-            {'key': 'pending_ao_fm',             'label': 'Finance/Admin',      'icon': 'fa-file-invoice',  'color': '#8b5cf6'},
-            {'key': 'pending_secretary',         'label': 'Secretary',          'icon': 'fa-signature',     'color': '#10b981'},
-            {'key': 'pending_report_approval',   'label': 'Report Verification','icon': 'fa-file-medical',  'color': '#ec4899'},
-        ]
+        stages_meta = {
+            'pending_principal':         {'label': 'Principal',          'icon': 'fa-user-tie',      'color': '#6366f1'},
+            'pending_chief_coordinator': {'label': 'Chief Coordinator',  'icon': 'fa-shield-halved', 'color': '#f59e0b'},
+            'pending_ao':                {'label': 'Admin (AO)',         'icon': 'fa-file-invoice',  'color': '#8b5cf6'},
+            'pending_fm':                {'label': 'Finance (FM)',       'icon': 'fa-coins',         'color': '#3b82f6'},
+            'pending_secretary':         {'label': 'Secretary',          'icon': 'fa-signature',     'color': '#10b981'},
+            'pending_report_chief_coordinator': {'label': 'Report: CC Review',   'icon': 'fa-file-medical',  'color': '#ec4899'},
+            'pending_report_principal':         {'label': 'Report: Final Sign', 'icon': 'fa-stamp',         'color': '#f43f5e'},
+        }
 
         return render_template('event_approval_dashboard.html',
             user=user,
-            pending_events=pending_events,
-            stages_meta=stages_meta,
+            metrics=metrics,
+            perms=perms,
+            reports=reports,
+            stages_meta=stages_meta
         )
+
+    @app.route('/admin/signature-settings')
+    def signature_settings_page():
+        session_user = session.get('user')
+        if not session_user:
+            return redirect(url_for('login_page'))
+        
+        # Fetch actual user from DB since signature is not in session
+        user = DB.get_admin_by_email(session_user.get('email'))
+        if not user:
+            user = session_user # Fallback
+            
+        club = None
+        mentor_sig = ""
+        president_sig = ""
+        if user.get('role') == 'club_admin':
+            identifier = user.get('email') or user.get('roll_number')
+            club = DB.get_club_by_admin(identifier)
+            if club:
+                # Mentor
+                mentors = club.get('mentors', [])
+                if not mentors and club.get('mentor'): mentors = [club['mentor']]
+                if mentors: mentor_sig = mentors[0].get('signature', '')
+                
+                # President
+                bearers = club.get('office_bearers', [])
+                for b in bearers:
+                    role = (b.get('role') or b.get('position') or '').lower()
+                    if 'president' in role:
+                        president_sig = b.get('signature', '')
+                        break
+            
+        return render_template('signature_settings.html', user=user, club=club, mentor_sig=mentor_sig, president_sig=president_sig)
 
     @app.route('/admin/report-approvals')
     def report_approvals_page():
         user = session.get('user')
-        if not user or user.get('role') != 'chief_coordinator':
+        if not user or user.get('role') not in ['principal', 'secretary', 'ao', 'fm', 'chief_coordinator']:
             return redirect(url_for('login_page'))
 
-        # Fetch all events from all clubs with pending report approval
-        all_events = DB.get_events()
-        pending_reports = []
-        for e in all_events:
-            # An event is pending report approval if explicitly set, OR if it has a report but isn't approved yet
-            status = e.get('event_status')
-            has_report = e.get('report')
-            is_approved = e.get('report_approved')
-            
-            if (status == 'pending_report_approval' or (has_report and not is_approved)) and not e.get('deleted'):
-                club = DB.get_club_by_id(e.get('club_id', ''))
-                e['_club_name'] = club['name'] if club else e.get('club_id', 'Unknown')
-                e['club_id'] = e.get('club_id', '')
-                pending_reports.append(e)
-
-        return render_template('admin_report_approvals_dedicated.html', 
-            user=user, 
-            pending_reports=pending_reports
-        )
+        # Reuse the combined logic but default view to Reports if needed (handled in template)
+        from flask import redirect, url_for
+        return redirect(url_for('event_approvals_page', tab='reports'))
 
     # ── EVENT LIFECYCLE: Document Vault ──────────────────────────────────────
     @app.route('/admin/event-docs/<club_id>/<event_id>')

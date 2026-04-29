@@ -1,18 +1,14 @@
 <aside class="sidebar">
     <div style="margin-bottom: 2rem;">
-        <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: #8b5cf6; margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🎭 Event Manager</p>
+        <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏠 Main Menu ⏺️</p>
         <a href="/em/dashboard" class="nav-item {% if request.path == '/em/dashboard' %}active{% endif %}">
             <i class="fas fa-chart-pie"></i>
             <span>Dashboard</span>
         </a>
-        <a href="/em/events" class="nav-item {% if request.path == '/em/events' %}active{% endif %}">
-            <i class="fas fa-calendar-alt"></i>
-            <span>Public Events</span>
-        </a>
     </div>
 
     <div>
-        <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: #14b8a6; margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🛠️ Tools</p>
+        <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🛠️ Management Tools</p>
         <a href="/em/scanner" class="nav-item {% if request.path == '/em/scanner' %}active{% endif %}">
             <i class="fas fa-qrcode"></i>
             <span>QR Scanner</span>
@@ -25,7 +21,7 @@
 
     {% if user.role in ('event_manager', 'chief_coordinator') %}
     <div style="margin-top: 1rem;">
-        <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: #6366f1; margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏛️ Admin Only</p>
+        <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏛️ Admin Only</p>
         <a href="/super/master" class="nav-item">
             <i class="fas fa-database"></i>
             <span>Master DB</span>

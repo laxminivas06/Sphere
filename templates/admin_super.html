@@ -3,10 +3,7 @@
 {% block content %}
 
 
-<div class="dashboard-layout">
-    {% include 'sidebar_super.html' %}
 
-    <main class="dashboard-content">
         <!-- ── HEADER ─────────────────────────────────────────────── -->
         <header class="reveal active" style="margin-bottom: 3rem;">
             <div class="section-tag">Administrator Portal</div>
@@ -99,9 +96,9 @@
                         </p>
 
                         <div style="display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 1rem;">
-                            {% if c.features.event_management %}<span class="badge badge-success" style="font-size: 0.55rem; padding: 0.15rem 0.4rem;">Events</span>{% endif %}
-                            {% if c.features.payment_system %}<span class="badge badge-warning" style="font-size: 0.55rem; padding: 0.15rem 0.4rem;">Payments</span>{% endif %}
-                            {% if c.features.qr_attendance %}<span class="badge" style="background: var(--navy); color: white; font-size: 0.55rem; padding: 0.15rem 0.4rem;">QR Hub</span>{% endif %}
+                            <span class="badge badge-success" style="font-size: 0.55rem; padding: 0.15rem 0.4rem;">Events</span>
+                            <span class="badge badge-warning" style="font-size: 0.55rem; padding: 0.15rem 0.4rem;">Payments</span>
+                            <span class="badge" style="background: var(--navy); color: white; font-size: 0.55rem; padding: 0.15rem 0.4rem;">QR Hub</span>
                         </div>
 
                         <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; padding-top: 1rem; border-top: 1px solid var(--border-light);">
@@ -248,8 +245,6 @@
                 </div>
             </div>
         </section>
-    </main>
-</div>
 
 
 <!-- Club Modal -->
@@ -257,8 +252,7 @@
     style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
     <div class="card glass" style="width: 100%; max-width: 600px; padding: 2.5rem;">
         <h3>Setup New Club Portal</h3>
-        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Initialize a new club with custom feature access.
-        </p>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Initialize a new club with full system access.</p>
         <form id="clubForm">
             <div class="grid-3" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
                 <div class="form-group">
@@ -285,28 +279,15 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <label>Feature Access (Role-Based Control)</label>
-                <div
-                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 10px;">
-                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
-                        <input type="checkbox" id="f_event" checked> Event Management
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
-                        <input type="checkbox" id="f_reg" checked> Registration System
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
-                        <input type="checkbox" id="f_pay" checked> Payment System
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
-                        <input type="checkbox" id="f_qr" checked> QR Attendance
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
-                        <input type="checkbox" id="f_prof" checked> Club Profile
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
-                        <input type="checkbox" id="f_doc" checked> Document Workflow
-                    </label>
+            <div class="form-group" style="margin-top: 1.5rem; padding: 1.5rem; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--border-light);">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 48px; height: 48px; background: rgba(16, 185, 129, 0.1); color: var(--success); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <div>
+                        <h4 style="margin: 0; color: #fff;">Full Feature Access</h4>
+                        <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">All modules (Events, Payments, QR, etc.) will be active.</p>
+                    </div>
                 </div>
             </div>
 
@@ -323,7 +304,7 @@
     style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
     <div class="card glass" style="width: 100%; max-width: 600px; padding: 2.5rem;">
         <h3>Edit Club Configuration</h3>
-        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Update feature access and admin details.</p>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Update administrative details and access.</p>
         <form id="editClubForm">
             <input type="hidden" id="editClubId">
             <div class="grid-3" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -351,28 +332,15 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <label>Feature Access</label>
-                <div
-                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 10px;">
-                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
-                        <input type="checkbox" id="ef_event"> Event Management
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
-                        <input type="checkbox" id="ef_reg"> Registration System
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
-                        <input type="checkbox" id="ef_pay"> Payment System
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
-                        <input type="checkbox" id="ef_qr"> QR Attendance
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
-                        <input type="checkbox" id="ef_prof"> Club Profile
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
-                        <input type="checkbox" id="ef_doc"> Document Workflow
-                    </label>
+            <div class="form-group" style="margin-top: 1.5rem; padding: 1.5rem; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--border-light);">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 48px; height: 48px; background: rgba(16, 185, 129, 0.1); color: var(--success); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div>
+                        <h4 style="margin: 0; color: #fff;">Full Feature Access Active</h4>
+                        <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">This club has access to all system modules.</p>
+                    </div>
                 </div>
             </div>
 
@@ -385,8 +353,6 @@
     </div>
 </div>
 
-<!-- Removed extracted modals -->
-
 <script>
     function toggleModal(id, show) {
         document.getElementById(id).style.display = show ? 'flex' : 'none';
@@ -396,12 +362,12 @@
         e.preventDefault();
         const clubName = document.getElementById('clubNameInp').value;
         const features = {
-            event_management: document.getElementById('f_event').checked,
-            registration_system: document.getElementById('f_reg').checked,
-            payment_system: document.getElementById('f_pay').checked,
-            qr_attendance: document.getElementById('f_qr').checked,
-            club_profile: document.getElementById('f_prof').checked,
-            document_workflow: document.getElementById('f_doc').checked
+            event_management: true,
+            registration_system: true,
+            payment_system: true,
+            qr_attendance: true,
+            club_profile: true,
+            document_workflow: true
         };
 
         const adminData = {
@@ -436,13 +402,10 @@
 
         document.getElementById('editClubId').value = c.id;
         document.getElementById('editClubName').value = c.name;
-        // The c object might have slightly different names depending on how it's populated
         document.getElementById('editClubAdminName').value = c.admin_name || c.name + " Admin";
         document.getElementById('editClubAdminEmail').value = c.admin_roll || '';
-        document.getElementById('editClubAdminPhone').value = c.admin_phone || '';
+        document.getElementById('editClubAdminPhone').value = c.admin_phone || c.phone || '';
         document.getElementById('editClubAdminPass').value = '';
-        document.getElementById('editClubAdminPhone').value = c.phone || '';
-        document.getElementById('editClubAdminPass').value = ''; // Reset password field
 
         // Ensure we search for additional admin info if available
         const adminEntry = (window.allAdmins || []).find(a => a.email === c.admin_roll);
@@ -451,13 +414,6 @@
             document.getElementById('editClubAdminPhone').value = adminEntry.phone || '';
         }
 
-        document.getElementById('ef_event').checked = c.features.event_management;
-        document.getElementById('ef_reg').checked = c.features.registration_system;
-        document.getElementById('ef_pay').checked = c.features.payment_system;
-        document.getElementById('ef_qr').checked = c.features.qr_attendance;
-        document.getElementById('ef_prof').checked = c.features.club_profile;
-        document.getElementById('ef_doc').checked = c.features.document_workflow;
-
         toggleModal('editClubModal', true);
     }
 
@@ -465,12 +421,12 @@
         e.preventDefault();
         const clubId = document.getElementById('editClubId').value;
         const features = {
-            event_management: document.getElementById('ef_event').checked,
-            registration_system: document.getElementById('ef_reg').checked,
-            payment_system: document.getElementById('ef_pay').checked,
-            qr_attendance: document.getElementById('ef_qr').checked,
-            club_profile: document.getElementById('ef_prof').checked,
-            document_workflow: document.getElementById('ef_doc').checked
+            event_management: true,
+            registration_system: true,
+            payment_system: true,
+            qr_attendance: true,
+            club_profile: true,
+            document_workflow: true
         };
 
         const adminData = {
@@ -493,9 +449,8 @@
         }
     }
     // ── SMTP Helpers ──────────────────────────────────────────────────────────
-    const csrf = () => document.querySelector('meta[name="csrf-token"]').content;
+    const getCsrf = () => document.querySelector('meta[name="csrf-token"]').content;
 
-    // Load current global SMTP on page load
     async function loadGlobalSmtp() {
         try {
             const r = await fetch('/api/smtp/get?scope=global');
@@ -516,18 +471,17 @@
         const msgEl    = document.getElementById('g_smtp_msg');
         if (!email) { msgEl.textContent = '⚠️ Email is required.'; msgEl.style.color='#f59e0b'; return; }
 
-        // Save super admin email as part of settings
         const payload = { smtp_email: email, smtp_server: 'smtp.gmail.com', smtp_port: 587,
                           chief_coordinator_email: saEmail };
         if (pass) payload.smtp_password = pass;
 
         msgEl.textContent = 'Saving…'; msgEl.style.color = 'var(--text-muted)';
-        const r = await fetch('/api/settings/update', {
-            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': csrf()},
+        await fetch('/api/settings/update', {
+            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': getCsrf()},
             body: JSON.stringify(payload)
         });
         const res = await fetch('/api/smtp/update', {
-            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': csrf()},
+            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': getCsrf()},
             body: JSON.stringify({ scope:'global', smtp_email: email,
                                    smtp_password: pass || undefined,
                                    smtp_server:'smtp.gmail.com', smtp_port: 587 })
@@ -542,7 +496,7 @@
         const msgEl = document.getElementById('g_smtp_msg');
         msgEl.textContent = '🧪 Testing connection…'; msgEl.style.color = 'var(--text-muted)';
         const r = await fetch('/api/smtp/test', {
-            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': csrf()},
+            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': getCsrf()},
             body: JSON.stringify({ to_email: email })
         });
         const d = await r.json();
@@ -555,7 +509,7 @@
         const pass  = document.getElementById(`club_smtp_pass_${clubId}`).value.trim();
         if (!email || !pass) { alert('Both email and app password are required for a club SMTP.'); return; }
         const r = await fetch('/api/smtp/update', {
-            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': csrf()},
+            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': getCsrf()},
             body: JSON.stringify({ scope:'club', club_id: clubId, smtp_email: email,
                                    smtp_password: pass, smtp_server:'smtp.gmail.com', smtp_port: 587 })
         });
@@ -567,7 +521,7 @@
     async function testClubSmtp(clubId) {
         const email = document.getElementById(`club_smtp_email_${clubId}`).value.trim();
         const r = await fetch('/api/smtp/test', {
-            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': csrf()},
+            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': getCsrf()},
             body: JSON.stringify({ club_id: clubId, to_email: email })
         });
         const d = await r.json();
@@ -583,7 +537,7 @@
         }
         if (!confirm(`Push this SMTP config (${email}) to ALL clubs?`)) return;
         const r = await fetch('/api/smtp/bulk-update-clubs', {
-            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': csrf()},
+            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': getCsrf()},
             body: JSON.stringify({ smtp_email: email, smtp_password: pass,
                                    smtp_server:'smtp.gmail.com', smtp_port: 587 })
         });
@@ -591,7 +545,5 @@
         alert((d.success ? '✅ ' : '❌ ') + d.message);
         if (d.success) location.reload();
     }
-
-
 </script>
 {% endblock %}

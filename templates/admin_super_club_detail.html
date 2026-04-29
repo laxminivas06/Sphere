@@ -1,59 +1,7 @@
 {% extends "layout.html" %}
 
+
 {% block content %}
-
-    <div class="dashboard-layout">
-    <aside class="sidebar">
-        <div style="margin-bottom: 2rem;">
-            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏠 Main Menu ⏺️</p>
-            <a href="/admin" class="nav-item active">
-                <i class="fas fa-tools"></i>
-                <span>Clubs Setup & Config</span>
-            </a>
-            <a href="/super/approvals" class="nav-item">
-                <i class="fas fa-check-circle"></i>
-                <span>Approvals</span>
-            </a>
-            <a href="/super/master" class="nav-item">
-                <i class="fas fa-database"></i>
-                <span>Master DB</span>
-            </a>
-        </div>
-
-        <div>
-            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏛️ Governance</p>
-            <a href="/super/registry" class="nav-item">
-                <i class="fas fa-folder-open"></i>
-                <span>Institutional Registry</span>
-            </a>
-            <a href="/super/leaderboard" class="nav-item">
-                <i class="fas fa-trophy"></i>
-                <span>Global Leaderboard</span>
-            </a>
-            <a href="/admin/contacts" class="nav-item">
-                <i class="fas fa-address-book"></i>
-                <span>Contacts</span>
-            </a>
-            <a href="/super/settings" class="nav-item">
-                <i class="fas fa-cog"></i>
-                <span>Global Settings</span>
-            </a>
-            <div class="nav-item" onclick="location.reload()">
-                <i class="fas fa-sync-alt"></i>
-                <span>Refresh</span>
-            </div>
-        </div>
-
-        <div style="margin-top: 1rem;">
-            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: #8b5cf6; margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🎭 College Events</p>
-            <a href="/em/dashboard" class="nav-item" style="background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);">
-                <i class="fas fa-ticket-alt" style="color: #8b5cf6;"></i>
-                <span>Event Manager</span>
-            </a>
-
-        </div>
-    </aside>
-    <div class="main-content">
 
 
 <!-- Hero Banner -->
@@ -162,8 +110,13 @@
                             {% endif %}
                         </td>
                         <td style="padding: 1.2rem; text-align: center;">
+                            {% set is_restricted = user.role in ['principal', 'secretary', 'ao', 'fm'] %}
                             {% if e.finance_unlock_requested %}
-                                <button onclick="approveUnlock('{{ club.id }}', '{{ e.id }}')" class="btn btn-primary" style="padding: 0.3rem 0.6rem; font-size: 0.6rem; background: #f59e0b; border: none;">Approve Unlock</button>
+                                {% if not is_restricted %}
+                                    <button onclick="approveUnlock('{{ club.id }}', '{{ e.id }}')" class="btn btn-primary" style="padding: 0.3rem 0.6rem; font-size: 0.6rem; background: #f59e0b; border: none;">Approve Unlock</button>
+                                {% else %}
+                                    <span class="badge badge-warning" style="font-size: 0.6rem;">Unlock Requested</span>
+                                {% endif %}
                             {% elif e.finance_locked %}
                                 <span style="color: var(--success); font-size: 0.7rem;"><i class="fas fa-lock"></i> Locked</span>
                             {% else %}
@@ -177,9 +130,13 @@
                         </td>
                         <td style="padding: 1.2rem; text-align: center;">
                             {% if e.report and not e.report_approved %}
-                            <button onclick="approveReport('{{ club.id }}', '{{ e.id }}')" class="btn btn-primary" style="padding: 0.3rem 0.75rem; font-size: 0.75rem;">Approve</button>
+                                {% if not is_restricted %}
+                                    <button onclick="approveReport('{{ club.id }}', '{{ e.id }}')" class="btn btn-primary" style="padding: 0.3rem 0.75rem; font-size: 0.75rem;">Approve</button>
+                                {% else %}
+                                    <span class="badge badge-warning" style="font-size: 0.65rem;">Pending Approval</span>
+                                {% endif %}
                             {% else %}
-                            <a href="/event/{{ club.id }}/{{ e.id }}" target="_blank" style="color:var(--text-muted);"><i class="fas fa-eye"></i></a>
+                                <a href="/event/{{ club.id }}/{{ e.id }}" target="_blank" style="color:var(--text-muted);"><i class="fas fa-eye"></i></a>
                             {% endif %}
                         </td>
                     </tr>
@@ -189,9 +146,8 @@
         </div>
     </section>
 
-
-
     <!-- SMTP Configuration Section (Chief Coordinator only) -->
+    {% if not is_restricted %}
     <section class="glass" style="padding: 2.5rem; border-radius: 24px; margin-bottom: 3rem; border: 1px solid rgba(255,255,255,0.05);">
         <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.8rem; font-size: 1.2rem;">
             <i class="fas fa-server" style="color:var(--primary);"></i> SMTP Server Configuration
@@ -225,6 +181,7 @@
             </div>
         </form>
     </section>
+    {% endif %}
 </main>
 
 <!-- Feedback Modal -->
@@ -356,5 +313,4 @@ async function approveUnlock(clubId, eventId) {
     };
 </script>
 
-</div></div>
 {% endblock %}

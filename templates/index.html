@@ -4,10 +4,26 @@
 <!-- ─── HERO SECTION ──────────────────────────────────────── -->
 <header class="hero">
     <div class="hero-inner reveal active">
+        <div style="margin-bottom: 2rem; display: flex; justify-content: center;">
+            <img src="{% if institution and institution.logo %}{{ url_for('static', filename='uploads/logos/' + institution.logo) }}{% else %}{{ url_for('static', filename='uploads/logos/college_logo.png') }}{% endif %}"
+                alt="College Logo" style="height: 100px; width: auto; max-width: 100%; object-fit: contain; filter: drop-shadow(0 0 15px rgba(255,255,255,0.1));">
+        </div>
         <div class="hero-badge">
             <i class="fas fa-sparkles"></i> Experience Excellence
         </div>
         <h1>
+            {% if user and user.role == 'student' %}
+            <div style="font-size: 1.5rem; font-weight: 600; color: var(--text-on-navy-muted); margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.8rem; flex-wrap: wrap;">
+                Welcome, {{ user.name.split()[0] }}!
+                {% if club_contributions %}
+                    {% for contrib in club_contributions %}
+                    <span style="display:inline-flex; align-items:center; color:#f59e0b; font-size: 14px; font-weight: 700; gap: 0.4rem; background: rgba(245, 158, 11, 0.1); padding: 0.2rem 0.8rem; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.2);" title="Club Contributor">
+                        ⭐ {{ 'Present' if contrib.status == 'Present' else 'Former' }} {{ contrib.tenure_year }} {{ contrib.role }} – {{ contrib.club_name }}
+                    </span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            {% endif %}
             Sphoorthy <em>EventSphere</em>
         </h1>
         <p class="hero-sub">

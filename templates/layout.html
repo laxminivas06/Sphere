@@ -18,38 +18,16 @@
             --navy: #2d3dba;
             --navy-dark: #171f5e;
             --navy-deeper: #0f1440;
-            --navy-mid: #2d3aa8;
-            --navy-light: #4052d7;
-            --navy-glass: rgba(15, 20, 64, 0.25);
-            --navy-border: rgba(255, 255, 255, 0.1);
-
-            --white: #ffffff;
-            --surface: #0f1440; /* Deep Navy Surface */
+            --surface: #0f1440;
             --surface-2: #171f5e;
-            --card-bg: rgba(255, 255, 255, 0.04);
-
-            --text-primary: #ffffff;
-            --text-secondary: #e2e8f0;
-            --text-muted: #94a3b8;
-            --text-on-navy: #ffffff;
-            --text-on-navy-muted: rgba(255, 255, 255, 0.7);
-
+            --primary: #4052d7;
+            --glass-border: rgba(255, 255, 255, 0.1);
             --border-light: rgba(255, 255, 255, 0.1);
-            --border-mid: rgba(255, 255, 255, 0.18);
-
-            --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.3);
-            --shadow-md: 0 10px 15px rgba(0, 0, 0, 0.4);
-            --shadow-lg: 0 20px 25px rgba(0, 0, 0, 0.5);
-
-            --radius-sm: 8px;
             --radius-md: 12px;
             --radius-lg: 20px;
             --radius-xl: 32px;
-
             --font: 'Inter', system-ui, -apple-system, sans-serif;
-
-            --primary: var(--navy-light);
-            --glass-border: var(--border-light);
+            --white: #ffffff;
         }
 
         /* ─── RESET & BASE ──────────────────────────────────────── */
@@ -68,9 +46,13 @@
         body {
             font-family: var(--font);
             background: var(--surface);
-            color: var(--text-primary);
+            color: #ffffff;
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
+            padding-top: 80px !important;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
 
         /* ─── NAVBAR ────────────────────────────────────────────── */
@@ -79,10 +61,10 @@
             top: 0;
             left: 0;
             right: 0;
-            z-index: 1000;
-            height: 68px;
+            z-index: 2000;
+            height: 80px;
             background: var(--navy-deeper);
-            border-bottom: 1px solid var(--navy-border);
+            border-bottom: 1px solid var(--glass-border);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -164,11 +146,13 @@
         }
 
         /* Hide mobile-specific admin links on desktop */
-        .nav-drawer-admin-link, .drawer-section-label {
+        .nav-drawer-admin-link,
+        .drawer-section-label {
             display: none !important;
         }
 
-        .nav-links a:hover, .nav-links a.active {
+        .nav-links a:hover,
+        .nav-links a.active {
             background: rgba(255, 255, 255, 0.12);
             color: var(--white);
         }
@@ -314,8 +298,8 @@
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             pointer-events: none;
             z-index: 2;
         }
@@ -721,27 +705,35 @@
 
         /* ─── DASHBOARD SIDEBAR ─────────────────────────────────── */
         .dashboard-layout {
-            display: grid !important;
-            grid-template-columns: 260px 1fr !important;
-            min-height: calc(100vh - 68px);
+            display: flex !important;
+            flex: 1;
             width: 100%;
-            max-width: 100%; /* Ensure full desktop fit */
-            margin-top: 0 !important;
+            position: relative;
+            min-height: calc(100vh - 80px);
         }
 
-        .sidebar {
-            background: var(--navy-deeper) !important;
-            border-right: 1px solid var(--border-light) !important;
-            padding: 1.5rem 1rem !important;
+        .public-layout {
+            display: block;
+            width: 100%;
+            position: relative;
+        }
+
+        .sidebar, .em-sidebar {
+            background: rgba(10, 10, 20, 0.4) !important;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+            padding: 2rem 1.25rem !important;
             display: flex;
             flex-direction: column;
-            gap: 0.25rem;
+            gap: 0.5rem;
             position: sticky !important;
-            top: 68px !important;
-            height: calc(100vh - 68px) !important;
-            width: 100% !important;
-            overflow-y: auto;
+            top: 80px !important;
+            height: calc(100vh - 80px) !important;
+            width: 260px !important;
+            flex-shrink: 0;
             z-index: 100;
+            overflow-y: auto;
         }
 
         .sidebar-label {
@@ -784,12 +776,29 @@
             opacity: 0.8;
         }
 
-        .dashboard-content, .main-content {
-            padding: 2rem 2.5rem;
+        .dashboard-content,
+        .main-content {
             background: var(--surface);
-            margin-left: 0 !important;
+            flex: 1;
             min-width: 0;
-            width: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 80px);
+        }
+
+        .dashboard-layout .main-content {
+            padding: 2rem 2.5rem;
+        }
+
+        .main-content.home-content {
+            padding: 0 !important;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-layout .main-content {
+                padding: 1rem;
+            }
         }
 
         /* ─── STAT CARDS ────────────────────────────────────────── */
@@ -808,13 +817,13 @@
             text-transform: uppercase;
             letter-spacing: 0.06em;
             margin-bottom: 0.5rem;
+            overflow: hidden;
         }
 
-        .stat-card-value {
-            font-size: 1.75rem;
-            font-weight: 800;
-            color: var(--navy);
-            line-height: 1;
+        .bubble-menu.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1) translateY(0);
         }
 
         .stat-card-navy {
@@ -859,324 +868,504 @@
             color: #e65100;
         }
 
-        /* ─── FOOTER ────────────────────────────────────────────── */
+        /* ─── FOOTER BEHAVIOR ─────────────────────────────────── */
         footer.site-footer {
-            padding: 1.75rem 5%;
-            border-top: 1px solid var(--border-light);
-            background: var(--white);
+            width: 100%;
+            background: #0a0a14 !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+            padding: 4rem 5% 2rem !important;
+            z-index: 10;
+            position: relative;
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1.5fr;
+            gap: 4rem;
+            margin-bottom: 3rem;
+        }
+
+        .footer-col h4 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-about {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .footer-logo-img-footer {
+            height: 60px;
+            width: auto;
+            max-width: 100%;
+            object-fit: contain;
+            align-self: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-about p {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.6;
+            max-width: 320px;
+        }
+
+        .footer-links-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .footer-links-list a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .footer-links-list a:hover {
+            color: var(--primary);
+        }
+
+        .footer-contact {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .contact-item:hover {
+            color: var(--white);
+        }
+
+        .contact-item i {
+            color: var(--primary);
+            font-size: 1rem;
+            width: 20px;
+        }
+
+        .footer-socials {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .social-link {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .social-link:hover {
+            background: var(--primary);
+            transform: translateY(-3px);
+            border-color: transparent;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 1rem;
             flex-wrap: wrap;
-        }
-
-        .footer-brand {
-            display: flex;
-            align-items: center;
             gap: 1rem;
-        }
-
-        .footer-brand h3 {
-            font-size: 0.9375rem;
-            font-weight: 700;
-            color: var(--navy);
-        }
-
-        .footer-brand span {
-            font-size: 0.65rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            font-weight: 600;
-            border-left: 1px solid var(--border-light);
-            padding-left: 1rem;
         }
 
         .footer-copy {
-            font-size: 0.8rem;
-            color: var(--text-muted);
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.4);
+            margin: 0;
         }
 
-        /* ─── RESPONSIVE ────────────────────────────────────────── */
+        @media (max-width: 1200px) {
+            .footer-grid { gap: 2rem; }
+        }
+
+        @media (max-width: 992px) {
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 2.5rem;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            footer.site-footer { padding: 2.5rem 1.25rem 1.5rem !important; }
+            .footer-bottom {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.5rem;
+            }
+            .footer-copy { text-align: center; }
+            .footer-about p { max-width: 100%; }
+        }
+
+        /* ─── MOBILE HUB WIDGET (Management Hub) ─────────────── */
+        .mobile-hub-widget {
+            display: none;
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            border-radius: 50%;
+            z-index: 4000;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .mobile-hub-widget.active {
+            transform: rotate(45deg);
+            background: #ef4444;
+        }
+
+        .bubble-menu {
+            position: fixed;
+            bottom: 6.5rem;
+            right: 2rem;
+            width: 300px;
+            max-height: 65vh;
+            background: #171f5e;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 28px;
+            z-index: 3999;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            opacity: 0;
+            visibility: hidden;
+            transform: scale(0.8) translateY(20px);
+            transform-origin: bottom right;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bubble-menu.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1) translateY(0);
+        }
+
+        /* Management Hub is now visible on all devices */
+        .mobile-hub-widget.can-show {
+            display: flex !important;
+        }
+
+        @media (max-width: 991px) {
+            /* Remove old grid override — handled by new flex rules below */
+            .main-content {
+                padding: 1rem !important;
+            }
+        }
+
         @media (max-width: 768px) {
-            body { padding-top: 60px !important; }
+            body {
+                padding-top: 70px !important;
+            }
+
             nav {
-                padding: 0 1.25rem;
-                height: 60px;
-            }
-
-            .mobile-toggle {
-                display: flex;
-                width: 40px;
-                height: 40px;
-                background: var(--surface);
-                border: 1px solid var(--border-mid);
-                border-radius: 10px;
-                align-items: center;
-                justify-content: center;
-                color: var(--navy);
-                z-index: 1001;
-            }
-
-            .nav-links {
-                position: fixed;
-                top: 0;
-                right: 0;
-                bottom: 0;
-                width: 85%;
-                max-width: 300px;
-                background: var(--navy-dark);
-                flex-direction: column;
-                align-items: stretch;
-                padding: 5rem 1.5rem 2rem;
-                gap: 0.5rem;
-                box-shadow: -10px 0 40px rgba(0, 0, 0, 0.4);
-                z-index: 2100;
-                transform: translateX(100%);
-                opacity: 0;
-                visibility: hidden;
-                transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-                overflow-y: auto;
-                border-left: 1px solid var(--navy-border);
-            }
-
-            .nav-links.active {
-                transform: translateX(0);
-                opacity: 1;
-                visibility: visible;
-            }
-
-            .drawer-header {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                margin-bottom: 1.5rem;
-                padding: 0.75rem 1rem;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-                background: rgba(255, 255, 255, 0.05);
-                border-radius: var(--radius-md);
-            }
-
-            .drawer-header span {
-                color: var(--white) !important;
-                font-size: 0.9rem;
-                letter-spacing: 0.05em;
-                text-transform: uppercase;
-            }
-
-            .dashboard-layout {
-                flex-direction: column;
-            }
-            .sidebar { display: none; }
-            .dashboard-content, .main-content {
-                padding: 1.5rem 1rem !important;
-                width: 100% !important;
-            }
-            .stat-card {
-                margin-bottom: 1rem;
-                width: 100% !important;
-            }
-            .grid-2, .grid-3, .grid-4 {
-                grid-template-columns: 1fr !important;
-                gap: 1rem !important;
-            }
-            /* Table responsiveness */
-            table { display: block; overflow-x: auto; white-space: nowrap; }
-
-            .drawer-close {
-                background: var(--surface-2);
-                border: 1px solid var(--border-light);
-                color: var(--navy);
-                width: 36px;
-                height: 36px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-                transition: background 0.2s;
-            }
-
-            .drawer-close:hover {
-                background: var(--border-light);
-            }
-
-            .nav-links.active {
-                transform: translateX(0);
-            }
-
-            .nav-links a, .nav-links .mobile-context-link, .nav-drawer-admin-link {
-                padding: 0.75rem 1rem;
-                font-size: 0.9rem;
-                background: transparent;
-                border: none;
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-                color: #ffffff !important; /* Force plain white */
-                text-decoration: none;
-                transition: all 0.2s ease;
-                cursor: pointer;
-            }
-
-            .nav-links a i, .nav-drawer-admin-link i {
-                color: #ffffff !important; /* Icons also white */
-                opacity: 0.8;
-            }
-
-            .nav-links a:hover, .nav-drawer-admin-link:hover {
-                background: rgba(255, 255, 255, 0.1);
-                color: #ffffff !important;
-            }
-
-            .nav-links .drawer-section-label {
-                font-size: 0.65rem;
-                text-transform: uppercase;
-                letter-spacing: 0.12em;
-                color: rgba(255, 255, 255, 0.4);
-                margin: 1.25rem 0 0.5rem 0.5rem;
-                font-weight: 800;
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-            }
-
-            .nav-links .drawer-section-label::after {
-                content: '';
-                flex: 1;
-                height: 1px;
-                background: var(--border-light);
-            }
-
-            .nav-links .btn {
-                background: transparent !important;
-                color: #ffffff !important;
-                border: 1px solid rgba(255, 255, 255, 0.4) !important;
-                width: 100%;
-                justify-content: flex-start;
-                padding: 0.75rem 1rem;
-                font-size: 0.9rem;
-            }
-            .nav-links .btn:hover {
-                background: rgba(255, 255, 255, 0.1) !important;
-                border-color: #ffffff !important;
-            }
-
-            .brand-title {
-                font-size: 0.95rem;
-            }
-
-            .brand-subtitle {
-                display: none;
-            }
-
-            .nav-logo-wrap {
-                width: 36px;
-                height: 36px;
-            }
-
-            .dashboard-layout {
-                grid-template-columns: 1fr !important;
-                display: grid !important;
-            }
-
-            .sidebar {
-                display: none !important;
-            }
-
-            .mobile-admin-tabs {
-                display: flex;
-                overflow-x: auto;
-                background: var(--white);
-                border-bottom: 1px solid var(--border-light);
-                padding: 0.5rem;
-                gap: 0.5rem;
-                position: sticky;
-                top: 60px;
-                z-index: 100;
-                -webkit-overflow-scrolling: touch;
-                scrollbar-width: none;
-            }
-
-            .mobile-admin-tabs::-webkit-scrollbar {
-                display: none;
-            }
-
-            .mobile-tab-item {
-                white-space: nowrap;
-                padding: 0.6rem 1rem;
-                border-radius: 30px;
-                font-size: 0.8125rem;
-                font-weight: 600;
-                color: var(--text-secondary);
-                background: var(--surface);
-                border: 1px solid var(--border-light);
-                text-decoration: none;
-                display: flex;
-                align-items: center;
-                gap: 0.4rem;
-            }
-
-            .mobile-tab-item.active {
-                background: var(--navy);
-                color: var(--white);
-                border-color: var(--navy);
-            }
-
-            .dashboard-content, .main-content {
-                padding: 1rem;
-                width: 100%;
-                max-width: 100%;
-                overflow-x: hidden;
-            }
-
-            /* Dashboard grids forced 1-column */
-            .main-content div[style*="display: grid"], 
-            .dashboard-content div[style*="display: grid"],
-            .grid-3, .grid-4, .form-grid, .ht-modules {
-                grid-template-columns: 1fr !important;
-                gap: 1.25rem !important;
-            }
-
-            .dense-grid {
-                grid-template-columns: repeat(2, 1fr) !important;
-                gap: 1.25rem !important;
-            }
-
-            .dense-grid {
-                grid-template-columns: repeat(2, 1fr) !important;
-            }
-
-            .ht-hero {
-                padding: 1.5rem !important;
-                flex-direction: column;
-                text-align: center;
-                gap: 1rem !important;
-            }
-
-            .ht-hero-banner, .ht-hero-placeholder {
-                width: 70px !important;
                 height: 70px !important;
+                padding: 0 1.25rem !important;
             }
 
-            .hero {
-                padding: 4rem 5% 3rem;
+            /* Ensure full-width on 768px — reinforces flex column */
+            .dashboard-layout {
+                display: flex !important;
+                flex-direction: column !important;
+                width: 100% !important;
             }
 
-            .section {
-                padding: 2.5rem 5%;
+            .dashboard-content,
+            .main-content {
+                padding: 0.75rem !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box;
             }
 
-            footer.site-footer {
-                flex-direction: column;
-                text-align: center;
-                gap: 0.5rem;
+            .grid-2,
+            .grid-3,
+            .grid-4 {
+                grid-template-columns: 1fr !important;
+                gap: 1rem !important;
+            }
+        }
+
+        /* Table responsiveness */
+        table {
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .drawer-close {
+            background: var(--surface-2);
+            border: 1px solid var(--border-light);
+            color: var(--navy);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .drawer-close:hover {
+            background: var(--border-light);
+        }
+
+        .nav-links.active {
+            transform: translateX(0);
+        }
+
+        .nav-links a,
+        .nav-links .mobile-context-link,
+        .nav-drawer-admin-link {
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            background: transparent;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #ffffff !important;
+            /* Force plain white */
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .nav-links a i,
+        .nav-drawer-admin-link i {
+            color: #ffffff !important;
+            /* Icons also white */
+            opacity: 0.8;
+        }
+
+        .nav-links a:hover,
+        .nav-drawer-admin-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff !important;
+        }
+
+        .nav-links .drawer-section-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: rgba(255, 255, 255, 0.4);
+            margin: 1.25rem 0 0.5rem 0.5rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links .drawer-section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-light);
+        }
+
+        .nav-links .btn {
+            background: transparent !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
+            width: 100%;
+            justify-content: flex-start;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .nav-links .btn:hover {
+            background: rgba(255, 255, 255, 0.1) !important;
+            border-color: #ffffff !important;
+        }
+
+        .brand-title {
+            font-size: 0.95rem;
+        }
+
+        .brand-subtitle {
+            display: none;
+        }
+
+        .nav-logo-wrap {
+            width: 36px;
+            height: 36px;
+        }
+
+        /* ─── DASHBOARD LAYOUT (desktop 2-col, mobile full-width) ── */
+        @media (min-width: 992px) {
+            .dashboard-layout {
+                display: grid !important;
+                grid-template-columns: 260px 1fr !important;
+                min-height: calc(100vh - 80px);
+            }
+        }
+
+        @media (max-width: 991px) {
+            .dashboard-layout {
+                display: flex !important;
+                flex-direction: column !important;
+                width: 100% !important;
+                min-height: calc(100vh - 80px);
+            }
+            .sidebar, .em-sidebar {
+                display: none !important;
+                width: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+            }
+            .dashboard-content,
+            .main-content {
+                width: 100% !important;
+                max-width: 100% !important;
+                flex: 1;
+                overflow-x: hidden;
+                padding: 1rem !important;
+                box-sizing: border-box;
+            }
+        }
+
+        .mobile-admin-tabs {
+            display: flex;
+            overflow-x: auto;
+            background: var(--white);
+            border-bottom: 1px solid var(--border-light);
+            padding: 0.5rem;
+            gap: 0.5rem;
+            position: sticky;
+            top: 60px;
+            z-index: 100;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+
+        .mobile-admin-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .mobile-tab-item {
+            white-space: nowrap;
+            padding: 0.6rem 1rem;
+            border-radius: 30px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: var(--surface);
+            border: 1px solid var(--border-light);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .mobile-tab-item.active {
+            background: var(--navy);
+            color: var(--white);
+            border-color: var(--navy);
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-content,
+            .main-content {
+                padding: 0.75rem !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow-x: hidden;
+                box-sizing: border-box;
             }
 
-            .footer-brand span {
-                display: none;
+            /* Dashboard grids forced 1-column on mobile */
+            .main-content div[style*="display: grid"],
+            .dashboard-content div[style*="display: grid"],
+            .grid-2,
+            .grid-3,
+            .grid-4,
+            .form-grid,
+            .ht-modules {
+                grid-template-columns: 1fr !important;
+                gap: 1rem !important;
             }
+
+            .dense-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 0.75rem !important;
+            }
+        }
+
+        .ht-hero {
+            padding: 1.5rem !important;
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem !important;
+        }
+
+        .ht-hero-banner,
+        .ht-hero-placeholder {
+            width: 70px !important;
+            height: 70px !important;
+        }
+
+        .hero {
+            padding: 4rem 5% 3rem;
+        }
+
+        .section {
+            padding: 2.5rem 5%;
+        }
+
+        footer.site-footer {
+            flex-direction: column;
+            text-align: center;
+            gap: 0.5rem;
+        }
+
+        .footer-brand span {
+            display: none;
+        }
+
+
+        @media (max-width: 900px) {
             .desktop-only {
                 display: none !important;
             }
@@ -1186,47 +1375,45 @@
                 right: 0;
                 bottom: 0;
                 width: 280px;
-                background: #0f172a; /* Solid Navy */
+                background: var(--navy-dark);
+                display: flex !important;
                 flex-direction: column;
-                align-items: stretch;
                 padding: 6rem 1.5rem 2rem;
-                gap: 1.25rem;
-                box-shadow: -10px 0 30px rgba(0,0,0,0.6);
-                z-index: 5000;
+                gap: 0.75rem;
                 transform: translateX(100%);
                 transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-                display: flex !important;
+                z-index: 5000;
+                box-shadow: -10px 0 40px rgba(0, 0, 0, 0.6);
             }
-
             .nav-links.active {
                 transform: translateX(0);
             }
-
-            .nav-links a {
-                color: white !important;
-                font-size: 1.1rem;
-                font-weight: 600;
-                display: flex;
-                align-items: center;
-                gap: 1rem;
-                padding: 0.75rem 1rem;
-                border-radius: 12px;
-                background: rgba(255,255,255,0.05);
+            .sidebar, .em-sidebar {
+                display: none !important;
             }
-
-            .nav-links a:active {
-                background: var(--primary);
-            }
-
             .mobile-toggle {
                 display: flex !important;
                 z-index: 5001;
             }
+        }
 
-            .nav-overlay.active {
-                display: block;
-                z-index: 4999;
-            }
+        .nav-links a {
+            color: white !important;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+
+        .nav-overlay.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 4999;
         }
 
         /* ─── BUBBLE MENU WIDGET (Mobile Only) ────────────────── */
@@ -1246,7 +1433,7 @@
             box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border: 2px solid rgba(255,255,255,0.2);
+            border: 2px solid rgba(255, 255, 255, 0.2);
         }
 
         @media (max-width: 900px) {
@@ -1255,7 +1442,10 @@
             }
         }
 
-        .mobile-hub-widget.active { transform: rotate(45deg); background: #ef4444; }
+        .mobile-hub-widget.active {
+            transform: rotate(45deg);
+            background: #ef4444;
+        }
 
         .bubble-menu {
             position: fixed;
@@ -1264,10 +1454,10 @@
             width: 280px;
             max-height: 400px;
             background: var(--navy-dark);
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 24px;
             z-index: 3999;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
             opacity: 0;
             visibility: hidden;
             transform: scale(0.8) translateY(20px);
@@ -1318,11 +1508,13 @@
             transition: background 0.2s;
         }
 
-        .hub-category-header:hover { background: rgba(255,255,255,0.05); }
+        .hub-category-header:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
 
         .hub-category.active .hub-category-header {
             color: var(--primary);
-            background: rgba(99,102,241,0.1);
+            background: rgba(99, 102, 241, 0.1);
         }
 
         .hub-items {
@@ -1342,50 +1534,73 @@
             gap: 0.75rem;
             padding: 0.6rem 0.75rem;
             border-radius: 10px;
-            color: rgba(255,255,255,0.7);
+            color: rgba(255, 255, 255, 0.7);
             text-decoration: none;
             font-size: 0.85rem;
             transition: all 0.2s;
         }
 
         .hub-item:active {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.1);
             color: white;
         }
 
-        .hub-item i { width: 16px; text-align: center; }
+        .hub-item i {
+            width: 16px;
+            text-align: center;
+        }
 
         /* ─── TABLE TO CARD (Mobile) ─────────────────────────── */
         @media (max-width: 768px) {
-            table, thead, tbody, th, td, tr { display: block; }
-            thead tr { position: absolute; top: -9999px; left: -9999px; }
-            tr { 
-                background: rgba(255,255,255,0.03); 
-                margin-bottom: 1rem; 
-                border-radius: 15px; 
-                padding: 1rem;
-                border: 1px solid rgba(255,255,255,0.05) !important;
+
+            table,
+            thead,
+            tbody,
+            th,
+            td,
+            tr {
+                display: block;
             }
-            td { 
-                border: none !important; 
-                padding: 0.5rem 0 !important; 
-                position: relative; 
-                padding-left: 50% !important; 
+
+            thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+
+            tr {
+                background: rgba(255, 255, 255, 0.03);
+                margin-bottom: 1rem;
+                border-radius: 15px;
+                padding: 1rem;
+                border: 1px solid rgba(255, 255, 255, 0.05) !important;
+            }
+
+            td {
+                border: none !important;
+                padding: 0.5rem 0 !important;
+                position: relative;
+                padding-left: 50% !important;
                 text-align: right;
                 font-size: 0.85rem !important;
             }
-            td:before { 
-                position: absolute; 
-                top: 0.5rem; left: 0; 
-                width: 45%; 
-                padding-right: 10px; 
-                white-space: nowrap; 
-                text-align: left; 
+
+            td:before {
+                position: absolute;
+                top: 0.5rem;
+                left: 0;
+                width: 45%;
+                padding-right: 10px;
+                white-space: nowrap;
+                text-align: left;
                 font-weight: 700;
                 color: var(--primary);
                 content: attr(data-label);
             }
-            td[style*="text-align: center"] { text-align: right !important; }
+
+            td[style*="text-align: center"] {
+                text-align: right !important;
+            }
         }
 
         /* ─── ANIMATIONS ────────────────────────────────────────── */
@@ -1409,15 +1624,22 @@
                 transition: none !important;
             }
         }
-        
+
         .no-js .reveal {
             opacity: 1 !important;
             transform: none !important;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .fade-in {
@@ -1431,13 +1653,9 @@
     <!-- ── NAVBAR ─────────────────────────────────────────────── -->
     <nav>
         <a href="/" class="nav-branding">
-            <div class="nav-logo-wrap">
-                <img src="{% if institution and institution.logo %}{{ url_for('static', filename='uploads/logos/' + institution.logo) }}{% else %}{{ url_for('static', filename='uploads/logos/college_logo.png') }}{% endif %}"
-                    alt="College Logo" class="nav-logo-img">
-            </div>
             <div class="brand-text">
-                <span class="brand-title">
-                    {% if institution %}{{ institution.name }}{% else %}Sphoorthy{% endif %} EventSphere
+                <span class="brand-title" style="color: #ffffff;">
+                    {% if institution %}{{ institution.name }}{% else %}Sphoorthy College{% endif %} EventSphere
                 </span>
                 <span class="brand-subtitle">
                     Institutional Event Hub
@@ -1457,20 +1675,52 @@
             </a>
 
             {% if user %}
-                <a href="/admin">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-                
-                <div class="nav-user-pill desktop-only" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.05); padding: 0.25rem 0.75rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);">
-                    <div class="nav-avatar" style="width: 24px; height: 24px; font-size: 0.7rem; background: var(--primary);">{{ user.name[0]|upper }}</div>
-                    <span style="color: white; font-size: 0.85rem; font-weight: 600;">{{ user.name }}</span>
-                </div>
-
-                <a href="/api/logout" class="btn btn-outline" style="color: white !important;">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
+            {% if user.role == 'student' %}
+            <a href="/student/profile">
+                <i class="fas fa-user-circle"></i> Profile
+            </a>
+            <a href="/student/history">
+                <i class="fas fa-history"></i> History
+            </a>
             {% else %}
-                <a href="/login" class="btn btn-primary">Login</a>
+            {% if user.role in ['principal', 'secretary', 'ao', 'fm', 'chief_coordinator'] %}
+            <a href="/admin/event-approvals">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            {% else %}
+            <a href="/admin">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            {% endif %}
+            {% endif %}
+
+            <div class="nav-user-pill desktop-only"
+                style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.05); padding: 0.25rem 0.75rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);">
+                {% if user.role == 'student' %}
+                <div class="nav-avatar"
+                    style="position: relative; width: 32px; height: 32px; border-radius: 50%; background: var(--primary); border: 2px solid rgba(255,255,255,0.2);">
+                    <img src="{% if user.photo %}/static/uploads/students/{{ user.roll_number }}/{{ user.photo }}{% else %}https://ui-avatars.com/api/?name={{ user.name|urlencode }}&background=202B81&color=fff&size=50{% endif %}"
+                        style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                    {% if is_club_contributor %}
+                    <div style="position: absolute; bottom: -4px; right: -4px; background: #f59e0b; color: #fff; width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; border: 2px solid var(--navy-deeper); box-shadow: 0 2px 4px rgba(0,0,0,0.3);"
+                        title="Club Contributor">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="nav-avatar"
+                    style="width: 32px; height: 32px; font-size: 0.8rem; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.2);">
+                    {{ user.name[0]|upper }}</div>
+                {% endif %}
+                <span style="color: white; font-size: 0.85rem; font-weight: 600;">{{ user.name }}</span>
+            </div>
+
+            <a href="/api/logout" class="btn btn-outline" style="color: white !important;">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+            {% else %}
+            <a href="/login" class="btn btn-primary">Login</a>
             {% endif %}
         </div>
     </nav>
@@ -1502,11 +1752,12 @@
             if (e) e.stopPropagation();
             const nav = document.getElementById('navLinks');
             const overlay = document.querySelector('.nav-overlay');
-            nav.classList.toggle('active');
+            const isActive = nav.classList.toggle('active');
             overlay.classList.toggle('active');
+            document.body.classList.toggle('menu-open', isActive);
         }
 
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function (event) {
             const bubbleMenu = document.getElementById('bubbleMenu');
             const hubWidget = document.querySelector('.mobile-hub-widget');
             if (bubbleMenu && hubWidget && bubbleMenu.classList.contains('active') && !bubbleMenu.contains(event.target) && !hubWidget.contains(event.target)) {
@@ -1537,38 +1788,49 @@
             const sidebar = document.querySelector('.sidebar') || document.querySelector('.em-sidebar');
             const hubWidget = document.querySelector('.mobile-hub-widget');
             const hubMenu = document.getElementById('hubMenu');
-            
+
             // Only show widget if in a dashboard/sidebar context
             if (sidebar && hubWidget) {
                 hubWidget.classList.add('can-show');
-                
-                // Find all groups in the sidebar
-                const sidebarGroups = sidebar.querySelectorAll('div.em-nav-group, div');
+
+                // Collect groups: prefer .em-nav-group, otherwise direct div children of sidebar-content
+                const sidebarContent = sidebar.querySelector('.sidebar-content') || sidebar;
+                let sidebarGroups = Array.from(sidebarContent.querySelectorAll(':scope > .sidebar-group, :scope > .em-nav-group'));
+                if (!sidebarGroups.length) {
+                    sidebarGroups = Array.from(sidebarContent.querySelectorAll(':scope > div'));
+                }
+
+                const seenLabels = new Set(); // deduplicate
+
                 sidebarGroups.forEach(group => {
-                    const groupLabel = group.querySelector('p, .em-nav-label, .sidebar-label');
+                    const groupLabel = group.querySelector(':scope > p, :scope > .em-nav-label, :scope > .sidebar-label');
                     if (!groupLabel) return;
+
+                    const labelText = groupLabel.textContent.trim();
+                    if (!labelText || seenLabels.has(labelText)) return;
+                    seenLabels.add(labelText);
 
                     const catDiv = document.createElement('div');
                     catDiv.className = 'hub-category';
                     catDiv.innerHTML = `
                         <div class="hub-category-header" onclick="this.parentElement.classList.toggle('active')">
-                            <span>${groupLabel.textContent.trim()}</span>
+                            <span>${labelText}</span>
                             <i class="fas fa-chevron-right" style="font-size:0.7rem; opacity:0.5;"></i>
                         </div>
                         <div class="hub-items"></div>
                     `;
-                    
+
                     const itemsContainer = catDiv.querySelector('.hub-items');
-                    const links = group.querySelectorAll('a, .nav-item, .em-nav, button.em-nav');
+                    const links = group.querySelectorAll('a.nav-item, a.em-nav, button.em-nav, .sidebar-link');
                     let addedLinks = 0;
 
                     links.forEach(link => {
-                        if (link.style.display === 'none' || link.classList.contains('em-nav-label')) return;
+                        if (link.style.display === 'none' || link.classList.contains('em-nav-label') || link.classList.contains('sidebar-label')) return;
                         const hubItem = document.createElement('a');
                         hubItem.href = link.href || '#';
                         hubItem.className = 'hub-item';
                         hubItem.innerHTML = link.innerHTML;
-                        
+
                         hubItem.onclick = (e) => {
                             if (link.tagName === 'BUTTON' || link.onclick || link.getAttribute('onclick')) {
                                 e.preventDefault();
@@ -1598,19 +1860,74 @@
         });
     </script>
 
-    {% block content %}{% endblock %}
+    {% set is_dashboard = request.path.startswith('/admin') or request.path.startswith('/super') or request.path.startswith('/em') or request.path.startswith('/scanner') %}
+    {% set show_sidebar = user and user.role != 'student' and is_dashboard %}
 
-    <!-- ── FOOTER ─────────────────────────────────────────────── -->
-    <footer class="site-footer" style="margin-top: auto;">
-        <div class="footer-brand">
-            <h3>{% if institution %}{{ institution.name }} EventSphere{% else %}EventSphere{% endif %}</h3>
-            <span>Centralized Event Management System</span>
+    <div class="{% if show_sidebar %}dashboard-layout{% else %}public-layout{% endif %}">
+        {% if show_sidebar %}
+            {% include 'unified_sidebar.html' %}
+        {% endif %}
+        
+        <main class="main-content {% if request.path == '/' %}home-content{% endif %}" style="flex: 1; min-width: 0;">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- ── FOOTER (always full-width, outside dashboard grid) ── -->
+    <footer class="site-footer">
+        <div class="footer-grid">
+            <!-- About Column -->
+            <div class="footer-col footer-about">
+                <img src="{% if institution and institution.logo %}{{ url_for('static', filename='uploads/logos/' + institution.logo) }}{% else %}{{ url_for('static', filename='uploads/logos/college_logo.png') }}{% endif %}"
+                     alt="College Logo" class="footer-logo-img-footer">
+                <p>Centralized platform for managing and exploring premier campus events, hackathons, and cultural festivals at Sphoorthy Engineering College.</p>
+                <div class="footer-socials">
+                    <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-x-twitter"></i></a>
+                </div>
+            </div>
+
+            <!-- Quick Links Column -->
+            <div class="footer-col">
+                <h4>Navigation</h4>
+                <ul class="footer-links-list">
+                    <li><a href="/">Events</a></li>
+                    <li><a href="/clubs/all">Clubs</a></li>
+                    <li><a href="/events/archive">Past Events</a></li>
+                    <li><a href="/student/history">My History</a></li>
+                </ul>
+            </div>
+
+            <!-- Contact Column -->
+            <div class="footer-col">
+                <h4>Contact Us</h4>
+                <div class="footer-contact">
+                    <a href="tel:+919100000000" class="contact-item">
+                        <i class="fas fa-phone-alt"></i>
+                        <span>+91 91000 00000</span>
+                    </a>
+                    <a href="mailto:info@sphoorthyengg.ac.in" class="contact-item">
+                        <i class="fas fa-envelope"></i>
+                        <span>info@sphoorthyengg.ac.in</span>
+                    </a>
+                    <div class="contact-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Nadargul, Balapur, Hyderabad, TS.</span>
+                    </div>
+                </div>
+            </div>
         </div>
-        <p class="footer-copy">
-            &copy; <span id="currentYear"></span>
-            {% if institution %}{{ institution.name }}{% else %}Institutional Portal{% endif %}
-            &nbsp;|&nbsp; All Rights Reserved
-        </p>
+
+        <div class="footer-bottom">
+            <p class="footer-copy">
+                &copy; <span id="currentYear"></span> <strong>Sphoorthy Engineering College EventSphere</strong>. All Rights Reserved.
+            </p>
+            <p class="footer-copy" style="opacity: 0.6;">
+                Empowering Student Innovation
+            </p>
+        </div>
     </footer>
 
     <script>

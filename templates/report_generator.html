@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Event Report Generator - {{ event.title }}</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
@@ -446,6 +447,28 @@
             flex: 1
         }
 
+        .back-pill {
+            background: var(--crimson);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .back-pill:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateX(-3px);
+        }
+        .back-pill i {
+            font-size: 0.8rem;
+        }
+
         .irow .xbtn2 {
             background: none;
             border: none;
@@ -547,6 +570,89 @@
         }
 
         /* ===== A4 PAGE ===== */
+        .workflow-tracker-wrap {
+            background: #fff;
+            padding: 1.25rem;
+            border-bottom: 1px solid #edf2f7;
+            display: flex;
+            justify-content: center;
+        }
+        .workflow-tracker {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            max-width: 900px;
+            justify-content: space-between;
+        }
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+            flex: 1;
+        }
+        .step-num {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 2;
+        }
+        .step-name {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #94a3b8;
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            text-align: center;
+        }
+        .step-line {
+            height: 3px;
+            background: #e2e8f0;
+            flex: 1;
+            margin: 0 -10px;
+            margin-bottom: 24px;
+            transition: background 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+        .step.done .step-num {
+            background: #22c55e !important; /* Green: Completed */
+            color: #fff !important;
+            border-color: #22c55e !important;
+        }
+        .step.done .step-name { color: #22c55e; }
+        
+        .step.active .step-num {
+            background: #f59e0b !important; /* Orange: Current */
+            color: #fff !important;
+            border-color: #f59e0b !important;
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2);
+        }
+        .step.active .step-name { color: #f59e0b; }
+
+        .step.pending .step-num {
+            background: #ef4444 !important; /* Red: Not Completed */
+            color: #fff !important;
+            border-color: #ef4444 !important;
+            opacity: 0.8;
+        }
+        .step.pending .step-name { color: #ef4444; }
+
+        .step-line.done {
+            background: #22c55e;
+        }
+
         .a4 {
             width: 794px;
             background: #fff;
@@ -554,7 +660,12 @@
             font-size: 13.5px;
             color: #111;
             display: flex;
-            flex-direction: column
+            flex-direction: column;
+            letter-spacing: 0.3px; /* Prevent character merging in PDF */
+            font-variant-ligatures: none;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
         }
 
         .phdr {
@@ -702,13 +813,14 @@
         .c-poster-zone {
             width: 100%;
             flex: 1;
-            min-height: 220px;
-            background: #fafafa;
-            border: 1px solid #ddd;
+            margin: 20px 0;
+            background: transparent;
+            border: none;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden
+            overflow: hidden;
+            max-height: 400px;
         }
 
         .c-poster-zone img {
@@ -727,8 +839,8 @@
         .c-sig-row {
             width: 100%;
             display: flex;
-            justify-content: space-around;
-            padding: 24px 36px 20px;
+            justify-content: space-between;
+            padding: 24px 20px 20px;
             flex-shrink: 0
         }
 
@@ -751,7 +863,12 @@
         .c-sig-label {
             font-size: 14px;
             font-weight: 700;
-            color: #1a2540
+            color: #1a2540;
+            text-align: center;
+            line-height: 1.4;
+            letter-spacing: 0.02em;
+            word-spacing: 1px;
+            max-width: 100%;
         }
 
         .enc-lbl {
@@ -856,9 +973,47 @@
             text-align: left;
         }
 
-        .etbl th {
-            background: #f4f2ec;
+        .btn-gold {
+            background: var(--gold);
             color: var(--navy);
+        }
+
+        .btn-crimson {
+            background: var(--crimson);
+            color: #fff;
+        }
+
+        .workflow-bar {
+            background: #e8e5dc;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .workflow-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+
+        .status-dot.active {
+            background: var(--crimson);
+            box-shadow: 0 0 5px var(--crimson);
+        }
+
+        .status-dot.done {
+            background: #27ae60;
         }
 
         .enc-item {
@@ -880,21 +1035,140 @@
         .back-btn:hover {
             opacity: 1;
         }
+
+        .green-sig-img {
+            /* This filter forces any dark ink to the institutional green color */
+            filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(121deg) brightness(98%) contrast(92%);
+            /* mix-blend-mode removes the white background (patchwork) by multiplying it with the document white */
+            mix-blend-mode: multiply;
+        }
+
+        .green-sig-txt {
+            color: #27ae60 !important;
+            font-family: 'Dancing Script', cursive, serif;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        /* Lock document for Institutional Heads or if not in Draft */
+        {% if (event.report_workflow_status and event.report_workflow_status != 'draft') or user.role in ['chief_coordinator', 'principal'] %}
+        /* Read-Only mode for submitted reports - Transform ALL inputs to static text */
+        .uarea, .clr-btn, .addbtn, .mode-toggle, .xbtn, .xbtn2, .mode-btn {
+            display: none !important;
+        }
+        #form-panel input, #form-panel textarea, #form-panel select {
+            background: transparent !important;
+            border: none !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            color: #0f172a !important;
+            pointer-events: none !important;
+            cursor: default !important;
+            resize: none !important;
+            box-shadow: none !important;
+            padding: 8px 0 !important;
+            font-weight: 600;
+            width: 100%;
+        }
+        .fg label, .sec-title {
+            color: #64748b !important;
+            font-weight: 700 !important;
+            font-size: 11px !important;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        #form-panel {
+            background: #ffffff !important;
+            border-right: 1px solid #e2e8f0 !important;
+        }
+        .sec-title {
+            background: #f8fafc !important;
+            color: #1e293b !important;
+            border-left: 4px solid var(--primary);
+            padding: 10px 15px !important;
+            margin: 20px 0 10px 0 !important;
+        }
+        .fnav {
+            background: #f1f5f9 !important;
+        }
+        .ftab.on {
+            background: #fff !important;
+            color: var(--primary) !important;
+            border-bottom: 2px solid var(--primary) !important;
+        }
+        .hr {
+            border-bottom: 1px solid #f1f5f9 !important;
+        }
+        {% endif %}
     </style>
 </head>
 
 <body>
     <header id="app-header">
         <div class="hdr-left">
-            <a href="/admin" class="back-btn">← Dashboard</a>
-            <img id="hdr-logo" src="/static/images/toplogo.jpg" alt="Logo">
+            <button class="back-pill" onclick="window.history.back()">
+                <i class="fas fa-chevron-left"></i>
+                <span>Back to Dashboard</span>
+            </button>
+            <div style="width: 20px;"></div>
+            <img src="/static/uploads/logos/college_logo.png" id="hdr-logo" alt="Logo">
             <div id="hdr-title">REPORT GENERATOR</div>
         </div>
         <div class="hdr-actions">
+            <button class="btn btn-ghost" onclick="applyZoom(zoom - 0.05)">-</button>
+            <button class="btn btn-ghost" id="zoom-label">78%</button>
+            <button class="btn btn-ghost" onclick="applyZoom(zoom + 0.05)">+</button>
+            <div style="width: 20px;"></div>
             <button class="btn btn-ghost" onclick="downloadPDF()">Download PDF</button>
-            <button class="btn btn-green" onclick="submitToPortal()">Submit to Portal</button>
+            
+            {% if not event.report_workflow_status or event.report_workflow_status == 'draft' %}
+                <button class="btn btn-green" onclick="submitToPortal()">Submit to Portal</button>
+            {% elif event.report_workflow_status == 'pending_report_principal' and user.role == 'principal' %}
+                <button class="btn btn-gold" onclick="approveStage()">Sign as Principal</button>
+            {% elif event.report_workflow_status == 'pending_report_chief_coordinator' and user.role == 'chief_coordinator' %}
+                <button class="btn btn-crimson" onclick="approveStage()">Approve & Finalize</button>
+            {% endif %}
         </div>
     </header>
+
+    <div class="workflow-tracker-wrap">
+        <div class="workflow-tracker">
+            {% set status = event.report_workflow_status or 'draft' %}
+            
+            <!-- 1. Draft -->
+            <div class="step done">
+                <div class="step-num"><i class="fas fa-file-edit"></i></div>
+                <div class="step-name">Draft</div>
+            </div>
+            <div class="step-line done"></div>
+            
+            <!-- 2. Mentor Sign -->
+            <div class="step {% if status != 'draft' %}done{% else %}active{% endif %}">
+                <div class="step-num"><i class="fas fa-file-signature"></i></div>
+                <div class="step-name">Mentor Sign</div>
+            </div>
+            <div class="step-line {% if status != 'draft' %}done{% endif %}"></div>
+            
+            <!-- 3. CC Review -->
+            <div class="step {% if status in ['pending_report_principal', 'finalized'] %}done{% elif status == 'pending_report_chief_coordinator' %}active{% else %}pending{% endif %}">
+                <div class="step-num"><i class="fas fa-user-tie"></i></div>
+                <div class="step-name">CC Review</div>
+            </div>
+            <div class="step-line {% if status in ['pending_report_principal', 'finalized'] %}done{% endif %}"></div>
+            
+            <!-- 4. Principal Approval -->
+            <div class="step {% if status == 'finalized' %}done{% elif status == 'pending_report_principal' %}active{% else %}pending{% endif %}">
+                <div class="step-num"><i class="fas fa-stamp"></i></div>
+                <div class="step-name">Principal</div>
+            </div>
+            <div class="step-line {% if status == 'finalized' %}done{% endif %}"></div>
+            
+            <!-- 5. Final Approval -->
+            <div class="step {% if status == 'finalized' %}done{% else %}pending{% endif %}">
+                <div class="step-num"><i class="fas fa-check-double"></i></div>
+                <div class="step-name">Finalized</div>
+            </div>
+        </div>
+    </div>
 
     <div id="main-layout">
         <aside id="form-panel">
@@ -939,12 +1213,12 @@
 
                 <div class="hr"></div>
                 <div class="sec-title">Document Signatures</div>
-                <div class="fg"><label>Left Signature Label</label><input type="text" id="convener-label" placeholder="e.g. Club Convenor"
-                        oninput="lu()"></div>
-                <div class="fg"><label>Centre Signature Label</label><input type="text" id="center-label" placeholder="e.g. Faculty Coordinator"
-                        oninput="lu()"></div>
-                <div class="fg"><label>Right Signature Label</label><input type="text" id="principal-label" placeholder="e.g. Principal"
-                        oninput="lu()"></div>
+                <p class="hint" style="margin-bottom: 12px;">The signature layout is standardized: [Dynamic Role] | [Chief Coordinator] | [Principal]</p>
+                <div id="custom-roles-container">
+                    <div class="fg"><label>Left Signatory Role (Dynamic)</label><input type="text" id="convener-label" value="Mentor / Convenor" oninput="lu()"></div>
+                    <div class="fg"><label>Centre Signatory Role</label><input type="text" id="center-label" value="Chief Coordinator" disabled></div>
+                    <div class="fg"><label>Right Signatory Role</label><input type="text" id="principal-label" value="Principal" disabled></div>
+                </div>
             </div>
 
             <!-- TAB 1: CONTENT -->
@@ -1057,6 +1331,10 @@
     </div>
 
     <script>
+        const SIGS = {{ sigs|tojson }};
+        const WORKFLOW_STATUS = "{{ event.report_workflow_status or 'draft' }}";
+        const WORKFLOW_APPROVALS = {{ (event.report_approvals or {})|tojson|safe }};
+        const INSTITUTIONAL_SIGS = {{ sigs|tojson|safe }};
         const SEC = {
             intro: { mode: 'para', items: ['The {{ club.name }} successfully organized an event titled "{{ event.title }}". The objective was to provide students with valuable insights and hands-on experience in the field.'] },
             objectives: { mode: 'bullet', items: ['To enhance technical knowledge.', 'To provide a platform for networking.', 'To encourage student participation in extra-curricular activities.'] },
@@ -1327,14 +1605,52 @@
         function buildCover(pgN) {
             const pg = makePg();
             const poster = D.poster ? `<img src="${D.poster}" alt="Poster">` : `<div class="c-poster-ph">← Upload Event Poster from MEDIA tab</div>`;
-            pg.innerHTML = `${phdrH()}<div class="cover-body">
+            
+            const leftRole = v('convener-label') || 'Mentor / Convenor';
+            const centerRole = 'Chief Coordinator';
+            const rightRole = 'Principal';
+
+            const getSigHTML = (label) => {
+                const l = (label || '').toLowerCase();
+                const style = 'max-height:60px; max-width:150px; object-fit:contain; display:block; margin:0 auto;';
+                
+                // Priority 1: Use specific workflow signatures if they match the role/label
+                if (WORKFLOW_APPROVALS.principal && (l.includes('principal') || l === 'principal')) {
+                    return `<img src="${WORKFLOW_APPROVALS.principal.signature}" class="green-sig-img" style="${style}">`;
+                }
+                if (WORKFLOW_APPROVALS.chief_coordinator && (l.includes('chief') || l.includes('coordinator') || l === 'chief_coordinator')) {
+                    return `<img src="${WORKFLOW_APPROVALS.chief_coordinator.signature}" class="green-sig-img" style="${style}">`;
+                }
+                if (WORKFLOW_APPROVALS.mentor && (l.includes('mentor') || l.includes('convener') || l === 'mentor' || l === leftRole.toLowerCase())) {
+                    return `<img src="${WORKFLOW_APPROVALS.mentor.signature}" class="green-sig-img" style="${style}">`;
+                }
+
+                // Temporary local signature for the first signer before submission
+                if (D.tempMentorSignature && (l.includes('mentor') || l.includes('convener') || l === leftRole.toLowerCase())) {
+                    return `<img src="${D.tempMentorSignature}" class="green-sig-img" style="${style}">`;
+                }
+
+                return '';
+            };
+
+            const buildSigBlock = (role) => `
+                <div class="c-sig-block" style="width: 180px;">
+                    <div class="c-sig-space" style="height: 80px; display:flex; align-items:flex-end; justify-content:center; padding-bottom:8px;">
+                        ${getSigHTML(role)}
+                    </div>
+                    <div class="c-sig-line" style="width:100%; border-top:1.5px solid #000;"></div>
+                    <div class="c-sig-label" style="font-size:11pt; font-weight:700; padding-top:6px; text-align:center; color: #000;">${xe(role)}</div>
+                </div>
+            `;
+
+            pg.innerHTML = `${phdrH()}<div class="cover-body" style="display:flex; flex-direction:column; height:100%;">
                 <div class="c-rpt">REPORT</div><div class="c-on">ON</div>
-                <div class="c-title">"${xe(v('ev-title'))}"</div>
-                <div class="c-poster-zone">${poster}</div>
-                <div class="c-sig-row">
-                    <div class="c-sig-block"><div class="c-sig-space"></div><div class="c-sig-line"></div><div class="c-sig-label">${xe(v('convener-label'))}</div></div>
-                    <div class="c-sig-block"><div class="c-sig-space"></div><div class="c-sig-line"></div><div class="c-sig-label">${xe(v('center-label'))}</div></div>
-                    <div class="c-sig-block"><div class="c-sig-space"></div><div class="c-sig-line"></div><div class="c-sig-label">${xe(v('principal-label'))}</div></div>
+                <div class="c-title" style="margin-bottom: 20px;">"${xe(v('ev-title'))}"</div>
+                <div class="c-poster-zone" style="flex: 1; max-height: 420px; margin-bottom: 30px;">${poster}</div>
+                <div class="c-sig-row" style="margin-top:auto; padding: 0 40px 40px; display:flex; justify-content:space-between; align-items:flex-end;">
+                    ${buildSigBlock(leftRole)}
+                    ${buildSigBlock(centerRole)}
+                    ${buildSigBlock(rightRole)}
                 </div>
             </div>${pftrH(pgN)}`;
             return pg;
@@ -1383,41 +1699,303 @@
             return pdf;
         }
 
+        function addCustomRoleField() {
+            const container = document.getElementById('custom-roles-container');
+            const div = document.createElement('div');
+            div.className = 'irow';
+            div.innerHTML = `<input type="text" class="custom-role-input" placeholder="e.g. IIC Convenor" oninput="lu()"><button class="xbtn2" onclick="this.parentElement.remove();lu()">✕</button>`;
+            container.appendChild(div);
+        }
+
+        function openSigModal() {
+            const modal = document.getElementById('sigModal');
+            const leftRole = v('convener-label') || 'Mentor / Convenor';
+            document.getElementById('sigRoleLabel').innerText = leftRole;
+            modal.style.display = 'flex';
+            
+            // Crucial: Set canvas dimensions AFTER modal is visible
+            resizeSigCanvas();
+        }
+
+        function resizeSigCanvas() {
+            const canvas = document.getElementById('sigCanvas');
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.getBoundingClientRect();
+            
+            // Only resize if we have actual dimensions
+            if (rect.width > 0 && rect.height > 0) {
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+                
+                // Re-apply context styles as resizing clears them
+                ctx.lineWidth = 3;
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = '#000';
+            }
+        }
+
         async function submitToPortal() {
-            if (!confirm("Are you sure you want to submit this report to the portal?")) return;
+            openSigModal();
+            window.pendingSubmission = true;
+        }
 
-            const pdf = await downloadPDF();
-            const blob = pdf.output('blob');
-            const formData = new FormData();
-            formData.append('report', blob, 'report.pdf');
-            formData.append('club_id', '{{ club.id }}');
-            formData.append('event_id', '{{ event.id }}');
+        async function finalizeSubmission() {
+            const canvas = document.getElementById('sigCanvas');
+            
+            // Reliable blank check
+            const ctx = canvas.getContext('2d');
+            const pixelData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            let isBlank = true;
+            for (let i = 0; i < pixelData.length; i += 4) {
+                if (pixelData[i+3] > 0) { isBlank = false; break; }
+            }
+            if (isBlank) { alert("Please provide your signature before submitting."); return; }
 
-            const msg = document.getElementById('prog-msg');
-            msg.textContent = "Uploading to portal...";
+            const signature = canvas.toDataURL();
+            D.tempMentorSignature = signature;
+            
+            const modalBtn = document.querySelector('#sigModal .btn-primary');
+            const mainBtn = document.querySelector('button[onclick="submitToPortal()"]');
+            
+            modalBtn.disabled = true; modalBtn.innerText = "Signing...";
+            if (mainBtn) { mainBtn.disabled = true; mainBtn.innerText = "Submitting..."; }
 
             try {
-                const res = await fetch('/api/events/upload_report', {
+                // Close modal and wait for DOM update
+                document.getElementById('sigModal').style.display = 'none';
+                
+                // Re-render report with signature
+                buildPages();
+                
+                // Small delay to ensure browser reflows
+                await new Promise(r => setTimeout(r, 500));
+
+                // Generate PDF
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('p', 'pt', 'a4');
+                const pages = document.querySelectorAll('.a4');
+                
+                for (let i = 0; i < pages.length; i++) {
+                    const canvas_pg = await html2canvas(pages[i], { 
+                        scale: 2, 
+                        useCORS: true,
+                        logging: false,
+                        allowTaint: true,
+                        backgroundColor: "#ffffff"
+                    });
+                    const img = canvas_pg.toDataURL('image/jpeg', 0.95);
+                    if (i > 0) doc.addPage();
+                    doc.addImage(img, 'JPEG', 0, 0, 595.28, 841.89);
+                }
+                
+                const blob = doc.output('blob');
+                const formData = new FormData();
+                formData.append('club_id', '{{ club.id }}');
+                formData.append('event_id', '{{ event.id }}');
+                formData.append('report', blob, 'report.pdf');
+                formData.append('mentor_signature', signature);
+                formData.append('mentor_role', v('convener-label'));
+
+                const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+                const res = await fetch('/api/events/upload_report', { 
+                    method: 'POST', 
+                    headers: { 'X-CSRFToken': csrf },
+                    body: formData 
+                });
+                
+                let data;
+                const contentType = res.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    data = await res.json();
+                } else {
+                    const text = await res.text();
+                    console.error("Non-JSON response:", text);
+                    throw new Error("Server returned an error page. Please check if you are logged in.");
+                }
+
+                if (data.success) {
+                    alert("Report submitted successfully!");
+                    window.location.href = `/admin/events/{{ club.id }}`;
+                } else {
+                    throw new Error(data.message || "Upload failed");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error: " + err.message);
+                modalBtn.disabled = false; modalBtn.innerText = "Finalize & Submit";
+                if (mainBtn) { mainBtn.disabled = false; mainBtn.innerText = "Submit to Portal"; }
+                document.getElementById('sigModal').style.display = 'flex';
+            }
+        }
+
+        async function approveStage() {
+            const role = "{{ user.role }}";
+            const stage = role === 'principal' ? 'Principal' : 'Chief Coordinator';
+            if (!confirm(`Approve and add your digital signature as ${stage}?`)) return;
+            
+            const btn = document.querySelector(role === 'principal' ? '.btn-gold' : '.btn-crimson');
+            const originalText = btn.innerText;
+            btn.disabled = true; btn.innerText = "Signing...";
+
+            try {
+                // 1. Update status and capture signature in DB
+                const res = await fetch('/api/report/approve_stage', {
                     method: 'POST',
-                    headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
-                    body: formData
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content },
+                    body: JSON.stringify({ club_id: '{{ club.id }}', event_id: '{{ event.id }}' })
+                });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message);
+
+                // 2. Update local state with the actual signature from DB
+                const sigKey = role === 'principal' ? 'principal' : 'chief_coordinator';
+                WORKFLOW_APPROVALS[sigKey] = data.sig_entry;
+
+                // 3. Regenerate and upload PDF
+                btn.innerText = "Generating PDF...";
+                buildPages();
+                await new Promise(r => setTimeout(r, 800)); // Wait for render
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('p', 'pt', 'a4');
+                const pages = document.querySelectorAll('.a4');
+                
+                for (let i = 0; i < pages.length; i++) {
+                    const canvas_pg = await html2canvas(pages[i], { 
+                        scale: 2, 
+                        useCORS: true,
+                        backgroundColor: "#ffffff"
+                    });
+                    const img = canvas_pg.toDataURL('image/jpeg', 0.95);
+                    if (i > 0) doc.addPage();
+                    doc.addImage(img, 'JPEG', 0, 0, 595.28, 841.89);
+                }
+                
+                const blob = doc.output('blob');
+                const formData = new FormData();
+                formData.append('club_id', '{{ club.id }}');
+                formData.append('event_id', '{{ event.id }}');
+                formData.append('report', blob, 'report.pdf');
+                // We don't need to re-send the mentor signature here as it's already in the DB, 
+                // but the backend handles it.
+
+                const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+                const uploadRes = await fetch('/api/events/upload_report', { 
+                    method: 'POST', 
+                    headers: { 'X-CSRFToken': csrf },
+                    body: formData 
+                });
+                
+                const uploadData = await uploadRes.json();
+                if (uploadData.success) {
+                    alert(`Report approved and signed by ${stage} successfully!`);
+                    location.reload();
+                } else {
+                    throw new Error(uploadData.message);
+                }
+            } catch (err) {
+                alert("Approval Error: " + err.message);
+                btn.disabled = false; btn.innerText = originalText;
+            }
+        }
+
+        async function mentorSign() {
+            if (!confirm("Confirm your digital signature as Mentor?")) return;
+            try {
+                const res = await fetch('/api/report/mentor_sign', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}' 
+                    },
+                    body: JSON.stringify({ club_id: '{{ club.id }}', event_id: '{{ event.id }}' })
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert("Report submitted successfully! Redirecting to dashboard...");
-                    window.location.href = "/admin";
+                    alert("Signed successfully!");
+                    window.location.reload();
                 } else {
-                    alert("Upload failed: " + data.message);
+                    alert("Error: " + data.message);
                 }
             } catch (err) {
-                alert("An error occurred during submission.");
+                alert("Connection error.");
+            }
+        }
+
+        async function finalApprove() {
+            if (!confirm("Finalize and approve this report?")) return;
+            try {
+                const res = await fetch('/api/report/final_approve', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}' 
+                    },
+                    body: JSON.stringify({ club_id: '{{ club.id }}', event_id: '{{ event.id }}' })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert("Report finalized!");
+                    window.location.href = "/admin/reports";
+                } else {
+                    alert("Error: " + data.message);
+                }
+            } catch (err) {
+                alert("Connection error.");
             }
         }
 
         let _lu;
         function lu() { clearTimeout(_lu); _lu = setTimeout(buildPages, 300); }
 
+        function initSig() {
+            const canvas = document.getElementById('sigCanvas');
+            const ctx = canvas.getContext('2d');
+            let drawing = false;
+
+            const getPos = (e) => {
+                const r = canvas.getBoundingClientRect();
+                const tx = e.touches ? e.touches[0].clientX : e.clientX;
+                const ty = e.touches ? e.touches[0].clientY : e.clientY;
+                return { x: tx - r.left, y: ty - r.top };
+            };
+
+            const start = (e) => {
+                e.preventDefault();
+                drawing = true;
+                const p = getPos(e);
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+            };
+
+            const move = (e) => {
+                e.preventDefault();
+                if (!drawing) return;
+                const p = getPos(e);
+                ctx.lineTo(p.x, p.y);
+                ctx.stroke();
+            };
+
+            const end = () => { drawing = false; };
+
+            canvas.addEventListener('mousedown', start);
+            canvas.addEventListener('mousemove', move);
+            window.addEventListener('mouseup', end);
+
+            canvas.addEventListener('touchstart', start, { passive: false });
+            canvas.addEventListener('touchmove', move, { passive: false });
+            canvas.addEventListener('touchend', end);
+        }
+
+        function clearCanvas() { 
+            const canvas = document.getElementById('sigCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+        }
+
         function init() {
+            initSig();
             Object.keys(SEC).forEach(k => renderSectionInput(k));
             ['att', 'fb', 'circ'].forEach(k => [0, 1].forEach(i => clearDual(k === 'att' ? 'attendance' : k === 'fb' ? 'feedback' : 'circular', i)));
             applyZoom(0.78);
@@ -1425,6 +2003,25 @@
         }
         document.addEventListener('DOMContentLoaded', init);
     </script>
+
+    <!-- Signature Modal -->
+    <div id="sigModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center; padding: 20px;">
+        <div style="background:#fff; padding:25px; border-radius:16px; width:100%; max-width:450px; text-align:center; box-shadow:0 25px 60px rgba(0,0,0,0.4); position:relative; overflow:hidden;">
+            <h3 style="margin-top:0; color:#1a1a1a; font-weight:800; letter-spacing:-0.02em;">Digital Sign-off</h3>
+            <p style="font-size:14px; color:#666; margin-bottom:20px;">Please provide your signature as <b id="sigRoleLabel" style="color:var(--primary);">...</b></p>
+            
+            <div style="border:1px solid #e0e0e0; border-radius:12px; margin-bottom:20px; background:#fafafa; position:relative;">
+                <canvas id="sigCanvas" style="cursor:crosshair; width:100%; height:180px; display:block;"></canvas>
+                <div style="position:absolute; bottom:10px; right:10px; font-size:10px; color:#ccc; pointer-events:none;">Sign within this box</div>
+            </div>
+            
+            <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+                <button onclick="clearCanvas()" class="btn btn-outline" style="flex:1; min-width:80px;">Clear</button>
+                <button onclick="document.getElementById('sigModal').style.display='none'" class="btn btn-outline" style="flex:1; min-width:80px;">Cancel</button>
+                <button onclick="finalizeSubmission()" class="btn btn-primary" style="background:#27ae60; border:none; flex:2; min-width:140px; font-weight:700;">Finalize & Submit</button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

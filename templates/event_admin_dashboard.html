@@ -232,34 +232,7 @@
 }
 </style>
 
-<div class="ea-wrap">
 
-  <!-- Left Sidebar -->
-  <aside class="ea-sidebar">
-    <div class="ea-sidebar-header">
-      <span class="ea-role-chip"><i class="fas fa-shield-alt"></i> Event Admin</span>
-      <div class="ea-topbar-name">{{ user.name }}</div>
-    </div>
-    
-    <div class="ea-sidebar-nav">
-      <button class="ea-tab active" onclick="switchTab('dashboard',this)" id="btn-dashboard">
-        <i class="fas fa-chart-pie"></i> Overview
-      </button>
-      {% if active_event %}
-      <button class="ea-tab" onclick="switchTab('hub',this)" id="btn-hub">
-        <i class="fas fa-th-large"></i> Dashboard
-      </button>
-      {% endif %}
-      <button class="ea-tab" onclick="switchTab('settings',this)" id="btn-settings">
-        <i class="fas fa-cog"></i> Event App
-      </button>
-    </div>
-
-    <div class="ea-sidebar-footer">
-      <a href="/" class="ea-sidebar-link"><i class="fas fa-home"></i> Home</a>
-      <a href="/api/logout" class="ea-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
-    </div>
-  </aside>
 
   <!-- Main Content Area -->
   <main class="ea-main-content">
@@ -532,8 +505,7 @@
     </div>
   </div>
 
-  </main>
-</div>
+
 
 <script>
 function switchTab(name, btn) {

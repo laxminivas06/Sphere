@@ -3,11 +3,8 @@
 {% block content %}
 
 
-<div class="dashboard-layout">
-    {% include 'sidebar_club.html' %}
 
-    <main class="main-content">
-            <!-- Events Tab -->
+        <!-- Events Tab -->
             <div id="tab-events" class="tab-pane">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                     <h2>Manage Events</h2>
@@ -217,9 +214,7 @@
                 </div>
             </div>
 
-        </main>
-    </div>
-</div>
+
 
 <!-- Modal -->
 <div id="eventModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; padding: 2rem;">
@@ -286,7 +281,6 @@
 <script>
 function showTab(tab) {
     document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
-    document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
     document.getElementById('tab-' + tab).style.display = 'block';
     event.target.classList.add('active');
 }

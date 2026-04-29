@@ -1,142 +1,315 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="dashboard-layout">
-    <div class="container" style="padding: 2rem;">
-        <header style="margin-bottom: 2.5rem;">
-            <h1 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -0.05rem;">
-                Approval <span style="color: var(--primary)">Command Center</span>
-            </h1>
-            <p style="color: var(--text-muted); font-size: 1.1rem;">Manage institutional event permissions and compliance workflows.</p>
-        </header>
-
-        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
-            {% for stage in stages_meta %}
-            <div class="card glass" style="padding: 1.5rem; border-radius: 20px; display: flex; align-items: center; gap: 1rem;">
-                <div style="width: 50px; height: 50px; border-radius: 12px; background: {{ stage.color }}20; color: {{ stage.color }}; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
-                    <i class="fas {{ stage.icon }}"></i>
-                </div>
-                <div>
-                    <h3 style="margin: 0; font-size: 1.1rem;">{{ stage.label }}</h3>
-                    <p style="margin: 0.2rem 0 0; color: var(--text-muted); font-size: 0.85rem;">
-                        {{ pending_events | selectattr('approval_status', 'equalto', stage.key) | list | length }} Pending
-                    </p>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        <div class="card glass" style="border-radius: 24px; overflow: hidden;">
-            <div style="padding: 1.5rem 2rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
-                <h2 style="font-size: 1.25rem; margin: 0;">Pending Requests</h2>
-                <div class="badge" style="background: var(--primary); color: white;">{{ pending_events | length }} Total</div>
-            </div>
-            <div class="table-responsive">
-                <table class="table" style="width: 100%; border-collapse: collapse;">
-                    <thead>
-                        <tr style="text-align: left; background: rgba(255,255,255,0.02);">
-                            <th style="padding: 1.2rem 2rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1rem; color: var(--text-muted);">Event & Club</th>
-                            <th style="padding: 1.2rem 2rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1rem; color: var(--text-muted);">Current Stage</th>
-                            <th style="padding: 1.2rem 2rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1rem; color: var(--text-muted);">Proposed Date</th>
-                            <th style="padding: 1.2rem 2rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1rem; color: var(--text-muted);">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for event in pending_events %}
-                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
-                            <td style="padding: 1.2rem 2rem;">
-                                <div style="display: flex; align-items: center; gap: 1rem;">
-                                    <div style="width: 40px; height: 40px; border-radius: 10px; background: var(--primary)20; color: var(--primary); display: flex; align-items: center; justify-content: center;">
-                                        <i class="fas fa-calendar-day"></i>
-                                    </div>
-                                    <div>
-                                        <div style="font-weight: 700; color: #fff;">{{ event.title }}</div>
-                                        <div style="font-size: 0.8rem; color: var(--text-muted);">{{ event._club_name }}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td style="padding: 1.2rem 2rem;">
-                                {% for stage in stages_meta %}
-                                    {% if stage.key == event._display_status %}
-                                    <span class="badge" style="background: {{ stage.color }}20; color: {{ stage.color }}; border: 1px solid {{ stage.color }}40;">
-                                        <i class="fas {{ stage.icon }}" style="margin-right: 5px;"></i> {{ stage.label }}
-                                    </span>
-                                    {% endif %}
-                                {% endfor %}
-                            </td>
-                            <td style="padding: 1.2rem 2rem; color: var(--text-muted);">
-                                {{ event.date }}
-                            </td>
-                            <td style="padding: 1.2rem 2rem;">
-                                {% if event.approval_status == 'pending_report_approval' or event.event_status == 'pending_report_approval' %}
-                                <div style="display: flex; gap: 0.5rem;">
-                                    {% set ev_slug = event.title | lower | replace(' ', '_') %}
-                                    <a href="/static/uploads/clubs/{{ event.club_id }}/events/{{ ev_slug }}/reports/{{ event.report }}" download class="btn btn-outline btn-sm" style="border-radius: 8px; font-size: 0.8rem; padding: 0.5rem 1rem;">
-                                        <i class="fas fa-eye"></i> View Report
-                                    </a>
-                                    <button onclick="approveReport('{{ event.club_id }}', '{{ event.id }}')" class="btn btn-primary btn-sm" style="background: #10b981; border: none; border-radius: 8px; font-size: 0.8rem; padding: 0.5rem 1rem;">
-                                        <i class="fas fa-check"></i> Approve
-                                    </button>
-                                </div>
-                                {% else %}
-                                <a href="/events/permission_letter/{{ event.club_id }}/{{ event.id }}" class="btn btn-primary btn-sm" style="border-radius: 8px; font-size: 0.8rem; padding: 0.5rem 1rem;">
-                                    Review & Approve
-                                </a>
-                                {% endif %}
-                            </td>
-                        </tr>
+{% macro build_table(event_list, mode, stages_meta) %}
+<div class="table-responsive" style="overflow-x: auto; width: 100%;">
+    <table class="table" style="width: 100%; min-width: 800px; border-collapse: separate; border-spacing: 0;">
+        <thead>
+            <tr>
+                <th style="padding: 1.5rem 2rem; font-size: 0.85rem;">Event & Club</th>
+                <th style="padding: 1.5rem 2rem; font-size: 0.85rem;">Status</th>
+                <th style="padding: 1.5rem 2rem; font-size: 0.85rem;">Date</th>
+                <th style="padding: 1.5rem 2rem; font-size: 0.85rem; text-align: right;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for event in event_list %}
+            <tr style="transition: all 0.2s; border-bottom: 1px solid var(--border-light);">
+                <td style="padding: 1.75rem 2rem;">
+                    <div style="font-weight: 800; color: #fff; font-size: 1.1rem; margin-bottom: 0.25rem;">{{ event.title }}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">{{ event._club_name }}</div>
+                </td>
+                <td style="padding: 1.75rem 2rem;">
+                    {% set meta = stages_meta.get(event._display_status, {'label': 'Processed', 'color': '#10b981', 'icon': 'fa-check'}) %}
+                    <span class="badge" style="background: {{ meta.color }}20; color: {{ meta.color }}; border: 1px solid {{ meta.color }}40; font-size: 0.75rem; padding: 0.5rem 1rem; border-radius: 10px;">
+                        <i class="fas {{ meta.icon }}"></i> {{ meta.label }}
+                    </span>
+                </td>
+                <td style="padding: 1.75rem 2rem; font-size: 0.95rem; color: var(--text-muted); font-weight: 600;">{{ event.date }}</td>
+                <td style="padding: 1.75rem 2rem; text-align: right;">
+                    {% if mode == 'sign' %}
+                        {% if event._type == 'Event Report' %}
+                            <a href="/admin/generate-report/{{ event.club_id }}/{{ event.id }}" class="btn btn-primary" style="padding: 0.75rem 1.5rem; font-size: 0.85rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">
+                                <i class="fas fa-signature"></i> Verify & Sign
+                            </a>
                         {% else %}
-                        <tr>
-                            <td colspan="4" style="padding: 4rem; text-align: center; color: var(--text-muted);">
-                                <i class="fas fa-check-circle" style="font-size: 3rem; color: #10b981; margin-bottom: 1rem; display: block;"></i>
-                                <p>All caught up! No pending approvals at this moment.</p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                            <a href="/events/permission_letter/{{ event.club_id }}/{{ event.id }}" class="btn btn-primary" style="padding: 0.75rem 1.5rem; font-size: 0.85rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">
+                                <i class="fas fa-file-signature"></i> Review & Approve
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        {% if event._type == 'Event Report' %}
+                            <a href="/admin/generate-report/{{ event.club_id }}/{{ event.id }}" class="btn btn-outline" style="padding: 0.6rem 1.25rem; font-size: 0.8rem; border-radius: 10px; opacity: 0.9;">
+                                <i class="fas fa-eye"></i> View Report
+                            </a>
+                        {% else %}
+                            <a href="/events/permission_letter/{{ event.club_id }}/{{ event.id }}" class="btn btn-outline" style="padding: 0.6rem 1.25rem; font-size: 0.8rem; border-radius: 10px; opacity: 0.9;">
+                                <i class="fas fa-file-alt"></i> View Letter
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" style="padding: 5rem 2rem; text-align: center; color: var(--text-muted);">
+                    <i class="fas fa-inbox" style="font-size: 3rem; opacity: 0.2; margin-bottom: 1.5rem; display: block;"></i>
+                    <p style="font-size: 1rem; font-weight: 600; margin: 0;">No records found in this category.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endmacro %}
+
+<div class="container" style="max-width: 1200px; padding-bottom: 5rem;">
+    <!-- HEADER -->
+    <header class="reveal active" style="margin-bottom: 3rem; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.5rem;">
+        <div>
+            <div class="section-tag">Institutional Governance</div>
+            <h1 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.5rem;">
+                <span class="gradient-text" style="text-transform: capitalize;">{{ user.role.replace('_', ' ') }}</span> Approval Portal
+            </h1>
+            <p style="color: var(--text-muted); font-size: 1.1rem; max-width: 700px; margin: 0; line-height: 1.4;">
+                {% if user.role == 'principal' %}
+                    Final institutional oversight and authorization for event permissions and reports.
+                {% else %}
+                    Institutional review and verification of event lifecycles and compliance.
+                {% endif %}
+            </p>
+        </div>
+        <a href="/admin" class="btn btn-outline" style="border-radius: 50px; padding: 0.6rem 1.5rem; font-weight: 700; border: 2px solid rgba(255,255,255,0.15);">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </header>
+
+    <!-- TABS NAVIGATION -->
+    <nav class="approval-tabs reveal" style="margin-bottom: 2.5rem; display: flex; gap: 1rem; border-bottom: 1px solid var(--border-light); padding-bottom: 1rem; position: relative; z-index: 10; background: transparent; border: 0; border-bottom: 1px solid var(--border-light); height: auto; box-shadow: none; padding: 0 0 1rem 0;">
+        <button class="tab-btn active" onclick="switchTab('perms-section', this)">
+            <i class="fas fa-file-signature"></i> Event Permissions
+            {% if metrics.event.pending > 0 %}
+            <span class="tab-badge">{{ metrics.event.pending }}</span>
+            {% endif %}
+        </button>
+        <button class="tab-btn" onclick="switchTab('reports-section', this)">
+            <i class="fas fa-file-medical"></i> Post-Event Reports
+            {% if metrics.report.pending > 0 %}
+            <span class="tab-badge">{{ metrics.report.pending }}</span>
+            {% endif %}
+        </button>
+    </nav>
+
+    <!-- SECTION: EVENT PERMISSIONS -->
+    <div id="perms-section" class="tab-content active reveal">
+        <!-- METRICS -->
+        <div class="grid-3" style="margin-bottom: 3.5rem;">
+            <div class="stat-card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                    <div class="stat-card-label">Action Required</div>
+                    <div style="width: 40px; height: 40px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                </div>
+                <div class="stat-card-value" style="color: #ef4444;">{{ metrics.event.pending }}</div>
+                <p class="stat-card-sub">Permission letters awaiting your sign</p>
+            </div>
+
+            <div class="stat-card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                    <div class="stat-card-label">Incoming Stream</div>
+                    <div style="width: 40px; height: 40px; background: rgba(245, 158, 11, 0.1); color: #f59e0b; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-clock-rotate-left"></i>
+                    </div>
+                </div>
+                <div class="stat-card-value" style="color: #f59e0b;">{{ metrics.event.incoming }}</div>
+                <p class="stat-card-sub">In-progress at earlier approval stages</p>
+            </div>
+
+            <div class="stat-card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                    <div class="stat-card-label">Total Completed</div>
+                    <div style="width: 40px; height: 40px; background: rgba(16, 185, 129, 0.1); color: #10b981; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-check-double"></i>
+                    </div>
+                </div>
+                <div class="stat-card-value" style="color: #10b981;">{{ metrics.event.completed }}</div>
+                <p class="stat-card-sub">Total letters successfully processed by you</p>
             </div>
         </div>
+
+        <!-- PERMISSIONS TABLE -->
+        <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-light); margin-bottom: 3rem;">
+            <div class="card-header">
+                <h2 style="font-size: 1.1rem; margin: 0; font-weight: 800;">Action Required: Permissions</h2>
+                <div class="badge badge-danger">{{ perms.pending | length }} Pending</div>
+            </div>
+            {{ build_table(perms.pending, 'sign', stages_meta) }}
+        </div>
+
+        {% if perms.incoming %}
+        <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-light); margin-bottom: 3rem; opacity: 0.8;">
+            <div class="card-header">
+                <h2 style="font-size: 1rem; margin: 0; font-weight: 800; color: var(--text-muted);">Incoming Stream (Permission Letters)</h2>
+            </div>
+            {{ build_table(perms.incoming, 'view', stages_meta) }}
+        </div>
+        {% endif %}
+
+        {% if perms.completed %}
+        <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-light); opacity: 0.7;">
+            <div class="card-header">
+                <h2 style="font-size: 1rem; margin: 0; font-weight: 800; color: var(--text-muted);">Permission History</h2>
+            </div>
+            {{ build_table(perms.completed, 'view', stages_meta) }}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- SECTION: POST-EVENT REPORTS -->
+    <div id="reports-section" class="tab-content reveal">
+        <!-- METRICS -->
+        <div class="grid-3" style="margin-bottom: 3.5rem;">
+            <div class="stat-card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                    <div class="stat-card-label">Action Required</div>
+                    <div style="width: 40px; height: 40px; background: rgba(244, 63, 94, 0.1); color: #f43f5e; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-file-signature"></i>
+                    </div>
+                </div>
+                <div class="stat-card-value" style="color: #f43f5e;">{{ metrics.report.pending }}</div>
+                <p class="stat-card-sub">Reports awaiting your institutional signature</p>
+            </div>
+
+            <div class="stat-card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                    <div class="stat-card-label">Incoming Stream</div>
+                    <div style="width: 40px; height: 40px; background: rgba(139, 92, 246, 0.1); color: #8b5cf6; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-clock-rotate-left"></i>
+                    </div>
+                </div>
+                <div class="stat-card-value" style="color: #8b5cf6;">{{ metrics.report.incoming }}</div>
+                <p class="stat-card-sub">In-progress at earlier verification stages</p>
+            </div>
+
+            <div class="stat-card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                    <div class="stat-card-label">Total Completed</div>
+                    <div style="width: 40px; height: 40px; background: rgba(16, 185, 129, 0.1); color: #10b981; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-check-double"></i>
+                    </div>
+                </div>
+                <div class="stat-card-value" style="color: #10b981;">{{ metrics.report.completed }}</div>
+                <p class="stat-card-sub">Total reports successfully finalized by you</p>
+            </div>
+        </div>
+
+        <!-- REPORTS TABLE -->
+        <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-light); margin-bottom: 3rem;">
+            <div class="card-header">
+                <h2 style="font-size: 1.1rem; margin: 0; font-weight: 800;">Action Required: Reports</h2>
+                <div class="badge badge-rose">{{ reports.pending | length }} Pending</div>
+            </div>
+            {{ build_table(reports.pending, 'sign', stages_meta) }}
+        </div>
+
+        {% if reports.incoming %}
+        <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-light); margin-bottom: 3rem; opacity: 0.8;">
+            <div class="card-header">
+                <h2 style="font-size: 1rem; margin: 0; font-weight: 800; color: var(--text-muted);">Incoming Stream (Reports)</h2>
+            </div>
+            {{ build_table(reports.incoming, 'view', stages_meta) }}
+        </div>
+        {% endif %}
+
+        {% if reports.completed %}
+        <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-light); opacity: 0.7;">
+            <div class="card-header">
+                <h2 style="font-size: 1rem; margin: 0; font-weight: 800; color: var(--text-muted);">Report History</h2>
+            </div>
+            {{ build_table(reports.completed, 'view', stages_meta) }}
+        </div>
+        {% endif %}
     </div>
 </div>
 
+
 <script>
-    function approveReport(clubId, eventId) {
-        if (!confirm('Are you sure you want to approve this event report?')) return;
+    function switchTab(targetId, btn) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
         
-        fetch(`/api/events/approve_report/${clubId}/${eventId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': '{{ csrf_token() }}'
-            }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert(data.message || 'Error approving report');
-            }
-        });
+        document.getElementById(targetId).classList.add('active');
+        if (btn) btn.classList.add('active');
     }
+
+    // Auto-switch tab based on URL param
+    window.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get('tab');
+        if (tab === 'reports') {
+            const btn = document.querySelector('button[onclick*="reports-section"]');
+            switchTab('reports-section', btn);
+        }
+    });
 </script>
+
 <style>
-    .badge {
-        padding: 0.4rem 0.8rem;
-        border-radius: 8px;
-        font-size: 0.75rem;
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    .tab-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
         font-weight: 700;
-        text-transform: uppercase;
-        display: inline-flex;
+        font-size: 1rem;
+        padding: 0.75rem 1.5rem;
+        cursor: pointer;
+        display: flex;
         align-items: center;
+        gap: 0.75rem;
+        transition: all 0.2s;
+        border-radius: 8px;
     }
-    .btn-sm {
-        padding: 0.4rem 0.8rem;
-        font-size: 0.85rem;
+    .tab-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
+    .tab-btn.active { color: var(--primary); background: rgba(99, 102, 241, 0.1); }
+    
+    .tab-badge {
+        background: #ef4444;
+        color: #fff;
+        font-size: 0.6rem;
+        padding: 2px 6px;
+        border-radius: 50px;
     }
-    tr:hover {
+
+    .card-header {
+        padding: 1.25rem 2rem;
+        border-bottom: 1px solid var(--border-light);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         background: rgba(255,255,255,0.02);
+    }
+
+    .stat-card {
+        background: var(--surface);
+        padding: 1.5rem;
+        border-radius: 16px;
+        border: 1px solid var(--border-light);
+    }
+    .stat-card-label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .stat-card-value { font-size: 2.25rem; font-weight: 800; line-height: 1; margin-bottom: 0.5rem; }
+    .stat-card-sub { font-size: 0.75rem; color: var(--text-muted); margin: 0; }
+
+    .badge-rose { background: rgba(244, 63, 94, 0.1); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.2); }
+    .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 8px; }
+
+    @media (max-width: 768px) {
+        .approval-tabs { flex-direction: column; gap: 0.5rem; border: 0; }
+        .tab-btn { width: 100%; justify-content: space-between; border: 1px solid var(--border-light); }
+        .grid-3 { grid-template-columns: 1fr; }
+        .table td { font-size: 0.8rem; padding: 1rem !important; }
     }
 </style>
 {% endblock %}

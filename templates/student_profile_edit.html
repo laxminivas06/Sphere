@@ -2,7 +2,6 @@
 
 {% block content %}
 <div class="profile-container container">
-    
     <div class="profile-hero premium-glass">
         <div class="hero-bg" style="background: var(--primary-gradient); opacity: 0.1; position: absolute; inset: 0; border-radius: inherit; z-index: -1;"></div>
         <div class="avatar-wrapper">
@@ -85,23 +84,8 @@
         <div class="profile-card premium-glass">
             <div class="card-header">
                 <h3><i class="fas fa-trophy"></i> Club Contributions & Achievements</h3>
-                <p>Add your memberships, leadership positions, and achievements.</p>
+                <p>These are automatically synced when a club admin adds you as an office bearer. They cannot be edited manually.</p>
             </div>
-            
-            <!-- Adding form on top for easy access -->
-            <div class="add-contribution-inline">
-                <div class="form-group mb-0">
-                    <input type="text" id="newClub" placeholder="Club Name (e.g., GDG)">
-                </div>
-                <div class="form-group mb-0">
-                    <input type="text" id="newPosition" placeholder="Position (e.g., President)">
-                </div>
-                <button type="button" onclick="addContribution()" class="btn btn-primary" style="background: var(--secondary-gradient); border: none;">
-                    <i class="fas fa-plus"></i> Add
-                </button>
-            </div>
-
-            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.05); margin: 2rem 0;">
 
             <div id="contributionsList" class="achievements-list main-display">
                 <!-- Javascript will render items here -->
@@ -114,9 +98,7 @@
 :root {
     --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
     --secondary-gradient: linear-gradient(135deg, #14b8a6 0%, #0ea5e9 100%);
-}
-
-.profile-container {
+}.profile-container {
     padding-top: 6rem;
     padding-bottom: 5rem;
     max-width: 1000px;
@@ -422,32 +404,6 @@ function previewPhoto(input) {
     }
 }
 
-function addContribution() {
-    const club = document.getElementById('newClub').value.trim();
-    const pos = document.getElementById('newPosition').value.trim();
-    
-    if(!club || !pos) {
-        alert("Please enter both club name and position");
-        return;
-    }
-    
-    contributions.push({ club_name: club, position: pos });
-    document.getElementById('newClub').value = '';
-    document.getElementById('newPosition').value = '';
-    renderContributions();
-    
-    // Automatically save profile when contribution is added
-    submitProfileData(false);
-}
-
-function removeContribution(index) {
-    if(confirm("Remove this achievement?")) {
-        contributions.splice(index, 1);
-        renderContributions();
-        submitProfileData(false);
-    }
-}
-
 function renderContributions() {
     const list = document.getElementById('contributionsList');
     list.innerHTML = ''; // Clear previous content
@@ -480,14 +436,8 @@ function renderContributions() {
         info.appendChild(h4);
         info.appendChild(p);
         
-        const btn = document.createElement('button');
-        btn.className = 'remove-contrib';
-        btn.innerHTML = '<i class="fas fa-times"></i>';
-        btn.onclick = () => removeContribution(i);
-        
         item.appendChild(icon);
         item.appendChild(info);
-        item.appendChild(btn);
         
         list.appendChild(item);
     });

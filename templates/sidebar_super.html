@@ -1,6 +1,10 @@
 <aside class="sidebar">
+    {% set is_restricted = user.role in ['principal', 'secretary', 'ao', 'fm'] %}
+    
     <div style="margin-bottom: 2rem;">
         <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏠 Main Menu ⏺️</p>
+        
+        {% if not is_restricted %}
         <a href="/admin" class="nav-item {% if request.path == '/admin' %}active{% endif %}">
             <i class="fas fa-tools"></i>
             <span>Clubs Setup & Config</span>
@@ -9,10 +13,14 @@
             <i class="fas fa-check-circle"></i>
             <span>Governance Approvals</span>
         </a>
+        {% endif %}
+
         <a href="/admin/event-approvals" class="nav-item {% if request.path == '/admin/event-approvals' %}active{% endif %}">
             <i class="fas fa-file-contract"></i>
             <span>Event Approvals</span>
         </a>
+
+        {% if not is_restricted %}
         <a href="/admin/report-approvals" class="nav-item {% if request.path == '/admin/report-approvals' %}active{% endif %}">
             <i class="fas fa-file-medical"></i>
             <span>Report Approvals</span>
@@ -21,6 +29,7 @@
             <i class="fas fa-database"></i>
             <span>Master DB</span>
         </a>
+        {% endif %}
     </div>
 
     <div>
@@ -33,6 +42,12 @@
             <i class="fas fa-trophy"></i>
             <span>Global Leaderboard</span>
         </a>
+        <a href="/admin/signature-settings" class="nav-item {% if request.path == '/admin/signature-settings' %}active{% endif %}">
+            <i class="fas fa-file-signature"></i>
+            <span>Digital Signature</span>
+        </a>
+        
+        {% if not is_restricted %}
         <a href="/admin/contacts" class="nav-item {% if request.path == '/admin/contacts' %}active{% endif %}">
             <i class="fas fa-address-book"></i>
             <span>Contacts</span>
@@ -41,17 +56,16 @@
             <i class="fas fa-cog"></i>
             <span>Global Settings</span>
         </a>
+        {% endif %}
+
         <div class="nav-item" onclick="location.reload()">
             <i class="fas fa-sync-alt"></i>
             <span>Refresh</span>
         </div>
     </div>
 
-    <div style="margin-top: 1rem;">
-        <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: #8b5cf6; margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🎭 College Events</p>
-        <a href="/em/dashboard" class="nav-item {% if request.path.startswith('/em/') %}active{% endif %}" style="background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);">
-            <i class="fas fa-ticket-alt" style="color: #8b5cf6;"></i>
-            <span>Event Manager</span>
-        </a>
+    <div style="margin-top: auto; padding-top: 2rem; border-top: 1px solid var(--border-light); opacity: 0.5;">
+        <p style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1rem; text-align: center; margin: 0;">Institutional Governance</p>
+        <p style="font-size: 0.5rem; text-align: center; margin-top: 0.25rem;">Command Center v2.4.0</p>
     </div>
 </aside>

@@ -507,6 +507,19 @@ def em_dashboard():
     user = session.get('user')
     if not user or not is_admin(user):
         return redirect(url_for('login_page'))
+    
+    # Persistent selection: Check query param first, then session
+    active_event_id = request.args.get('event_id')
+    if active_event_id:
+        session['em_active_event'] = active_event_id
+    else:
+        active_event_id = session.get('em_active_event')
+
+    # Allow clearing
+    if request.args.get('clear_event'):
+        active_event_id = None
+        session.pop('em_active_event', None)
+
     # Event admins get their own dedicated, focused dashboard
     if is_event_admin(user):
         return redirect(url_for('em.em_ea_dashboard'))
@@ -531,7 +544,54 @@ def em_dashboard():
     return render_template('em_admin.html',
         user=user, events=events, all_tickets=tickets,
         settings=settings, em_admins=em_admins, available_admins=available_admins, 
-        all_events=all_events, clubs=clubs, active_event_id=None)
+        all_events=all_events, clubs=clubs, active_event_id=active_event_id)
+
+@em.route('/my-events')
+def em_my_events():
+    user = session.get('user')
+    if not user or not is_admin(user):
+        return redirect(url_for('login_page'))
+    events    = admin_events(user)
+    all_tickets = get_tickets()
+    clubs = DB.get_clubs()
+    em_admins = get_em_admins()
+    all_events = get_events()
+    active_events = [e for e in all_events if e.get('status') == 'active']
+    occupied_admin_emails = set()
+    for e in active_events:
+        if e.get('assigned_admin'):
+            occupied_admin_emails.add(e.get('assigned_admin'))
+    available_admins = [a for a in em_admins if a.get('email') not in occupied_admin_emails]
+    
+    return render_template('em_my_events.html', 
+        user=user, events=events, all_tickets=all_tickets, 
+        clubs=clubs, available_admins=available_admins, all_events=all_events)
+
+@em.route('/admins')
+def em_admins_page():
+    user = session.get('user')
+    if not user or not is_admin(user):
+        return redirect(url_for('login_page'))
+    em_admins = get_em_admins()
+    # For modals
+    all_events = get_events()
+    active_events = [e for e in all_events if e.get('status') == 'active']
+    occupied_admin_emails = set()
+    for e in active_events:
+        if e.get('assigned_admin'):
+            occupied_admin_emails.add(e.get('assigned_admin'))
+    available_admins = [a for a in em_admins if a.get('email') not in occupied_admin_emails]
+
+    return render_template('em_admins.html', 
+        user=user, em_admins=em_admins, available_admins=available_admins, all_events=all_events)
+
+@em.route('/settings')
+def em_settings():
+    user = session.get('user')
+    if not user or not is_admin(user):
+        return redirect(url_for('login_page'))
+    settings = get_settings()
+    return render_template('em_settings.html', user=user, settings=settings)
 
 @em.route('/ea/dashboard')
 def em_ea_dashboard():

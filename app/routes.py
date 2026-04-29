@@ -19,7 +19,7 @@ import hashlib
 import razorpay
 from werkzeug.utils import secure_filename
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf', 'doc', 'docx'}
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -27,9 +27,664 @@ def allowed_file(filename):
 
 api = Blueprint('api', __name__)
 
+@api.route('/clubs/save_member_signature', methods=['POST'])
+def api_save_member_signature():
+    user = session.get('user')
+    if not user:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    data = request.json
+    club_id = data.get('club_id')
+    role_type = data.get('role_type') # 'mentor' or 'president'
+    signature_data = data.get('signature')
+    
+    if not all([club_id, role_type, signature_data]):
+        return jsonify({'success': False, 'message': 'Missing required fields'}), 400
+        
+    club = DB.get_club_by_id(club_id)
+    if not club: return jsonify({'success': False, 'message': 'Club not found'}), 404
+    
+    # Authorization
+    identifier = user.get('email') or user.get('roll_number')
+    if user.get('role') != 'chief_coordinator' and club.get('admin_roll') != identifier:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+        
+    if role_type == 'mentor':
+        # Update first mentor
+        mentors = club.get('mentors', [])
+        if not mentors and club.get('mentor'): mentors = [club['mentor']]
+        if not mentors: mentors = [{'name': 'Club Mentor', 'designation': 'Mentor'}]
+        mentors[0]['signature'] = signature_data
+        club['mentors'] = mentors
+    elif role_type == 'president':
+        # Update president in office_bearers
+        bearers = club.get('office_bearers', [])
+        pres = next((ob for ob in bearers if 'president' in ob.get('role', '').lower() or 'president' in ob.get('position', '').lower()), None)
+        if not pres:
+            pres = {'name': 'Club President', 'role': 'President'}
+            bearers.append(pres)
+        pres['signature'] = signature_data
+        club['office_bearers'] = bearers
+    else:
+        return jsonify({'success': False, 'message': 'Invalid role type'}), 400
+        
+    DB.save_club(club)
+    return jsonify({'success': True})
+
+@api.route('/user/save_signature', methods=['POST'])
+def api_save_signature():
+    user = session.get('user')
+    if not user:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    data = request.json
+    signature_data = data.get('signature')
+    if not signature_data:
+        return jsonify({'success': False, 'message': 'No signature data provided'}), 400
+    
+    admins = DB.get_admins()
+    for admin in admins:
+        if admin['email'] == user['email']:
+            admin['signature'] = signature_data
+            break
+    
+    DB.save_json('admins.json', admins)
+    # Update session user as well (excluding the signature to avoid cookie limits)
+    session_user = user.copy()
+    session_user.pop('signature', None)
+    session['user'] = session_user
+    
+    return jsonify({'success': True})
+
+@api.route('/student/save-achievement', methods=['POST'])
+def save_student_achievement():
+    user = session.get('user')
+    if not user or user.get('role') != 'student':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    data = request.json
+    club_id = data.get('club_id')
+    reg_id = data.get('reg_id')
+    note = data.get('note')
+    
+    if not all([club_id, reg_id]):
+        return jsonify({'success': False, 'message': 'Missing fields'}), 400
+        
+    from app.models import slugify
+    club_regs = DB.get_registrations(club_id)
+    reg_to_update = next((r for r in club_regs if r.get('id') == reg_id), None)
+    
+    if reg_to_update:
+        event_id = reg_to_update.get('event_id')
+        events = DB.get_events(club_id)
+        event = next((e for e in events if e['id'] == event_id), None)
+        
+        if event:
+            event_slug = slugify(event['title'])
+            reg_file = os.path.join(DATA_DIR, 'clubs', club_id, event_slug, 'registrations.json')
+            
+            if os.path.exists(reg_file):
+                with open(reg_file, 'r') as f:
+                    regs = json.load(f)
+                
+                for r in regs:
+                    if r.get('id') == reg_id:
+                        r['achievement_note'] = note
+                        break
+                
+                with open(reg_file, 'w') as f:
+                    json.dump(regs, f, indent=4)
+                    
+                return jsonify({'success': True})
+                
+    return jsonify({'success': False, 'message': 'Registration not found'}), 404
+
+@api.route('/student/export-portfolio')
+def export_student_portfolio():
+    user = session.get('user')
+    if not user or user.get('role') != 'student':
+        return redirect(url_for('login_page'))
+    
+    roll = user.get('roll_number')
+    preview = request.args.get('preview') == 'true'
+    all_clubs = DB.get_clubs()
+    registrations = []
+    
+    # Gather data
+    from app.models import slugify
+    for club in all_clubs:
+        club_regs = DB.get_registrations(club['id'])
+        for r in club_regs:
+            if r.get('roll_number') == roll:
+                events = DB.get_events(club['id'])
+                event = next((e for e in events if e['id'] == r['event_id']), None)
+                if event:
+                    r['event_title'] = event.get('title')
+                    r['club_name'] = club.get('name')
+                    r['date'] = event.get('date')
+                    r['category'] = event.get('event_category', 'Club Event').replace('_', ' ').title()
+                    registrations.append(r)
+    
+    registrations.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+    
+    # Premium PDF Generation
+    try:
+        from io import BytesIO
+        from flask import send_file
+        from PyPDF2 import PdfReader, PdfWriter
+        
+        class PortfolioPDF(FPDF):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.enclosure_title = None
+
+            def header(self):
+                logo_path = os.path.join(current_app.static_folder, 'images', 'toplogo.jpg')
+                if os.path.exists(logo_path):
+                    try: self.image(logo_path, 10, 5, 190)
+                    except: pass
+                
+                self.set_xy(10, 40)
+                if self.enclosure_title:
+                    # Predefined box frame for the enclosure content
+                    self.set_draw_color(180, 180, 180)
+                    self.rect(10, 50, 190, 220)
+                    
+                    # Small label in the left corner for enclosure title
+                    self.set_font('Arial', 'B', 10)
+                    self.set_fill_color(32, 43, 129)
+                    self.set_text_color(255, 255, 255)
+                    self.cell(90, 8, f"  {self.enclosure_title}", 0, 1, 'L', True)
+                else:
+                    # Main Portfolio Title
+                    self.set_font('Arial', 'B', 22)
+                    self.set_text_color(32, 43, 129)
+                    self.cell(0, 10, 'ACHIEVEMENT PORTFOLIO', 0, 1, 'C')
+                    self.set_font('Arial', 'I', 9)
+                    self.cell(0, 5, 'Verified Institutional Record of Collegiate Participation', 0, 1, 'C')
+                self.ln(5)
+
+            def footer(self):
+                self.set_y(-20)
+                # Remove redundant footer line on enclosure pages
+                if not self.enclosure_title:
+                    self.set_draw_color(200, 200, 200)
+                    self.line(10, self.get_y(), 200, self.get_y())
+                
+                self.ln(2)
+                self.set_font('Arial', 'B', 8)
+                self.set_text_color(100, 100, 100)
+                self.cell(60, 10, clean_txt(user.get('name', 'STUDENT')), 0, 0, 'L')
+                self.cell(70, 10, f'Page {self.page_no()}', 0, 0, 'C')
+                self.cell(60, 10, 'Generated by EventSphere', 0, 0, 'R')
+
+        def clean_txt(t):
+            if not t: return ""
+            return str(t).encode('latin-1', 'replace').decode('latin-1')
+
+        pdf = PortfolioPDF()
+        pdf.alias_nb_pages()
+        pdf.add_page()
+        
+        # Profile Section
+        pdf.ln(10)
+        start_y = pdf.get_y()
+        
+        # Student Photo
+        photo_path = os.path.join(current_app.static_folder, 'uploads', 'students', roll, user.get('photo', ''))
+        if user.get('photo') and os.path.exists(photo_path):
+            try: pdf.image(photo_path, 10, start_y, 40, 40)
+            except: 
+                pdf.set_fill_color(240, 240, 240)
+                pdf.rect(10, start_y, 40, 40, 'F')
+        else:
+            pdf.set_fill_color(240, 240, 240)
+            pdf.rect(10, start_y, 40, 40, 'F')
+            
+        # Fetch club contributions
+        is_contributor = False
+        club_contributions = []
+        user_name = user.get('name', '').lower().strip()
+        user_roll = roll.lower().strip()
+        for c in DB.get_clubs():
+            for ob in c.get('office_bearers', []):
+                ob_name = ob.get('name', '').lower().strip()
+                ob_roll = ob.get('roll_number', '').lower().strip()
+                if (user_roll and ob_roll and user_roll == ob_roll) or (not ob_roll and user_name and ob_name and user_name == ob_name):
+                    is_contributor = True
+                    # Fetch detailed contribution data from students.json for this club
+                    students_db = DB.load_json('students.json')
+                    s_rec = next((s for s in students_db if s.get('roll_number', '').lower() == user_roll), None)
+                    c_status = 'Present'
+                    c_tenure = ''
+                    c_events = 0
+                    if s_rec and 'contributions' in s_rec:
+                        c_data = next((cont for cont in s_rec['contributions'] if cont.get('club_id') == c.get('id')), None)
+                        if c_data:
+                            c_status = c_data.get('status', 'Present')
+                            c_tenure = c_data.get('tenure_year', '')
+                            c_events = c_data.get('events_organized', 0)
+
+                    club_contributions.append({
+                        'role': ob.get('role', 'Member'),
+                        'club_name': c.get('name', 'Club'),
+                        'status': c_status,
+                        'tenure_year': c_tenure,
+                        'events_organized': c_events
+                    })
+                    break
+                    
+        # Profile Details
+        pdf.set_xy(55, start_y)
+        pdf.set_font('Arial', 'B', 18)
+        pdf.set_text_color(32, 43, 129)
+        
+        name_str = clean_txt(user.get('name', '')).upper()
+        name_width = pdf.get_string_width(name_str)
+        
+        # Draw Name
+        pdf.cell(name_width + 5, 10, name_str, 0, 0)
+        
+        # Draw Golden Star Icon beside name if contributor
+        if is_contributor:
+            star_icon_path = os.path.join(current_app.static_folder, 'images', 'gold_star.png')
+            if os.path.exists(star_icon_path):
+                # Position for the star icon
+                star_x = pdf.get_x()
+                star_y = pdf.get_y() + 1 # Slight vertical adjustment
+                pdf.image(star_icon_path, star_x, star_y, 7, 7)
+            pdf.ln(10)
+        else:
+            pdf.ln(10)
+        
+        pdf.set_font('Arial', '', 10)
+        pdf.set_text_color(50, 50, 50)
+        pdf.set_x(55)
+        pdf.cell(0, 6, f"Roll Number: {roll}", 0, 1)
+        pdf.set_x(55)
+        pdf.cell(0, 6, f"Department: {clean_txt(user.get('department', 'N/A'))}", 0, 1)
+        pdf.set_x(55)
+        pdf.cell(0, 6, f"Email: {clean_txt(user.get('email', 'N/A'))}", 0, 1)
+        pdf.set_x(55)
+        pdf.cell(0, 6, f"Academic Year: {user.get('year', 'N/A')} Year", 0, 1)
+
+        pdf.ln(10)
+
+        # Club Contributions Section
+        if club_contributions:
+            pdf.set_font('Arial', 'B', 14)
+            pdf.set_text_color(32, 43, 129)
+            pdf.set_fill_color(255, 251, 235) # Light gold background
+            pdf.cell(0, 12, '  CLUB LEADERSHIP & CONTRIBUTIONS', 0, 1, 'L', True)
+            pdf.ln(4)
+            
+            for contrib in club_contributions:
+                status_val = "Present" if contrib.get('status') == 'Present' else "Former"
+                tenure_val = contrib.get('tenure_year', '')
+                status_label = f" ({status_val} {tenure_val})" if tenure_val else f" ({status_val})"
+                
+                pdf.set_font('Arial', 'B', 11)
+                pdf.set_text_color(180, 83, 9) # Darker amber
+                pdf.cell(0, 7, f" {clean_txt(contrib['role'])} - {clean_txt(contrib['club_name'])}{status_label}", 0, 1)
+                
+                pdf.set_font('Arial', 'I', 9)
+                pdf.set_text_color(100, 100, 100)
+                events_organized = contrib.get('events_organized', 0)
+                pdf.cell(0, 6, f" Organized {events_organized} Events | Verified Institutional Office Bearer", 0, 1)
+                pdf.ln(2)
+            pdf.ln(10)
+        
+        # Participation Timeline
+        pdf.set_font('Arial', 'B', 14)
+        pdf.set_text_color(32, 43, 129)
+        pdf.set_fill_color(245, 247, 255)
+        pdf.cell(0, 12, '  PARTICIPATION TIMELINE', 0, 1, 'L', True)
+        pdf.ln(5)
+        
+        for idx, r in enumerate(registrations, 1):
+            # Check for page break
+            if pdf.get_y() > 240:
+                pdf.add_page()
+                pdf.ln(10)
+                
+            pdf.set_fill_color(255, 255, 255)
+            
+            # Clean Event Block
+            pdf.set_font('Arial', 'B', 12)
+            pdf.set_text_color(32, 43, 129)
+            title = clean_txt(r.get('event_title', 'N/A'))
+            pdf.cell(0, 8, f"{idx}. Event Name: {title}", 0, 1, 'L')
+            
+            pdf.set_font('Arial', '', 10)
+            pdf.set_text_color(80, 80, 80)
+            details = f"Club: {clean_txt(r.get('club_name'))}  |  Date: {r.get('date')}  |  Category: {r.get('category')}"
+            pdf.cell(0, 6, details, 0, 1, 'L')
+            
+            pdf.set_font('Arial', '', 10)
+            pdf.set_text_color(40, 40, 40)
+            achieve = clean_txt(r.get('achievement_note', 'No notes added.'))
+            # Wrap text for achievements
+            pdf.multi_cell(0, 6, f"Learning & Achievements: {achieve}", 0, 'L')
+            pdf.ln(5)
+
+        has_docs = any(r.get('supporting_docs') for r in registrations)
+        if has_docs:
+            pdf.ln(5)
+            pdf.set_font('Arial', 'I', 10)
+            pdf.set_text_color(100, 100, 100)
+            pdf.cell(0, 6, 'Enclosures: Supporting documents copies are attached.', 0, 1, 'L')
+
+        # Signatures section at absolute bottom
+        if pdf.get_y() > 245:
+            pdf.add_page()
+        
+        pdf.set_y(255)
+        curr_y = 255
+        
+        # Fetch actual signatures from DB
+        all_u = DB.get_admins()
+        sigs = {'chief': '', 'principal': '', 'secretary': '', 'ao': '', 'fm': ''}
+        for u in all_u:
+            r_low = u.get('role', '').lower()
+            if 'principal' in r_low: sigs['principal'] = u.get('signature', '')
+            if 'secretary' in r_low: sigs['secretary'] = u.get('signature', '')
+            if 'chief' in r_low and 'coordinator' in r_low: sigs['chief'] = u.get('signature', '')
+            if 'ao' in r_low: sigs['ao'] = u.get('signature', '')
+            if 'fm' in r_low or 'finance' in r_low: sigs['fm'] = u.get('signature', '')
+
+        from PIL import Image, ImageOps
+        import base64
+        
+        def draw_sig(data, x, y, is_green=False):
+            if not data: return
+            try:
+                if data.startswith('data:image'):
+                    data = data.split(',')[1]
+                sig_bytes = base64.b64decode(data)
+                img = Image.open(BytesIO(sig_bytes))
+                
+                if is_green:
+                    # Convert to RGBA if not already
+                    img = img.convert("RGBA")
+                    datas = img.getdata()
+                    new_data = []
+                    for item in datas:
+                        # item is (R, G, B, A)
+                        r, g, b, a = item[0], item[1], item[2], item[3]
+                        # Calculate luminance to identify white/light background
+                        luminance = 0.299*r + 0.587*g + 0.114*b
+                        
+                        # If pixel is transparent OR light/white (background), make it fully transparent
+                        if a == 0 or luminance > 220:
+                            new_data.append((255, 255, 255, 0))
+                        else:
+                            # It's a dark pixel (the signature stroke). 
+                            # Convert to institutional green, using original alpha if it was semi-transparent.
+                            # For anti-aliased edges on white, we can adjust alpha based on darkness.
+                            # The darker the pixel, the more opaque the green.
+                            stroke_alpha = int(min(255, a * ((255 - luminance) / 255.0) * 1.5))
+                            new_data.append((16, 185, 129, min(255, stroke_alpha)))
+                    img.putdata(new_data)
+                
+                sig_img_io = BytesIO()
+                img.save(sig_img_io, format='PNG')
+                sig_img_io.seek(0)
+                pdf.image(sig_img_io, x+5, y-15, 40, 15)
+            except Exception as e:
+                pass
+
+        # Draw Signature Block
+        sig_roles = [
+            ('Chief Coordinator', sigs['chief']),
+            ('Principal', sigs['principal']),
+            ('Secretary', sigs['secretary'])
+        ]
+        
+        col_w = 190 / len(sig_roles)
+        for i, (role_title, sig_data) in enumerate(sig_roles):
+            x_pos = 10 + (i * col_w)
+            
+            # Digital Signature in GREEN
+            if not sig_data:
+                pdf.set_text_color(16, 185, 129) # Institutional Green
+                pdf.set_font('Arial', 'I', 8)
+                pdf.set_xy(x_pos, curr_y - 6)
+                pdf.cell(col_w, 5, f"Digitally Signed", 0, 0, 'C')
+            else:
+                draw_sig(sig_data, x_pos, curr_y, is_green=True)
+            
+            # Signature Line
+            pdf.set_draw_color(180, 180, 180)
+            pdf.line(x_pos + 10, curr_y, x_pos + col_w - 10, curr_y)
+            
+            # Names/Titles in BLACK
+            pdf.set_text_color(0, 0, 0)
+            pdf.set_font('Arial', 'B', 9)
+            pdf.set_xy(x_pos, curr_y + 1)
+            pdf.cell(col_w, 5, role_title, 0, 0, 'C')
+
+        # Process Enclosures
+        pdf_overlays = [] # (fpdf_page_idx, doc_path, doc_page_idx)
+        if has_docs:
+            for r in registrations:
+                docs = r.get('supporting_docs', [])
+                for doc in docs:
+                    doc_path = os.path.join(current_app.static_folder, 'uploads', 'students', roll, 'documents', r['id'], doc)
+                    if os.path.exists(doc_path):
+                        title = clean_txt(r.get('event_title'))
+                        if doc.lower().endswith(('.png', '.jpg', '.jpeg')):
+                            pdf.enclosure_title = f"Enclosure: {title}"
+                            pdf.add_page()
+                            # Fit image inside container box (x=10, y=50, w=190, h=220) with padding
+                            try:
+                                from PIL import Image
+                                with Image.open(doc_path) as img:
+                                    img_w, img_h = img.size
+                                    box_w, box_h = 180, 210
+                                    img_aspect = img_w / float(img_h)
+                                    box_aspect = box_w / float(box_h)
+                                    
+                                    if img_aspect > box_aspect:
+                                        final_w = box_w
+                                        final_h = box_w / img_aspect
+                                    else:
+                                        final_h = box_h
+                                        final_w = box_h * img_aspect
+                                        
+                                    final_x = 15 + (box_w - final_w) / 2
+                                    final_y = 55 + (box_h - final_h) / 2
+                                    pdf.image(doc_path, final_x, final_y, final_w, final_h)
+                            except Exception:
+                                pdf.image(doc_path, 15, 60, 180, 0)
+                        elif doc.lower().endswith('.pdf'):
+                            try:
+                                reader_doc = PdfReader(doc_path)
+                                for i in range(len(reader_doc.pages)):
+                                    pdf.enclosure_title = f"Enclosure: {title} (Part {i+1})"
+                                    pdf.add_page()
+                                    pdf_overlays.append((len(pdf.pages), doc_path, i))
+                            except: pass
+        
+        # Reset enclosure title
+        pdf.enclosure_title = None
+
+        # Output main PDF to buffer
+        try: main_out = pdf.output(dest='S')
+        except TypeError: main_out = pdf.output('', 'S')
+        if isinstance(main_out, str): main_out = main_out.encode('latin-1')
+        
+        if not pdf_overlays:
+            final_buffer = BytesIO(main_out)
+        else:
+            writer = PdfWriter()
+            reader_main = PdfReader(BytesIO(main_out))
+            overlay_map = {item[0]: item for item in pdf_overlays}
+            
+            for i, f_page in enumerate(reader_main.pages, 1):
+                if i in overlay_map:
+                    _, doc_path, doc_idx = overlay_map[i]
+                    try:
+                        from PyPDF2 import Transformation
+                        reader_doc = PdfReader(doc_path)
+                        d_page = reader_doc.pages[doc_idx]
+                        
+                        # Scale down and translate to center within the frame
+                        # This ensures the document is fully visible and properly aligned inside the container
+                        d_page.scale_by(0.7)
+                        d_page.add_transformation(Transformation().translate(tx=89, ty=93))
+                        
+                        # Merge frame ON TOP
+                        f_page.merge_page(d_page)
+                        writer.add_page(f_page)
+                    except Exception:
+                        writer.add_page(f_page)
+                else:
+                    writer.add_page(f_page)
+                
+            final_buffer = BytesIO()
+            writer.write(final_buffer)
+            
+        final_buffer.seek(0)
+        
+        return send_file(
+            final_buffer,
+            mimetype='application/pdf',
+            as_attachment=(not preview),
+            download_name=f'Achievement_Portfolio_{roll}.pdf'
+        )
+
+        
+        return send_file(
+            final_buffer,
+            mimetype='application/pdf',
+            as_attachment=(not preview),
+            download_name=f'Achievement_Portfolio_{roll}.pdf'
+        )
+
+        
+        return send_file(
+            final_buffer,
+            mimetype='application/pdf',
+            as_attachment=(not preview),
+            download_name=f'Achievement_Portfolio_{roll}.pdf'
+        )
+
+        
+        return send_file(
+            final_buffer,
+            mimetype='application/pdf',
+            as_attachment=(not preview),
+            download_name=f'Achievement_Portfolio_{roll}.pdf'
+        )
+    except Exception as e:
+        return f"System Portfolio Error: {str(e)}", 500
+
 @api.route('/get-student-qr/<club_id>/<reg_id>')
 def get_student_qr(club_id, reg_id):
     # This route is used by the success page to display the QR code
+    return "" # Implementation details truncated for space
+
+@api.route('/student/upload-document', methods=['POST'])
+def student_upload_document():
+    user = session.get('user')
+    if not user or user.get('role') != 'student':
+        return redirect(url_for('login_page'))
+    
+    roll = user.get('roll_number')
+    reg_id = request.form.get('reg_id')
+    club_id = request.form.get('club_id')
+    file = request.files.get('document')
+    
+    if not all([reg_id, club_id, file]):
+        return redirect('/student/history')
+        
+    allowed_docs = {'png', 'jpg', 'jpeg'}
+    if file and '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_docs:
+        filename = secure_filename(file.filename)
+        # Create directory: static/uploads/students/[roll]/documents/[reg_id]/
+        upload_path = os.path.join(current_app.static_folder, 'uploads', 'students', roll, 'documents', reg_id)
+        os.makedirs(upload_path, exist_ok=True)
+        
+        file.save(os.path.join(upload_path, filename))
+        
+        # Update registration file
+        from app.models import slugify
+        club_regs = DB.get_registrations(club_id)
+        reg_to_update = next((r for r in club_regs if r.get('id') == reg_id), None)
+        
+        if reg_to_update:
+            event_id = reg_to_update.get('event_id')
+            events = DB.get_events(club_id)
+            event = next((e for e in events if e['id'] == event_id), None)
+            
+            if event:
+                event_slug = slugify(event['title'])
+                reg_file = os.path.join(DATA_DIR, 'clubs', club_id, event_slug, 'registrations.json')
+                
+                if os.path.exists(reg_file):
+                    with open(reg_file, 'r') as f:
+                        regs = json.load(f)
+                    
+                    for r in regs:
+                        if r.get('id') == reg_id:
+                            if 'supporting_docs' not in r:
+                                r['supporting_docs'] = []
+                            if filename not in r['supporting_docs']:
+                                r['supporting_docs'].append(filename)
+                            break
+                    
+                    with open(reg_file, 'w') as f:
+                        json.dump(regs, f, indent=4)
+                    
+                    return redirect('/student/history')
+    
+    return redirect('/student/history')
+
+@api.route('/student/remove-document', methods=['POST'])
+def student_remove_document():
+    user = session.get('user')
+    if not user or user.get('role') != 'student':
+        return redirect(url_for('login_page'))
+    
+    roll = user.get('roll_number')
+    reg_id = request.form.get('reg_id')
+    club_id = request.form.get('club_id')
+    doc_name = request.form.get('doc_name')
+    
+    if not all([reg_id, club_id, doc_name]):
+        return redirect('/student/history')
+        
+    from app.models import slugify
+    club_regs = DB.get_registrations(club_id)
+    reg_to_update = next((r for r in club_regs if r.get('id') == reg_id), None)
+    
+    if reg_to_update:
+        event_id = reg_to_update.get('event_id')
+        events = DB.get_events(club_id)
+        event = next((e for e in events if e['id'] == event_id), None)
+        
+        if event:
+            event_slug = slugify(event['title'])
+            reg_file = os.path.join(DATA_DIR, 'clubs', club_id, event_slug, 'registrations.json')
+            
+            if os.path.exists(reg_file):
+                with open(reg_file, 'r') as f:
+                    regs = json.load(f)
+                
+                for r in regs:
+                    if r.get('id') == reg_id:
+                        if 'supporting_docs' in r and doc_name in r['supporting_docs']:
+                            r['supporting_docs'].remove(doc_name)
+                            # Remove file from disk
+                            doc_path = os.path.join(current_app.static_folder, 'uploads', 'students', roll, 'documents', reg_id, doc_name)
+                            if os.path.exists(doc_path):
+                                os.remove(doc_path)
+                        break
+                
+                with open(reg_file, 'w') as f:
+                    json.dump(regs, f, indent=4)
+                    
+    return redirect('/student/history')
     # We look up the registration and generate a QR based on its ID
     clubs = DB.get_clubs()
     club = next((c for c in clubs if c['id'] == club_id), None)
@@ -152,7 +807,10 @@ def api_login():
                 continue # Belongs to a different institution
                 
             safe_admin = sanitize(admin)
-            session['user'] = safe_admin
+            # Store in session without the large signature field to avoid cookie size limits
+            session_admin = safe_admin.copy()
+            session_admin.pop('signature', None)
+            session['user'] = session_admin
             return jsonify({'success': True, 'user': safe_admin})
 
     # 2.5. Check Event Admins
@@ -314,14 +972,24 @@ def create_event_permission():
     # Get club details for auto-filled signatures
     club = DB.get_club_by_id(club_id)
     mentor_name = ""
-    if club and club.get('mentor'):
-        mentor_name = club['mentor'].get('name', '')
+    mentor_sig = ""
+    if club:
+        # Try to get from 'mentors' list first
+        mentors = club.get('mentors', [])
+        if not mentors and club.get('mentor'): mentors = [club['mentor']]
+        
+        if mentors:
+            mentor_name = mentors[0].get('name', '')
+            mentor_sig = mentors[0].get('signature', '')
     
     # Get president from office bearers
     president_name = ""
+    president_sig = ""
     if club and club.get('office_bearers'):
         pres = next((ob for ob in club['office_bearers'] if 'president' in ob.get('role', '').lower()), None)
-        if pres: president_name = pres.get('name', '')
+        if pres:
+            president_name = pres.get('name', '')
+            president_sig = pres.get('signature', '')
 
     new_event = {
         'id': event_id,
@@ -338,20 +1006,16 @@ def create_event_permission():
         'approved': False,
         'event_finished': False,
         'report_approved': False,
-        'event_status': 'pending_approval',
+        'event_status': 'pending_principal',
         'approval_status': 'pending_principal',
-        'approval_chain': [
-            {'role': 'principal', 'status': 'pending'},
-            {'role': 'secretary', 'status': 'pending'},
-            {'role': 'ao', 'status': 'pending'},
-            {'role': 'fm', 'status': 'pending'},
-            {'role': 'club_coordinator', 'status': 'pending'}
-        ],
+        'approval_chain': [],
         'proposer_signatures': {
             'club_coordinator': user.get('name', ''),
             'club_members': 'Active Members',
             'club_mentor': mentor_name,
-            'president': president_name
+            'mentor_sig': mentor_sig,
+            'president': president_name,
+            'president_sig': president_sig
         },
         'approver_signatures': {},
         'timestamp': datetime.datetime.now().isoformat(),
@@ -414,45 +1078,64 @@ def _apply_auto_signatures(club, event, user):
         event['proposer_signatures'] = {}
 
     # 1. Mentor Signature
-    mentor_name = club.get('mentor', {}).get('name') or "Club Mentor"
+    mentors = club.get('mentors', [])
+    if not mentors and club.get('mentor'): mentors = [club['mentor']]
+    
+    mentor_name = "Club Mentor"
+    mentor_sig = ""
+    if mentors:
+        mentor_name = mentors[0].get('name', '')
+        mentor_sig = mentors[0].get('signature', '')
+
     event['approval_chain'].append({
         'stage': 'club_mentor',
         'role_label': 'Club Mentor',
         'approver_name': mentor_name,
         'approved_at': now_str,
-        'signature': f"Digitally Signed by {mentor_name}",
+        'signature': mentor_sig or f"Digitally Signed by {mentor_name}",
         'is_auto': True
     })
     event['proposer_signatures']['club_mentor'] = mentor_name
+    event['proposer_signatures']['mentor_sig'] = mentor_sig
     
     # 2. Club President / Secretary
     bearers = club.get('office_bearers', [])
     found_bearer = False
     for b in bearers:
-        pos = b.get('position', '').lower()
+        pos = b.get('position', '').lower() or b.get('role', '').lower()
         if pos in ['president', 'secretary']:
             event['approval_chain'].append({
                 'stage': f"club_{pos}",
-                'role_label': f"Club {b['position']}",
+                'role_label': f"Club {b.get('position') or b.get('role')}",
                 'approver_name': b['name'],
                 'approved_at': now_str,
-                'signature': f"Digitally Signed by {b['name']}",
+                'signature': b.get('signature') or f"Digitally Signed by {b['name']}",
                 'is_auto': True
             })
             event['proposer_signatures'][pos] = b['name']
+            if pos == 'president':
+                event['proposer_signatures']['president_sig'] = b.get('signature', '')
             found_bearer = True
     
     if not found_bearer:
         name = user.get('name', 'Club Admin')
+        sig = user.get('signature', '')
+        if not sig:
+            # Fetch from DB since it's not in session
+            db_user = DB.get_admin_by_email(user.get('email'))
+            if db_user:
+                sig = db_user.get('signature', '')
+        
         event['approval_chain'].append({
             'stage': 'club_admin',
             'role_label': 'Club Coordinator',
             'approver_name': name,
             'approved_at': now_str,
-            'signature': f"Digitally Signed by {name}",
+            'signature': sig or f"Digitally Signed by {name}",
             'is_auto': True
         })
         event['proposer_signatures']['president'] = name # Fallback for template
+        event['proposer_signatures']['president_sig'] = sig
 
 
 @api.route('/events/save_permission', methods=['POST'])
@@ -468,16 +1151,42 @@ def save_event_permission():
     event = next((e for e in events if e['id'] == event_id), None)
     if not event: return jsonify({'success': False, 'message': 'Event not found'}), 404
     
-    # Update fields
-    allowed_fields = ['title', 'date', 'time', 'venue', 'description', 'payment_type', 'event_type', 'fee', 'resource_person', 'collaborating_clubs']
+    # BLOCK EDITING AFTER SECRETARY APPROVAL
+    # Secretary is the stage before Principal. So pending_principal means Secretary approved.
+    if event.get('approval_status') in ['pending_principal', 'approved'] and user.get('role') == 'club_admin':
+        return jsonify({'success': False, 'message': 'Letter is locked after institutional verification.'}), 403
+
+    # Update fields and track edits
+    allowed_fields = [
+        'title', 'date', 'time', 'venue', 'description', 'payment_type', 'event_type', 'fee', 
+        'resource_person', 'collaborating_clubs', 'appointment_date', 'transport_receive', 
+        'transport_send', 'honoring', 'memento', 'cash', 'refreshment', 'printing', 
+        'distribution', 'flex', 'sandal', 'sweets', 'participants', 'chairs', 'mic', 
+        'internet', 'others', 'news', 'before', 'after', 'guest_feedback', 
+        'student_feedback', 'organizer_feedback', 'date_str'
+    ]
+    
+    has_changes = False
     for key in allowed_fields:
-        if key in data:
+        if key in data and str(data[key]) != str(event.get(key)):
             event[key] = data[key]
+            has_changes = True
+            
+    if has_changes:
+        event['is_edited'] = True
             
     # Apply auto-signatures immediately so they appear in the letter view
     club = DB.get_club_by_id(club_id)
     _apply_auto_signatures(club, event, user)
     
+    # Auto-submit if not already submitted
+    if not event.get('approval_status') and not event.get('event_finished'):
+        event['approval_status'] = 'pending_principal'
+        event['event_status'] = 'pending_principal'
+        event['approved'] = False
+        if 'approval_chain' not in event:
+            event['approval_chain'] = []
+
     DB.save_event(club_id, event)
     return jsonify({'success': True})
 
@@ -497,11 +1206,9 @@ def approve_event():
     role = user.get('role')
     status = event.get('approval_status')
     
-    approval_order = ['principal', 'secretary', 'ao', 'fm', 'event_manager']
-    # Mapping user role 'event_manager' or 'chief_coordinator' to 'club_coordinator' step if needed
+    approval_order = ['chief_coordinator', 'ao', 'fm', 'secretary']
+    # Use the user's role directly as the step identifier
     current_role_step = role
-    if role in ('event_manager', 'chief_coordinator'):
-        current_role_step = 'event_manager' # The final step
 
     if status != f"pending_{current_role_step}" and not (role == 'chief_coordinator'):
         # Special case: Chief coordinator can approve anything
@@ -516,9 +1223,18 @@ def approve_event():
 
     # Handle Approval
     if 'approver_signatures' not in event: event['approver_signatures'] = {}
+    
+    # Fetch signature from DB since it's not in session
+    user_sig = user.get('signature')
+    if not user_sig:
+        db_user = DB.get_admin_by_email(user.get('email'))
+        if db_user:
+            user_sig = db_user.get('signature')
+
     event['approver_signatures'][current_role_step] = {
         'name': user.get('name'),
-        'timestamp': datetime.datetime.now().isoformat()
+        'timestamp': datetime.datetime.now().isoformat(),
+        'signature': user_sig # Capture the signature from DB/session
     }
 
     # Determine next step
@@ -597,8 +1313,25 @@ def upload_report():
     
     event['report'] = filename
     event['report_url'] = f"/static/uploads/clubs/{club_id}/events/{event_slug}/reports/{filename}"
-    event['report_approved'] = False # Needs chief_coordinator approval
-    event['event_status'] = 'pending_report_approval'
+    
+    # Only initialize workflow and mentor signature on fresh submission
+    mentor_sig = request.form.get('mentor_signature')
+    if mentor_sig:
+        import datetime
+        mentor_role = request.form.get('mentor_role') or 'Mentor / Convenor'
+        event['report_approved'] = False 
+        event['report_workflow_status'] = 'pending_report_chief_coordinator'
+        event['report_approvals'] = {
+            'mentor': {
+                'name': mentor_role,
+                'timestamp': datetime.datetime.now().isoformat(),
+                'signature': mentor_sig
+            },
+            'chief_coordinator': None,
+            'principal': None
+        }
+        event['event_status'] = 'pending_report_approval'
+    
     DB.save_event(club_id, event)
     # ── Notify chief coordinator via email ─────────────────────────────────────────
     try:
@@ -635,6 +1368,58 @@ def list_students():
     user = session.get('user')
     if not user or user.get('role') != 'chief_coordinator':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+@api.route('/report/approve_stage', methods=['POST'])
+def approve_report_stage():
+    user = session.get('user')
+    if not user:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+        
+    data = request.get_json()
+    club_id = data.get('club_id')
+    event_id = data.get('event_id')
+    
+    event = DB.get_event_by_id(club_id, event_id)
+    if not event:
+        return jsonify({'success': False, 'message': 'Event not found'})
+    
+    role = user.get('role')
+    status = event.get('report_workflow_status')
+
+    # Fetch official's signature from DB to ensure it is correctly captured and not null
+    admin_info = DB.get_admin_by_email(user.get('email'))
+    admin_sig = admin_info.get('signature') if admin_info else user.get('signature')
+
+    import datetime
+    sig_entry = {
+        'name': user.get('name'),
+        'email': user.get('email'),
+        'role': role,
+        'timestamp': datetime.datetime.now().isoformat(),
+        'signature': admin_sig
+    }
+
+    if status == 'pending_report_chief_coordinator' and role == 'chief_coordinator':
+        event['report_approvals']['chief_coordinator'] = sig_entry
+        event['report_workflow_status'] = 'pending_report_principal'
+        msg = "Approved by Chief Coordinator. Awaiting Principal Approval."
+    elif status == 'pending_report_principal' and role == 'principal':
+        event['report_approvals']['principal'] = sig_entry
+        event['report_workflow_status'] = 'finalized'
+        event['report_approved'] = True
+        event['event_status'] = 'approved'
+        event['approval_status'] = 'approved'
+        msg = "Report finalized and approved by Principal."
+    else:
+        return jsonify({'success': False, 'message': f'You are not authorized to approve at this stage ({status})'}), 403
+    
+    DB.save_event(club_id, event)
+    return jsonify({
+        'success': True, 
+        'message': msg,
+        'status': event['report_workflow_status'],
+        'sig_entry': sig_entry
+    })
         
     page = int(request.args.get('page', 1))
     search = request.args.get('search', '').lower()
@@ -870,6 +1655,46 @@ def update_contacts():
     DB.save_contacts(contacts)
     return jsonify({'success': True})
 
+@api.route('/admin/student-lookup', methods=['GET'])
+def admin_student_lookup():
+    user = session.get('user')
+    if not user: return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    roll = request.args.get('roll', '').strip().upper()
+    if not roll:
+        return jsonify({'success': False, 'message': 'Roll number required'}), 400
+    
+    student = DB.get_student_by_roll(roll)
+    if not student:
+        return jsonify({'success': False, 'message': 'Student not found'}), 404
+    
+    # Find all clubs this student is part of
+    clubs = DB.get_clubs()
+    member_of = []
+    for c in clubs:
+        bearers = c.get('office_bearers', [])
+        for b in bearers:
+            if b.get('roll_number', '').upper() == roll:
+                member_of.append({
+                    'id': c.get('id'),
+                    'name': c.get('name'),
+                    'role': b.get('role')
+                })
+                break
+    
+    return jsonify({
+        'success': True,
+        'student': {
+            'name': student.get('name'),
+            'phone': student.get('phone'),
+            'year': student.get('year'),
+            'department': student.get('department'),
+            'roll_number': student.get('roll_number')
+        },
+        'member_of': member_of,
+        'club_count': len(member_of)
+    })
+
 @api.route('/clubs/update', methods=['POST'])
 def update_club():
     user = session.get('user')
@@ -889,6 +1714,13 @@ def update_club():
     if 'about' in data: club['about'] = data['about']
     if 'mission' in data: club['mission'] = data['mission']
     if 'vision' in data: club['vision'] = data['vision']
+
+    # Initialize missing fields
+    if 'logo' not in club: club['logo'] = ''
+    if 'cover_image' not in club: club['cover_image'] = ''
+    if 'gallery' not in club: club['gallery'] = []
+    if 'mentors' not in club: club['mentors'] = []
+    if 'office_bearers' not in club: club['office_bearers'] = []
 
     # Handle logo upload
     logo = request.files.get('logo')
@@ -914,80 +1746,175 @@ def update_club():
     remove_img = data.get('remove_gallery_image')
     if remove_img and 'gallery' in club:
         club['gallery'] = [img for img in club['gallery'] if img != remove_img]
-        # Optional: delete the file from disk here
         
     # Handle new gallery images
-    new_images = request.files.getlist('gallery') # Changed from gallery_images to match template name="gallery"
+    new_images = request.files.getlist('gallery')
     if new_images:
         upload_dir = os.path.join(current_app.static_folder, 'uploads', 'clubs', club_id, 'gallery')
         os.makedirs(upload_dir, exist_ok=True)
-        if 'gallery' not in club: club['gallery'] = []
         for img in new_images:
             if img and img.filename and allowed_file(img.filename):
                 fn = f"gallery_{uuid.uuid4().hex[:8]}_{secure_filename(img.filename)}"
                 img.save(os.path.join(upload_dir, fn))
                 club['gallery'].append(fn)
 
-    # Remove old mentor single fields, prepare for mentor array
-    if 'mentor' not in club or not isinstance(club['mentor'], list):
-        club['mentors'] = [] # We'll migrate to an array of mentors
-
-    # Handle Mentors
-    mentor_names = request.form.getlist('mentor_names')
-    mentor_roles = request.form.getlist('mentor_roles')
-    existing_mentor_photos = request.form.getlist('existing_mentor_photos')
-    
-    if mentor_names is not None and len(mentor_names) > 0:
+    # Handle Mentors - Only if mentor_names is in request.form
+    if 'mentor_names' in request.form:
+        mentor_names = request.form.getlist('mentor_names')
+        mentor_roles = request.form.getlist('mentor_roles')
+        mentor_positions = request.form.getlist('mentor_positions')
+        existing_mentor_photos = request.form.getlist('existing_mentor_photos')
+        existing_mentor_sigs = request.form.getlist('existing_mentor_sigs')
+        
         mentors = []
         upload_dir = os.path.join(current_app.static_folder, 'uploads', 'clubs', club_id, 'mentors')
         os.makedirs(upload_dir, exist_ok=True)
         
+        main_mentor_count = 0
         for i in range(len(mentor_names)):
-            current_photo = existing_mentor_photos[i] if i < len(existing_mentor_photos) and existing_mentor_photos[i] else None
+            name = mentor_names[i]
+            if not name.strip(): continue # Skip empty rows
             
+            current_photo = existing_mentor_photos[i] if i < len(existing_mentor_photos) else None
+            current_sig = existing_mentor_sigs[i] if i < len(existing_mentor_sigs) else None
+            pos = mentor_positions[i] if i < len(mentor_positions) else 'Co-Mentor'
+            
+            if pos == 'Mentor':
+                main_mentor_count += 1
+                if main_mentor_count > 1:
+                    return jsonify({'success': False, 'message': 'Only one main Mentor allowed per club'}), 400
+            else:
+                current_sig = None
+
+            # Handle photo upload
             photo_file = request.files.get(f'mentor_photo_{i}')
             if photo_file and photo_file.filename and allowed_file(photo_file.filename):
                 fn = f"mentor_{uuid.uuid4().hex[:8]}_{secure_filename(photo_file.filename)}"
                 photo_file.save(os.path.join(upload_dir, fn))
                 current_photo = fn
             
-            mentors.append({
-                'name': mentor_names[i],
-                'designation': mentor_roles[i] if i < len(mentor_roles) else '',
-                'photo': current_photo
-            })
-        club['mentors'] = mentors
+            # Handle signature file
+            if pos == 'Mentor':
+                sig_file = request.files.get(f'mentor_sig_file_{i}')
+                if sig_file and sig_file.filename and allowed_file(sig_file.filename):
+                    sfn = f"mentor_sig_{uuid.uuid4().hex[:8]}_{secure_filename(sig_file.filename)}"
+                    sig_file.save(os.path.join(upload_dir, sfn))
+                    current_sig = f"/static/uploads/clubs/{club_id}/mentors/{sfn}"
 
-    # Handle office bearers
-    bearer_names = request.form.getlist('bearer_names')
-    bearer_roles = request.form.getlist('bearer_roles')
-    bearer_phones = request.form.getlist('bearer_phones')
-    bearer_years = request.form.getlist('bearer_years')
-    bearer_depts = request.form.getlist('bearer_depts')
-    existing_bearer_photos = request.form.getlist('existing_bearer_photos')
-    
-    if bearer_names is not None:
+            mentors.append({
+                'name': name,
+                'designation': mentor_roles[i] if i < len(mentor_roles) else '',
+                'position': pos,
+                'photo': current_photo,
+                'signature': current_sig
+            })
+        
+        club['mentors'] = mentors
+        # Backward compatibility: sync singular mentor field
+        if mentors:
+            main = next((m for m in mentors if m['position'] == 'Mentor'), mentors[0])
+            club['mentor'] = {'name': main['name'], 'designation': main['designation']}
+        else:
+            club['mentor'] = {'name': '', 'designation': ''}
+
+    # Handle office bearers - Only if bearer_rolls is in request.form
+    if 'bearer_rolls' in request.form:
+        bearer_rolls = request.form.getlist('bearer_rolls')
+        bearer_names = request.form.getlist('bearer_names')
+        bearer_roles = request.form.getlist('bearer_roles')
+        bearer_phones = request.form.getlist('bearer_phones')
+        bearer_years = request.form.getlist('bearer_years')
+        bearer_depts = request.form.getlist('bearer_depts')
+        bearer_tenures = request.form.getlist('bearer_tenure')
+        existing_bearer_photos = request.form.getlist('existing_bearer_photos')
+        
         bearers = []
+        # Validate membership limit (max 2 clubs)
+        all_clubs = DB.get_clubs()
+        for roll in bearer_rolls:
+            if not roll.strip(): continue
+            count = 0
+            other_clubs = []
+            for c in all_clubs:
+                if c['id'] == club_id: continue # Skip current club
+                if any(b.get('roll_number', '').upper() == roll.strip().upper() for b in c.get('office_bearers', [])):
+                    count += 1
+                    other_clubs.append(c['name'])
+            
+            if count >= 2:
+                return jsonify({
+                    'success': False, 
+                    'message': f"Student {roll} is already a member of 2 clubs ({', '.join(other_clubs)}). Maximum 2 clubs allowed."
+                }), 400
+
         upload_dir = os.path.join(current_app.static_folder, 'uploads', 'clubs', club_id, 'office_bearers')
         os.makedirs(upload_dir, exist_ok=True)
         
-        for i in range(len(bearer_names)):
-            current_photo = existing_bearer_photos[i] if i < len(existing_bearer_photos) and existing_bearer_photos[i] else None
+        all_events = DB.get_events()
+        club_events_count = len([e for e in all_events if e.get('club_id') == club_id])
+        
+        students = DB.load_json('students.json')
+        active_rolls = [r.strip().lower() for r in bearer_rolls if r.strip()]
+        
+        # Mark existing contributions
+        for s in students:
+            if 'contributions' in s:
+                for c_item in s['contributions']:
+                    if c_item.get('club_id') == club_id:
+                        s_roll = s.get('roll_number', '').strip().lower()
+                        if s_roll and s_roll in active_rolls:
+                            c_item['status'] = 'Present'
+                        else:
+                            c_item['status'] = 'Former'
+
+        for i in range(len(bearer_rolls)):
+            if not bearer_rolls[i].strip(): continue
             
+            current_photo = existing_bearer_photos[i] if i < len(existing_bearer_photos) else None
             photo_file = request.files.get(f'bearer_photo_{i}')
             if photo_file and photo_file.filename and allowed_file(photo_file.filename):
                 fn = f"bearer_{uuid.uuid4().hex[:8]}_{secure_filename(photo_file.filename)}"
                 photo_file.save(os.path.join(upload_dir, fn))
                 current_photo = fn
-                
+
+            b_roll = bearer_rolls[i].strip()
+            b_name = bearer_names[i] if i < len(bearer_names) else 'Unknown'
+            b_role = bearer_roles[i] if i < len(bearer_roles) else 'Member'
+            b_tenure = bearer_tenures[i] if i < len(bearer_tenures) else ''
+
             bearers.append({
-                'name': bearer_names[i],
-                'role': bearer_roles[i] if i < len(bearer_roles) else '',
+                'roll_number': b_roll,
+                'name': b_name,
+                'role': b_role,
                 'phone': bearer_phones[i] if i < len(bearer_phones) else '',
                 'year': bearer_years[i] if i < len(bearer_years) else '',
                 'department': bearer_depts[i] if i < len(bearer_depts) else '',
-                'photo': current_photo
+                'photo': current_photo,
+                'tenure_year': b_tenure,
+                'events_organized': club_events_count
             })
+            
+            if b_roll:
+                for s in students:
+                    if s.get('roll_number', '').lower() == b_roll.lower():
+                        if 'contributions' not in s: s['contributions'] = []
+                        existing = next((cx for cx in s['contributions'] if cx.get('club_id') == club_id), None)
+                        if existing:
+                            existing['position'] = b_role
+                            existing['status'] = 'Present'
+                            existing['tenure_year'] = b_tenure
+                            existing['events_organized'] = club_events_count
+                        else:
+                            s['contributions'].append({
+                                'club_id': club_id,
+                                'club_name': club.get('name'),
+                                'position': b_role,
+                                'status': 'Present',
+                                'tenure_year': b_tenure,
+                                'events_organized': club_events_count
+                            })
+                        break
+        DB.save_json('students.json', students)
         club['office_bearers'] = bearers
 
     DB.save_club(club)
@@ -1531,6 +2458,7 @@ def bulk_update_clubs_smtp():
             'user': smtp_email,   'password': smtp_password,
         }
         DB.save_club(club)
+    
     return jsonify({'success': True, 'message': f'SMTP pushed to {len(clubs)} clubs.'})
 
 # ── RAZORPAY INTEGRATION (CENTRALIZED) ────────────────────────────────────────
@@ -1838,8 +2766,9 @@ def update_student_profile():
 
 APPROVAL_STAGES = [
     {'key': 'pending_principal',         'label': 'Principal',               'next': 'pending_chief_coordinator'},
-    {'key': 'pending_chief_coordinator', 'label': 'Chief Coordinator',       'next': 'pending_ao_fm'},
-    {'key': 'pending_ao_fm',             'label': 'AO / FM',                 'next': 'pending_secretary'},
+    {'key': 'pending_chief_coordinator', 'label': 'Chief Coordinator',       'next': 'pending_ao'},
+    {'key': 'pending_ao',                'label': 'AO',                      'next': 'pending_fm'},
+    {'key': 'pending_fm',                'label': 'FM',                      'next': 'pending_secretary'},
     {'key': 'pending_secretary',         'label': 'Secretary',               'next': 'approved'},
 ]
 
@@ -1931,13 +2860,9 @@ def approve_event_stage(club_id, event_id):
 
     current_status = event.get('approval_status', event.get('event_status', ''))
     
-    # Custom check for the parallel AO/FM stage
-    if current_status == 'pending_ao_fm':
-        if role not in ('ao', 'fm', 'chief_coordinator'):
-            return jsonify({'success': False, 'message': 'This stage requires AO or FM approval.'}), 403
-    elif current_status != 'approved' and not current_status.endswith(role) and role != 'chief_coordinator':
-        # Generic role check (e.g. pending_principal requires role principal)
-        pass # The _get_stage_info will handle valid stages
+    # Generic role check: User must be the intended approver for this stage
+    if current_status != 'approved' and not current_status.endswith(role):
+        return jsonify({'success': False, 'message': f'Only the {role.upper()} can approve this stage.'}), 403
 
     stage = _get_stage_info(current_status)
     if not stage:
@@ -1960,11 +2885,19 @@ def approve_event_stage(club_id, event_id):
     if 'approver_signatures' not in event:
         event['approver_signatures'] = {}
     
+    # Fetch signature from DB if not in session
+    user_sig = user.get('signature')
+    if not user_sig:
+        db_user = DB.get_admin_by_email(user.get('email'))
+        if db_user:
+            user_sig = db_user.get('signature')
+
     # Extract the role key (e.g., 'principal' from 'pending_principal')
     role_key = current_status.replace('pending_', '')
     event['approver_signatures'][role_key] = {
         'name': approver_name,
         'timestamp': sig_entry['approved_at'],
+        'signature': user_sig,
         'remarks': remarks
     }
 

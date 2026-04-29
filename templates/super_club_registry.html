@@ -1,14 +1,6 @@
 {% extends "layout.html" %}
 
 {% block content %}
-
-
-<div class="dashboard-layout">
-    <!-- Year Navigation Sidebar -->
-    {% include 'sidebar_super.html' %}
-
-    <!-- Main Content -->
-    <main class="main-content">
         <!-- Back Button & Header -->
         <div style="margin-bottom: 2rem;">
             <a href="/super/registry" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 12px; padding: 0.6rem 1.2rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); text-decoration: none; transition: 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='var(--text-muted)'">
@@ -296,6 +288,5 @@ function downloadBearers(year, electionId) {
     showToast(`Office bearer data for ${year} downloaded!`, 'success');
 }
 
-// ZIP downloads are handled server-side via /api/clubs/<id>/download_annual_zip/<year>
+// ZIP downloads are handled server-side via /api/clubs/<id>/download_annual_zip/{% endblock %}
 </script>
-{% endblock %}

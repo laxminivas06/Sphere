@@ -3,47 +3,6 @@
 {% block content %}
 
 
-<div class="dashboard-layout">
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar">
-                <div style="margin-bottom: 2rem;">
-            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏠 Main Menu ⏺️</p>
-        </div>
-
-        <a class="nav-item active" onclick="switchTab('overview', this)">
-            <i class="fas fa-th-large"></i> <span>Overview</span>
-        </a>
-        <a class="nav-item" href="/admin/events/{{ club.id }}">
-            <i class="fas fa-calendar-alt"></i> <span>Event Registry</span>
-        </a>
-        <a class="nav-item" href="/admin/bulk-email/{{ club.id }}">
-            <i class="fas fa-paper-plane"></i> <span>Communications</span>
-        </a>
-        <a class="nav-item" href="/admin/finance/{{ club.id }}">
-            <i class="fas fa-wallet"></i> <span>Finance Hub</span>
-        </a>
-        <a class="nav-item" onclick="switchTab('eventhub', this)">
-            <i class="fas fa-ticket-alt"></i> <span>Event Hub</span>
-        </a>
-        <a class="nav-item" href="/admin/identity/{{ club.id }}">
-            <i class="fas fa-id-card"></i> <span>Club Identity</span>
-        </a>
-        <a class="nav-item" href="/admin/leaderboard/{{ club.id }}">
-            <i class="fas fa-trophy"></i> <span>Top Attendees</span>
-        </a>
-        <a class="nav-item" href="/admin/elections/{{ club.id }}">
-            <i class="fas fa-vote-yea"></i> <span>Elections Zone</span>
-        </a>
-        <a class="nav-item" href="/admin/reports/{{ club.id }}">
-            <i class="fas fa-archive"></i> <span>Academic Year Reports</span>
-        </a>
-        <a class="nav-item" onclick="switchTab('email', this)">
-            <i class="fas fa-envelope"></i> <span>Email / SMTP</span>
-        </a>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="dashboard-content">
 
         <!-- ============ OVERVIEW TAB ============ -->
         <div id="tab-overview" class="tab-pane" style="display: block;">
@@ -105,6 +64,69 @@
                     </a>
                 </div>
             </section>
+
+            <section style="margin-top: 3rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div class="card glass" style="padding: 2rem; border-radius: 28px;">
+                    <h4 style="margin-bottom: 1.5rem; font-size: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;">Department Distribution</h4>
+                    <div style="height: 250px;"><canvas id="clubDeptChart"></canvas></div>
+                </div>
+                <div class="card glass" style="padding: 2rem; border-radius: 28px;">
+                    <h4 style="margin-bottom: 1.5rem; font-size: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;">Year Distribution</h4>
+                    <div style="height: 250px;"><canvas id="clubYearChart"></canvas></div>
+                </div>
+            </section>
+
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const deptData = {{ stats.dept_distribution | tojson }};
+                    const yearData = {{ stats.year_distribution | tojson }};
+                    
+                    const chartColors = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#14b8a6', '#f43f5e'];
+
+                    if (Object.keys(deptData).length > 0) {
+                        new Chart(document.getElementById('clubDeptChart'), {
+                            type: 'doughnut',
+                            data: {
+                                labels: Object.keys(deptData),
+                                datasets: [{
+                                    data: Object.values(deptData),
+                                    backgroundColor: chartColors,
+                                    borderWidth: 0,
+                                    hoverOffset: 15
+                                }]
+                            },
+                            options: {
+                                cutout: '70%',
+                                plugins: {
+                                    legend: { position: 'right', labels: { color: '#94a3b8', font: { family: 'Outfit', size: 11 } } }
+                                }
+                            }
+                        });
+                    }
+
+                    if (Object.keys(yearData).length > 0) {
+                        new Chart(document.getElementById('clubYearChart'), {
+                            type: 'doughnut',
+                            data: {
+                                labels: Object.keys(yearData),
+                                datasets: [{
+                                    data: Object.values(yearData),
+                                    backgroundColor: chartColors,
+                                    borderWidth: 0,
+                                    hoverOffset: 15
+                                }]
+                            },
+                            options: {
+                                cutout: '70%',
+                                plugins: {
+                                    legend: { position: 'right', labels: { color: '#94a3b8', font: { family: 'Outfit', size: 11 } } }
+                                }
+                            }
+                        });
+                    }
+                });
+            </script>
         </div>
 
         <!-- ============ EVENT HUB TAB ============ -->
@@ -331,8 +353,7 @@
             </div>
         </div>
 
-    </main>
-</div>
+
 
 <script>
     function switchTab(tabId, element) {

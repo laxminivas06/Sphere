@@ -1,46 +1,7 @@
 {% extends "layout.html" %}
 
+
 {% block content %}
-
-
-<div class="dashboard-layout">
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar">
-                <div style="margin-bottom: 2rem;">
-            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏠 Main Menu ⏺️</p>
-        </div>
-
-        <a class="nav-item" href="/admin/club/{{ club.id }}">
-            <i class="fas fa-th-large"></i> <span>Overview</span>
-        </a>
-        <a class="nav-item" href="/admin/events/{{ club.id }}">
-            <i class="fas fa-calendar-alt"></i> <span>Event Registry</span>
-        </a>
-        <a class="nav-item active" href="/admin/bulk-email/{{ club.id }}">
-            <i class="fas fa-paper-plane"></i> <span>Communications</span>
-        </a>
-        <a class="nav-item" href="/admin/finance/{{ club.id }}">
-            <i class="fas fa-wallet"></i> <span>Finance Hub</span>
-        </a>
-        <a class="nav-item" href="/admin/club/{{ club.id }}#eventhub">
-            <i class="fas fa-ticket-alt"></i> <span>Event Hub</span>
-        </a>
-        <a class="nav-item" href="/admin/identity/{{ club.id }}">
-            <i class="fas fa-id-card"></i> <span>Club Identity</span>
-        </a>
-        <a class="nav-item" href="/admin/leaderboard/{{ club.id }}">
-            <i class="fas fa-trophy"></i> <span>Top Attendees</span>
-        </a>
-        <a class="nav-item" href="/admin/elections/{{ club.id }}">
-            <i class="fas fa-vote-yea"></i> <span>Elections Zone</span>
-        </a>
-        <a class="nav-item" href="/admin/reports/{{ club.id }}">
-            <i class="fas fa-archive"></i> <span>Academic Year Reports</span>
-        </a>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="main-content">
         <header style="margin-bottom: 3rem;">
             <div style="display:flex; justify-content: space-between; align-items: center;">
                 <div>

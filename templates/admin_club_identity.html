@@ -1,46 +1,7 @@
 {% extends "layout.html" %}
 
+
 {% block content %}
-
-
-<div class="dashboard-layout">
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar">
-                <div style="margin-bottom: 2rem;">
-            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏠 Main Menu ⏺️</p>
-        </div>
-
-        <a class="nav-item" href="/admin/club/{{ club.id }}">
-            <i class="fas fa-th-large"></i> <span>Overview</span>
-        </a>
-        <a class="nav-item" href="/admin/events/{{ club.id }}">
-            <i class="fas fa-calendar-alt"></i> <span>Event Registry</span>
-        </a>
-        <a class="nav-item" href="/admin/bulk-email/{{ club.id }}">
-            <i class="fas fa-paper-plane"></i> <span>Communications</span>
-        </a>
-        <a class="nav-item" href="/admin/finance/{{ club.id }}">
-            <i class="fas fa-wallet"></i> <span>Finance Hub</span>
-        </a>
-        <a class="nav-item" href="/admin/club/{{ club.id }}#eventhub">
-            <i class="fas fa-ticket-alt"></i> <span>Event Hub</span>
-        </a>
-        <a class="nav-item active" href="/admin/identity/{{ club.id }}">
-            <i class="fas fa-id-card"></i> <span>Club Identity</span>
-        </a>
-        <a class="nav-item" href="/admin/leaderboard/{{ club.id }}">
-            <i class="fas fa-trophy"></i> <span>Top Attendees</span>
-        </a>
-        <a class="nav-item" href="/admin/elections/{{ club.id }}">
-            <i class="fas fa-vote-yea"></i> <span>Elections Zone</span>
-        </a>
-        <a class="nav-item" href="/admin/reports/{{ club.id }}">
-            <i class="fas fa-archive"></i> <span>Academic Year Reports</span>
-        </a>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="main-content">
         <header style="margin-bottom: 3rem;">
             <h2 style="font-size: 2rem;">Club <span style="color: var(--primary)">Profile</span></h2>
             <p style="color: var(--text-muted)">Manage how your club appears to the campus community.</p>
@@ -57,8 +18,10 @@
                         style="display: flex; flex-direction: column; align-items: center; gap: 1.5rem; text-align: center; background: rgba(0,0,0,0.2); padding: 2rem; border-radius: 20px;">
                         <div
                             style="width: 120px; height: 120px; border-radius: 50%; overflow: hidden; border: 3px solid var(--primary); background: #000;">
-                            <img id="logoPreview" src="/static/uploads/clubs/{{ club.id }}/details/{{ club.logo }}"
-                                style="width:100%; height:100%; object-fit:cover;">
+                            <img id="logoPreview" 
+                                 src="{% if club.logo %}/static/uploads/clubs/{{ club.id }}/details/{{ club.logo }}{% else %}https://ui-avatars.com/api/?name={{ club.name|urlencode }}&background=6366f1&color=fff&size=128{% endif %}"
+                                 style="width:100%; height:100%; object-fit:cover;"
+                                 onerror="this.src='https://ui-avatars.com/api/?name={{ club.name|urlencode }}&background=6366f1&color=fff&size=128'">
                         </div>
                         <div>
                             <h4 style="margin-bottom: 0.5rem;">Club Logo</h4>
@@ -75,8 +38,9 @@
                         <div
                             style="width: 100%; height: 120px; border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background: #000;">
                             <img id="coverPreview"
-                                src="/static/uploads/clubs/{{ club.id }}/details/{{ club.cover_image }}"
-                                style="width:100%; height:100%; object-fit:cover;">
+                                src="{% if club.cover_image %}/static/uploads/clubs/{{ club.id }}/details/{{ club.cover_image }}{% else %}https://images.unsplash.com/photo-1501183638710-841dd1904471?q=80&w=2070&auto=format&fit=crop{% endif %}"
+                                style="width:100%; height:100%; object-fit:cover;"
+                                onerror="this.src='https://images.unsplash.com/photo-1501183638710-841dd1904471?q=80&w=2070&auto=format&fit=crop'">
                         </div>
                         <div>
                             <h4 style="margin-bottom: 0.5rem;">Cover Image</h4>
@@ -112,21 +76,50 @@
                                 <div
                                     style="width:60px; height:60px; border-radius:50%; background:rgba(255,255,255,0.05); overflow:hidden; border:2px solid var(--primary);">
                                     <img id="mentor-preview-{{ loop.index0 }}"
-                                        src="{% if m.photo %}/static/uploads/clubs/{{ club.id }}/mentors/{{ m.photo }}{% else %}https://ui-avatars.com/api/?name={{ m.name|urlencode }}&background=6366f1&color=fff{% endif %}"
-                                        style="width:100%; height:100%; object-fit:cover;">
+                                        src="{% if m.photo %}/static/uploads/clubs/{{ club.id }}/mentors/{{ m.photo }}{% else %}https://ui-avatars.com/api/?name={{ m.name|urlencode if m.name else 'Mentor' }}&background=6366f1&color=fff{% endif %}"
+                                        style="width:100%; height:100%; object-fit:cover;"
+                                        onerror="this.src='https://ui-avatars.com/api/?name=Mentor&background=6366f1&color=fff'">
                                 </div>
-                                <label class="btn btn-outline"
-                                    style="font-size:0.65rem; padding:0.3rem 0.6rem; cursor:pointer;">
-                                    Change <input type="file" name="mentor_photos" style="display:none;"
-                                        onchange="previewBearer(this, 'mentor-preview-{{ loop.index0 }}')">
-                                </label>
+                                <div>
+                                    <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Profile Photo</label>
+                                    <label class="btn btn-outline"
+                                        style="font-size:0.65rem; padding:0.3rem 0.6rem; cursor:pointer;">
+                                        Change <input type="file" name="mentor_photos" style="display:none;"
+                                            onchange="previewBearer(this, 'mentor-preview-{{ loop.index0 }}')">
+                                    </label>
+                                </div>
                                 <input type="hidden" name="existing_mentor_photos" value="{{ m.photo }}">
                             </div>
                             <div style="display:grid; gap:0.8rem;">
-                                <input type="text" name="mentor_names" placeholder="Name" value="{{ m.name }}"
-                                    required style="font-weight:600;">
-                                <input type="text" name="mentor_roles" placeholder="Designation (e.g. Main Mentor)"
-                                    value="{{ m.designation }}" required>
+                                <div>
+                                    <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Mentor Name</label>
+                                    <input type="text" name="mentor_names" placeholder="Name" value="{{ m.name }}"
+                                        required style="font-weight:600; width:100%;">
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Designation</label>
+                                    <input type="text" name="mentor_roles" placeholder="Designation"
+                                        value="{{ m.designation }}" required style="width:100%;">
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Position</label>
+                                    <select name="mentor_positions" onchange="toggleMentorSig(this)" required style="padding:0.8rem; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; width:100%;">
+                                        <option value="Mentor" {% if m.position == 'Mentor' or not m.position %}selected{% endif %}>Mentor (Main)</option>
+                                        <option value="Co-Mentor" {% if m.position == 'Co-Mentor' %}selected{% endif %}>Co-Mentor</option>
+                                    </select>
+                                </div>
+                                <div class="sig-upload-wrapper" style="display: {{ 'block' if m.position == 'Mentor' or not m.position else 'none' }};">
+                                    <label style="display: block; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.3rem;">Digital Signature</label>
+                                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                        <label class="btn btn-outline" style="font-size:0.6rem; padding:0.3rem 0.5rem; cursor:pointer;">
+                                            Upload Signature <input type="file" name="mentor_sigs" style="display:none;" onchange="previewSig(this, 'mentor-sig-{{ loop.index0 }}')">
+                                        </label>
+                                        <div style="width: 60px; height: 30px; background: white; border-radius: 4px; overflow: hidden;">
+                                            <img id="mentor-sig-{{ loop.index0 }}" src="{{ m.signature if m.signature else '' }}" style="width: 100%; height: 100%; object-fit: contain; display: {{ 'block' if m.signature else 'none' }}">
+                                        </div>
+                                        <input type="hidden" name="existing_mentor_sigs" value="{{ m.signature }}">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -155,32 +148,64 @@
                                 <div
                                     style="width:60px; height:60px; border-radius:50%; background:rgba(255,255,255,0.05); overflow:hidden; border:2px solid var(--primary);">
                                     <img id="bearer-preview-{{ loop.index0 }}"
-                                        src="{% if b.photo %}/static/uploads/clubs/{{ club.id }}/office_bearers/{{ b.photo }}{% else %}https://ui-avatars.com/api/?name={{ b.name|urlencode }}&background=6366f1&color=fff{% endif %}"
-                                        style="width:100%; height:100%; object-fit:cover;">
+                                        src="{% if b.photo %}/static/uploads/clubs/{{ club.id }}/office_bearers/{{ b.photo }}{% else %}https://ui-avatars.com/api/?name={{ b.name|urlencode if b.name else 'Member' }}&background=6366f1&color=fff{% endif %}"
+                                        style="width:100%; height:100%; object-fit:cover;"
+                                        onerror="this.src='https://ui-avatars.com/api/?name=Member&background=6366f1&color=fff'">
                                 </div>
-                                <label class="btn btn-outline"
-                                    style="font-size:0.65rem; padding:0.3rem 0.6rem; cursor:pointer;">
-                                    Change <input type="file" name="bearer_photos" style="display:none;"
-                                        onchange="previewBearer(this, 'bearer-preview-{{ loop.index0 }}')">
-                                </label>
+                                <div>
+                                    <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Profile Photo</label>
+                                    <label class="btn btn-outline"
+                                        style="font-size:0.65rem; padding:0.3rem 0.6rem; cursor:pointer;">
+                                        Change <input type="file" name="bearer_photos" style="display:none;"
+                                            onchange="previewBearer(this, 'bearer-preview-{{ loop.index0 }}')">
+                                    </label>
+                                </div>
                                 <input type="hidden" name="existing_bearer_photos" value="{{ b.photo }}">
                             </div>
                             <div style="display:grid; gap:0.8rem;">
-                                <input type="text" name="bearer_names" placeholder="Name" value="{{ b.name }}"
-                                    required style="font-weight:600;">
-                                <input type="text" name="bearer_roles" placeholder="Role (e.g. Secretary)"
-                                    value="{{ b.role }}" required>
-                                <input type="text" name="bearer_phones" placeholder="Phone" value="{{ b.phone }}"
-                                    required>
-                                <select name="bearer_years" required style="padding:0.8rem; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; width:100%;">
-                                    <option value="" disabled {% if not b.year %}selected{% endif %}>Year of Study</option>
-                                    <option value="1st Year" {% if b.year == '1st Year' %}selected{% endif %}>1st Year</option>
-                                    <option value="2nd Year" {% if b.year == '2nd Year' %}selected{% endif %}>2nd Year</option>
-                                    <option value="3rd Year" {% if b.year == '3rd Year' %}selected{% endif %}>3rd Year</option>
-                                    <option value="4th Year" {% if b.year == '4th Year' %}selected{% endif %}>4th Year</option>
-                                </select>
-                                <input type="text" name="bearer_depts" placeholder="Department / Branch" value="{{ b.department }}"
-                                    required>
+                                <div>
+                                    <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Roll Number</label>
+                                    <input type="text" name="bearer_rolls" placeholder="Roll Number" value="{{ b.roll_number }}"
+                                        onchange="handleRollLookup(this)"
+                                        required style="font-weight:600; font-family: monospace; width:100%;">
+                                    <div class="membership-info" style="font-size:0.65rem; margin-top:0.3rem;"></div>
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Full Name</label>
+                                    <input type="text" name="bearer_names" placeholder="Name" value="{{ b.name }}"
+                                        readonly required style="font-weight:600; width:100%; opacity:0.8;">
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Administrative Role</label>
+                                    <input type="text" name="bearer_roles" placeholder="Role (e.g. Secretary)"
+                                        value="{{ b.role }}" required style="width:100%;">
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Contact Number</label>
+                                    <input type="text" name="bearer_phones" placeholder="Phone" value="{{ b.phone }}"
+                                        readonly required style="width:100%; opacity:0.8;">
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Year of Study</label>
+                                    <select name="bearer_years_display" disabled style="padding:0.8rem; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; width:100%; opacity:0.8;">
+                                        <option value="" disabled {% if not b.year %}selected{% endif %}>Year</option>
+                                        <option value="1st Year" {% if b.year == '1st Year' %}selected{% endif %}>1st Year</option>
+                                        <option value="2nd Year" {% if b.year == '2nd Year' %}selected{% endif %}>2nd Year</option>
+                                        <option value="3rd Year" {% if b.year == '3rd Year' %}selected{% endif %}>3rd Year</option>
+                                        <option value="4th Year" {% if b.year == '4th Year' %}selected{% endif %}>4th Year</option>
+                                    </select>
+                                    <input type="hidden" name="bearer_years" value="{{ b.year }}">
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Department</label>
+                                    <input type="text" name="bearer_depts" placeholder="Department" value="{{ b.department }}"
+                                        readonly required style="width:100%; opacity:0.8;">
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Tenure Year</label>
+                                    <input type="number" name="bearer_tenure" placeholder="e.g. 2026" value="{{ b.tenure_year }}"
+                                        required style="font-weight:600; width:100%;">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -254,11 +279,13 @@
                     style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem;">
                     {% for img in club.gallery %}
                     <div class="gallery-item-wrapper"
-                        style="position: relative; aspect-ratio: 1/1; border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                        style="position: relative; aspect-ratio: 1/1; border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); cursor: pointer;"
+                        onclick="previewFullImage('/static/uploads/clubs/{{ club.id }}/gallery/{{ img }}')">
                         <img src="/static/uploads/clubs/{{ club.id }}/gallery/{{ img }}"
-                            style="width:100%; height:100%; object-fit:cover;">
-                        <button type="button" onclick="removeGalleryImage('{{ img }}')"
-                            style="position:absolute; top:8px; right:8px; background:rgba(239, 68, 68, 0.9); border:none; color:white; width:28px; height:28px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center;">&times;</button>
+                            style="width:100%; height:100%; object-fit:cover;"
+                            onerror="this.parentElement.style.display='none'">
+                        <button type="button" onclick="event.stopPropagation(); removeGalleryImage('{{ img }}')"
+                            style="position:absolute; top:8px; right:8px; background:rgba(239, 68, 68, 0.9); border:none; color:white; width:28px; height:28px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index: 10;">&times;</button>
                     </div>
                     {% endfor %}
                 </div>
@@ -273,6 +300,13 @@
             </div>
         </form>
     </main>
+</div>
+
+<div id="imagePreviewModal"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; justify-content: center; align-items: center; padding:2rem;"
+    onclick="this.style.display='none'">
+    <img id="fullImagePreview" src="" style="max-width: 95%; max-height: 95%; border-radius: 12px; box-shadow: 0 0 40px rgba(0,0,0,0.5);">
+    <button style="position: absolute; top: 2rem; right: 2.5rem; background: none; border: none; color: #fff; font-size: 3rem; cursor: pointer;">&times;</button>
 </div>
 
 <div id="requestBearerModal"
@@ -350,32 +384,51 @@
         const btn = ev.target.querySelector('button[type="submit"]');
         btn.disabled = true; btn.innerText = 'Saving...';
         
-        // Ensure accurate photo mappings for mentors
+        // Ensure accurate photo and signature mappings for mentors
         const mentorCards = ev.target.querySelectorAll('.mentor-card');
         mentorCards.forEach((card, index) => {
-            const fileInput = card.querySelector('input[type="file"]');
-            if (fileInput) fileInput.name = 'mentor_photo_' + index;
+            // Find the photo file input - it might have been renamed already
+            const photoInput = card.querySelector('input[type="file"][name^="mentor_photo"]');
+            if (photoInput) photoInput.name = 'mentor_photo_' + index;
+            
+            const sigInput = card.querySelector('input[type="file"][name^="mentor_sig"]');
+            if (sigInput) sigInput.name = 'mentor_sig_file_' + index;
         });
 
         // Ensure accurate photo mappings for bearers
         const bearerCards = ev.target.querySelectorAll('.bearer-card');
         bearerCards.forEach((card, index) => {
-            const fileInput = card.querySelector('input[type="file"]');
-            if (fileInput) fileInput.name = 'bearer_photo_' + index;
+            const photoInput = card.querySelector('input[type="file"][name^="bearer_photo"]');
+            if (photoInput) photoInput.name = 'bearer_photo_' + index;
         });
 
         const formData = new FormData(ev.target);
         formData.append('id', '{{ club.id }}');
 
-        const csrf = document.querySelector('meta[name="csrf-token"]').content;
-        const res = await fetch('/api/clubs/update', { method: 'POST', headers: { 'X-CSRFToken': csrf }, body: formData });
-        const data = await res.json();
+        try {
+            const csrf = document.querySelector('meta[name="csrf-token"]').content;
+            const res = await fetch('/api/clubs/update', { method: 'POST', headers: { 'X-CSRFToken': csrf }, body: formData });
+            
+            if (!res.ok) {
+                if (res.status === 413) {
+                    throw new Error("Files too large. Please upload smaller images.");
+                }
+                const errText = await res.text();
+                console.error("Server error:", errText);
+                throw new Error(`Server responded with status ${res.status}`);
+            }
 
-        if (data.success) {
-            alert('Club settings updated successfully!');
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            alert('Update failed');
+            const data = await res.json();
+
+            if (data.success) {
+                alert('Club settings updated successfully!');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                alert(data.message || 'Update failed');
+                btn.disabled = false; btn.innerText = 'Save Profile Updates';
+            }
+        } catch (err) {
+            alert('Error updating club identity: ' + err.message);
             btn.disabled = false; btn.innerText = 'Save Profile Updates';
         }
     };
@@ -413,6 +466,73 @@
         if (res.ok) location.reload();
     }
 
+    function previewSig(input, targetId) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById(targetId);
+                img.src = e.target.result;
+                img.style.display = 'block';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function toggleMentorSig(select) {
+        const wrapper = select.parentElement.parentElement.querySelector('.sig-upload-wrapper');
+        if (select.value === 'Mentor') {
+            wrapper.style.display = 'block';
+        } else {
+            wrapper.style.display = 'none';
+        }
+    }
+
+    async function handleRollLookup(input) {
+        const roll = input.value.trim();
+        if (!roll) return;
+
+        const card = input.closest('.bearer-card');
+        const infoDiv = card.querySelector('.membership-info');
+        const nameInput = card.querySelector('input[name="bearer_names"]');
+        const phoneInput = card.querySelector('input[name="bearer_phones"]');
+        const deptInput = card.querySelector('input[name="bearer_depts"]');
+        const yearSelect = card.querySelector('select[name="bearer_years_display"]');
+        const yearHidden = card.querySelector('input[type="hidden"][name="bearer_years"]');
+
+        infoDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+        
+        try {
+            const res = await fetch(`/api/admin/student-lookup?roll=${roll}`);
+            const data = await res.json();
+
+            if (data.success) {
+                nameInput.value = data.student.name;
+                phoneInput.value = data.student.phone;
+                deptInput.value = data.student.department;
+                if (yearSelect) yearSelect.value = data.student.year;
+                if (yearHidden) yearHidden.value = data.student.year;
+
+                if (data.club_count > 0) {
+                    const clubNames = data.member_of.map(c => c.name).join(', ');
+                    infoDiv.innerHTML = `<span style="color: #fbbf24;"><i class="fas fa-exclamation-triangle"></i> Member of: ${clubNames} (${data.club_count}/2)</span>`;
+                    if (data.club_count >= 2) {
+                        infoDiv.innerHTML = `<span style="color: #ef4444;"><i class="fas fa-times-circle"></i> Max clubs reached (${data.club_count}/2)</span>`;
+                        alert(`Student ${roll} is already in ${data.club_count} clubs. They cannot join another.`);
+                    }
+                } else {
+                    infoDiv.innerHTML = '<span style="color: #10b981;"><i class="fas fa-check-circle"></i> Eligible for joining</span>';
+                }
+            } else {
+                infoDiv.innerHTML = '<span style="color: #ef4444;"><i class="fas fa-times-circle"></i> Student not found</span>';
+                nameInput.value = '';
+                phoneInput.value = '';
+                deptInput.value = '';
+            }
+        } catch (err) {
+            infoDiv.innerHTML = '<span style="color: #ef4444;">Lookup failed</span>';
+        }
+    }
+
     function addBearer() {
         const list = document.getElementById('bearersList');
         const idx = 'new_' + Date.now();
@@ -426,23 +546,51 @@
                     <div style="width:60px; height:60px; border-radius:50%; background:rgba(255,255,255,0.05); overflow:hidden; border:2px solid var(--primary);">
                         <img id="bearer-preview-${idx}" src="https://ui-avatars.com/api/?name=New&background=6366f1&color=fff" style="width:100%; height:100%; object-fit:cover;">
                     </div>
-                    <label class="btn btn-outline" style="font-size:0.65rem; padding:0.3rem 0.6rem; cursor:pointer;">
-                        Add Photo <input type="file" name="bearer_photos" style="display:none;" onchange="previewBearer(this, 'bearer-preview-${idx}')">
-                    </label>
+                    <div>
+                        <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Profile Photo</label>
+                        <label class="btn btn-outline" style="font-size:0.65rem; padding:0.3rem 0.6rem; cursor:pointer;">
+                            Add Photo <input type="file" name="bearer_photos" style="display:none;" onchange="previewBearer(this, 'bearer-preview-${idx}')">
+                        </label>
+                    </div>
                     <input type="hidden" name="existing_bearer_photos" value="">
                 </div>
                 <div style="display:grid; gap:0.8rem;">
-                    <input type="text" name="bearer_names" placeholder="Name" required style="font-weight:600;">
-                    <input type="text" name="bearer_roles" placeholder="Role" required>
-                    <input type="text" name="bearer_phones" placeholder="Phone" required>
-                    <select name="bearer_years" required style="padding:0.8rem; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; width:100%;">
-                        <option value="" disabled selected>Year of Study</option>
-                        <option value="1st Year">1st Year</option>
-                        <option value="2nd Year">2nd Year</option>
-                        <option value="3rd Year">3rd Year</option>
-                        <option value="4th Year">4th Year</option>
-                    </select>
-                    <input type="text" name="bearer_depts" placeholder="Department / Branch" required>
+                    <div>
+                        <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Roll Number</label>
+                        <input type="text" name="bearer_rolls" placeholder="Enter Roll Number" onchange="handleRollLookup(this)" required style="font-weight:600; font-family: monospace; width:100%;">
+                        <div class="membership-info" style="font-size:0.65rem; margin-top:0.3rem;"></div>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Full Name</label>
+                        <input type="text" name="bearer_names" placeholder="Name" readonly required style="font-weight:600; width:100%; opacity:0.8;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Administrative Role</label>
+                        <input type="text" name="bearer_roles" placeholder="Role (e.g. President)" required style="width:100%;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Contact Number</label>
+                        <input type="text" name="bearer_phones" placeholder="Phone" readonly required style="width:100%; opacity:0.8;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Year of Study</label>
+                        <select name="bearer_years_display" disabled style="padding:0.8rem; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; width:100%; opacity:0.8;">
+                            <option value="" disabled selected>Year</option>
+                            <option value="1st Year">1st Year</option>
+                            <option value="2nd Year">2nd Year</option>
+                            <option value="3rd Year">3rd Year</option>
+                            <option value="4th Year">4th Year</option>
+                        </select>
+                        <input type="hidden" name="bearer_years" value="">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Department</label>
+                        <input type="text" name="bearer_depts" placeholder="Department" readonly required style="width:100%; opacity:0.8;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Tenure Year</label>
+                        <input type="number" name="bearer_tenure" placeholder="e.g. 2026" required style="font-weight:600; width:100%;">
+                    </div>
                 </div>
             </div>
         `;
@@ -462,18 +610,51 @@
                     <div style="width:60px; height:60px; border-radius:50%; background:rgba(255,255,255,0.05); overflow:hidden; border:2px solid var(--primary);">
                         <img id="mentor-preview-${idx}" src="https://ui-avatars.com/api/?name=New&background=6366f1&color=fff" style="width:100%; height:100%; object-fit:cover;">
                     </div>
-                    <label class="btn btn-outline" style="font-size:0.65rem; padding:0.3rem 0.6rem; cursor:pointer;">
-                        Add Photo <input type="file" name="mentor_photos" style="display:none;" onchange="previewBearer(this, 'mentor-preview-${idx}')">
-                    </label>
+                    <div>
+                        <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Profile Photo</label>
+                        <label class="btn btn-outline" style="font-size:0.65rem; padding:0.3rem 0.6rem; cursor:pointer;">
+                            Add Photo <input type="file" name="mentor_photos" style="display:none;" onchange="previewBearer(this, 'mentor-preview-${idx}')">
+                        </label>
+                    </div>
                     <input type="hidden" name="existing_mentor_photos" value="">
                 </div>
                 <div style="display:grid; gap:0.8rem;">
-                    <input type="text" name="mentor_names" placeholder="Name" required style="font-weight:600;">
-                    <input type="text" name="mentor_roles" placeholder="Designation (e.g. Main Mentor)" required>
+                    <div>
+                        <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Mentor Name</label>
+                        <input type="text" name="mentor_names" placeholder="Name" required style="font-weight:600; width:100%;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Designation</label>
+                        <input type="text" name="mentor_roles" placeholder="Designation" required style="width:100%;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem;">Position</label>
+                        <select name="mentor_positions" onchange="toggleMentorSig(this)" required style="padding:0.8rem; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; width:100%;">
+                            <option value="Mentor" selected>Mentor (Main)</option>
+                            <option value="Co-Mentor">Co-Mentor</option>
+                        </select>
+                    </div>
+                    <div class="sig-upload-wrapper">
+                        <label style="display: block; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.3rem;">Digital Signature</label>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <label class="btn btn-outline" style="font-size:0.6rem; padding:0.3rem 0.5rem; cursor:pointer;">
+                                Upload Signature <input type="file" name="mentor_sigs" style="display:none;" onchange="previewSig(this, 'mentor-sig-${idx}')">
+                            </label>
+                            <div style="width: 60px; height: 30px; background: white; border-radius: 4px; overflow: hidden;">
+                                <img id="mentor-sig-${idx}" src="" style="width: 100%; height: 100%; object-fit: contain; display: none">
+                            </div>
+                            <input type="hidden" name="existing_mentor_sigs" value="">
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
         list.appendChild(div);
+    }
+    function previewFullImage(src) {
+        const modal = document.getElementById('imagePreviewModal');
+        document.getElementById('fullImagePreview').src = src;
+        modal.style.display = 'flex';
     }
 </script>
 {% endblock %}

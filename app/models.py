@@ -66,6 +66,11 @@ class DB:
         DB.save_json('admins.json', admins)
 
     @staticmethod
+    def get_admin_by_role(role):
+        admins = DB.get_admins()
+        return next((a for a in admins if a.get('role') == role), None)
+
+    @staticmethod
     def get_admin_by_email(email):
         admins = DB.get_admins()
         return next((a for a in admins if a.get('email') == email), None)
@@ -343,13 +348,23 @@ class DB:
                 
             total_revenue += event_revenue
                         
+        dept_dist = {}
+        year_dist = {}
+        for r in regs:
+            d = r.get('dept') or r.get('user_dept') or 'N/A'
+            y = r.get('year') or r.get('user_year') or 'N/A'
+            dept_dist[d] = dept_dist.get(d, 0) + 1
+            year_dist[y] = year_dist.get(y, 0) + 1
+
         return {
             "total_events": len(events),
             "completed_events": completed_events,
             "total_registrations": len(regs),
             "total_revenue": total_revenue,
             "total_spent": total_spent,
-            "net_balance": total_revenue - total_spent
+            "net_balance": total_revenue - total_spent,
+            "dept_distribution": dept_dist,
+            "year_distribution": year_dist
         }
 
     @staticmethod

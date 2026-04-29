@@ -43,9 +43,14 @@
         <div class="card" style="padding: 0; overflow: hidden;">
             <div style="padding: 1.5rem 2rem; background: var(--surface); border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                 <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--navy); margin: 0;">Participation Timeline</h2>
-                <button class="btn btn-outline" style="padding: 0.5rem 1rem;" onclick="window.print()">
-                    <i class="fas fa-download"></i> Export History
-                </button>
+                <div style="display: flex; gap: 0.75rem;">
+                    <a href="/api/student/export-portfolio?preview=true" target="_blank" class="btn btn-outline" style="padding: 0.6rem 1.25rem;">
+                        <i class="fas fa-eye"></i> Preview Portfolio
+                    </a>
+                    <a href="/api/student/export-portfolio" class="btn btn-navy" style="padding: 0.6rem 1.25rem;">
+                        <i class="fas fa-download"></i> Download Portfolio
+                    </a>
+                </div>
             </div>
 
             <div class="table-container">
@@ -55,7 +60,8 @@
                             <th>Event & Category</th>
                             <th>Club</th>
                             <th>Date</th>
-                            <th>Amount</th>
+                            <th>Learning & Achievements</th>
+                            <th>Supporting Docs</th>
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -63,13 +69,50 @@
                         {% if registrations %}
                             {% for r in registrations %}
                             <tr>
-                                <td>
+                                <td style="min-width: 180px;">
                                     <div style="font-weight: 700; color: var(--navy); margin-bottom: 0.25rem;">{{ r.event_title }}</div>
                                     <span class="badge badge-navy">{{ r.type }}</span>
                                 </td>
                                 <td style="color: var(--text-secondary); font-weight: 500;">{{ r.club_name }}</td>
                                 <td>{{ r.date }}</td>
-                                <td style="font-weight: 700; color: var(--navy);">₹{{ r.fee }}</td>
+                                <td style="min-width: 250px;">
+                                    <div class="achievement-box">
+                                        <textarea class="achievement-input" 
+                                                  placeholder="What did you learn or achieve?"
+                                                  onblur="saveAchievement('{{ r.club_id }}', '{{ r.id }}', this.value)">{{ r.achievement_note or '' }}</textarea>
+                                        <div class="save-status"></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                                        {% if r.supporting_docs %}
+                                            {% for doc in r.supporting_docs %}
+                                                <div style="position: relative; display: inline-block;">
+                                                    <a href="/static/uploads/students/{{ user.roll_number }}/documents/{{ r.id }}/{{ doc }}" target="_blank" class="doc-pill" title="{{ doc }}">
+                                                        <i class="fas fa-file-alt"></i>
+                                                    </a>
+                                                    <form action="/api/student/remove-document" method="POST" style="position: absolute; top: -5px; right: -5px;">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                        <input type="hidden" name="reg_id" value="{{ r.id }}">
+                                                        <input type="hidden" name="club_id" value="{{ r.club_id }}">
+                                                        <input type="hidden" name="doc_name" value="{{ doc }}">
+                                                        <button type="submit" class="btn btn-icon-only" style="width: 16px; height: 16px; background: var(--danger); color: white; border-radius: 50%; font-size: 8px; border: none;" title="Remove document">✕</button>
+                                                    </form>
+                                                </div>
+                                            {% endfor %}
+                                        {% endif %}
+                                        
+                                        <form class="upload-doc-form" action="/api/student/upload-document" method="POST" enctype="multipart/form-data">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="reg_id" value="{{ r.id }}">
+                                            <input type="hidden" name="club_id" value="{{ r.club_id }}">
+                                            <input type="file" name="document" class="doc-input" accept=".png,.jpg,.jpeg" style="display: none;" onchange="this.form.submit()">
+                                            <button type="button" class="btn btn-icon-only btn-outline" onclick="this.previousElementSibling.click()" title="Upload Image (PNG/JPG)">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
                                 <td>
                                     {% if r.payment_verified %}
                                         <span class="badge badge-success">
@@ -85,7 +128,7 @@
                             {% endfor %}
                         {% else %}
                             <tr>
-                                <td colspan="5" style="padding: 5rem 2rem; text-align: center; color: var(--text-muted);">
+                                <td colspan="6" style="padding: 5rem 2rem; text-align: center; color: var(--text-muted);">
                                     <i class="fas fa-history" style="font-size: 3rem; margin-bottom: 1.5rem; opacity: 0.1;"></i>
                                     <p>No event history found yet. Start registering for exciting events!</p>
                                     <a href="/" class="btn btn-navy" style="margin-top: 1.5rem;">Browse Events</a>
@@ -107,6 +150,15 @@
                                 </div>
                                 <div style="font-weight: 800; color: var(--navy);">₹{{ r.fee }}</div>
                             </div>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <div style="text-transform: uppercase; font-size: 0.65rem; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Learning & Achievements</div>
+                                <textarea class="achievement-input" 
+                                          style="min-height: 80px;"
+                                          placeholder="What did you learn or achieve?"
+                                          onblur="saveAchievement('{{ r.club_id }}', '{{ r.id }}', this.value)">{{ r.achievement_note or '' }}</textarea>
+                            </div>
+
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
                                 <div>
                                     <div style="text-transform: uppercase; font-size: 0.65rem; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Club</div>
@@ -117,12 +169,42 @@
                                     <div style="font-weight: 600;">{{ r.date }}</div>
                                 </div>
                             </div>
-                            <div style="border-top: 1px solid var(--border-light); padding-top: 0.875rem;">
-                                {% if r.payment_verified %}
-                                    <span class="badge badge-success" style="width: 100%; justify-content: center;">Confirmed</span>
-                                {% else %}
-                                    <span class="badge badge-warning" style="width: 100%; justify-content: center;">Pending Verification</span>
-                                {% endif %}
+                            <div style="border-top: 1px solid var(--border-light); padding-top: 0.875rem; display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    {% if r.payment_verified %}
+                                        <span class="badge badge-success">Confirmed</span>
+                                    {% else %}
+                                        <span class="badge badge-warning">Pending Verification</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    {% if r.supporting_docs %}
+                                        {% for doc in r.supporting_docs %}
+                                            <div style="position: relative; display: inline-block;">
+                                                <a href="/static/uploads/students/{{ user.roll_number }}/documents/{{ r.id }}/{{ doc }}" target="_blank" class="doc-pill">
+                                                    <i class="fas fa-file-alt"></i>
+                                                </a>
+                                                <form action="/api/student/remove-document" method="POST" style="position: absolute; top: -5px; right: -5px;">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <input type="hidden" name="reg_id" value="{{ r.id }}">
+                                                    <input type="hidden" name="club_id" value="{{ r.club_id }}">
+                                                    <input type="hidden" name="doc_name" value="{{ doc }}">
+                                                    <button type="submit" class="btn btn-icon-only" style="width: 16px; height: 16px; background: var(--danger); color: white; border-radius: 50%; font-size: 8px; border: none;">✕</button>
+                                                </form>
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                    <button type="button" class="btn btn-icon-only btn-outline" onclick="this.parentElement.nextElementSibling.querySelector('.doc-input').click()">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <form class="upload-doc-form" action="/api/student/upload-document" method="POST" enctype="multipart/form-data" style="display: none;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="reg_id" value="{{ r.id }}">
+                                    <input type="hidden" name="club_id" value="{{ r.club_id }}">
+                                    <input type="file" name="document" class="doc-input" accept=".png,.jpg,.jpeg" onchange="this.form.submit()">
+                                </form>
                             </div>
                         </div>
                         {% endfor %}
@@ -130,10 +212,104 @@
                 </div>
             </div>
         </div>
+
     </div>
 </main>
+<script>
+function saveAchievement(clubId, regId, note) {
+    const statusDiv = event.target.parentElement.querySelector('.save-status');
+    if (statusDiv) statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    
+    fetch('/api/student/save-achievement', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            club_id: clubId,
+            reg_id: regId,
+            note: note
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (statusDiv) {
+                statusDiv.innerHTML = '<i class="fas fa-check-circle" style="color: var(--success);"></i> Saved';
+                setTimeout(() => statusDiv.innerHTML = '', 2000);
+            }
+        } else {
+            alert('Failed to save achievement note');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (statusDiv) statusDiv.innerHTML = '<i class="fas fa-exclamation-circle" style="color: var(--danger);"></i> Error';
+    });
+}
+</script>
 
 <style>
+    .achievement-box {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+    }
+    .achievement-input {
+        width: 100%;
+        min-height: 60px;
+        padding: 0.75rem;
+        border: 1px solid var(--border-mid);
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-family: inherit;
+        resize: vertical;
+        transition: all 0.2s ease;
+        background: var(--surface-2);
+    }
+    .achievement-input:focus {
+        outline: none;
+        border-color: var(--navy-light);
+        background: var(--white);
+        box-shadow: 0 0 0 3px rgba(32, 43, 129, 0.1);
+    }
+    .save-status {
+        position: absolute;
+        bottom: -18px;
+        right: 0;
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--text-muted);
+    }
+
+    .doc-pill {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: var(--surface-2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--navy);
+        border: 1px solid var(--border-light);
+        transition: all 0.2s ease;
+    }
+    .doc-pill:hover {
+        background: var(--navy);
+        color: white;
+        transform: translateY(-2px);
+    }
+    .btn-icon-only {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+    }
+
     .stat-card-premium {
         background: var(--white);
         border: 1px solid var(--border-light);

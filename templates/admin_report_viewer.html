@@ -159,9 +159,17 @@
     </div>
 
     <!-- Download button -->
-    <a href="{{ report_url }}" download="{{ report_filename }}" class="rv-dl-btn">
-      &#8595; Download Report
-    </a>
+    <div style="display: flex; gap: 0.75rem;">
+      {% if (event.report_workflow_status == 'pending_report_chief_coordinator' and session.user.role == 'chief_coordinator') or 
+            (event.report_workflow_status == 'pending_report_principal' and session.user.role == 'principal') %}
+      <a href="/admin/generate-report/{{ club.id }}/{{ event.id }}" class="rv-dl-btn" style="background: linear-gradient(135deg, #10b981, #059669);">
+        <i class="fas fa-file-signature"></i> Sign & Approve Document
+      </a>
+      {% endif %}
+      <a href="{{ report_url }}" download="{{ report_filename }}" class="rv-dl-btn">
+        &#8595; Download Report
+      </a>
+    </div>
   </div>
 
   <!-- Viewer -->

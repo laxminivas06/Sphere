@@ -1,29 +1,103 @@
+{% if not club %}
 <aside class="sidebar">
-    <div style="margin-bottom: 2rem;">
-        <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏠 Club Panel</p>
-        <a class="nav-item active" onclick="showTab('events', this)">
-            <i class="fas fa-calendar-alt"></i> <span>Events</span>
+    <div style="padding: 2rem; color: var(--text-muted); font-style: italic;">
+        No club context found.
+    </div>
+</aside>
+{% else %}
+<aside class="sidebar">
+    <div class="em-nav-group" style="margin-bottom:1.5rem;">
+        <p class="sidebar-label">🏠 Main Menu ⏺️</p>
+        <a href="/admin/club/{{ club.id }}" class="nav-item {% if request.path == '/admin/club/' ~ club.id %}active{% endif %}">
+            <i class="fas fa-th-large"></i> <span>Overview</span>
         </a>
-        <a class="nav-item" onclick="showTab('registrations', this)">
-            <i class="fas fa-users"></i> <span>Registrations</span>
+        <a href="/scanner" class="nav-item">
+            <i class="fas fa-qrcode"></i> <span>Launch Scanner</span>
         </a>
-        <a class="nav-item" onclick="showTab('attendance', this)">
-            <i class="fas fa-qrcode"></i> <span>Attendance Logs</span>
+        <a href="/admin/events/{{ club.id }}" class="nav-item {% if request.path == '/admin/events/' ~ club.id %}active{% endif %}">
+            <i class="fas fa-calendar-alt"></i> <span>Event Registry</span>
         </a>
-        <a class="nav-item" onclick="showTab('clubs', this)">
-            <i class="fas fa-th-large"></i> <span>My Club</span>
+        <a href="/admin/bulk-email/{{ club.id }}" class="nav-item {% if request.path == '/admin/bulk-email/' ~ club.id %}active{% endif %}">
+            <i class="fas fa-paper-plane"></i> <span>Communications</span>
         </a>
-        <a class="nav-item" onclick="showTab('reports', this)">
-            <i class="fas fa-archive"></i> <span>Reports</span>
+        <a href="/admin/finance/{{ club.id }}" class="nav-item {% if request.path == '/admin/finance/' ~ club.id %}active{% endif %}">
+            <i class="fas fa-wallet"></i> <span>Finance Hub</span>
         </a>
-        <a class="nav-item" onclick="showTab('email', this)">
+    </div>
+
+    <div class="em-nav-group" style="margin-bottom:1.5rem;">
+        <p class="sidebar-label">🏛️ Governance</p>
+        <a href="/admin/club/{{ club.id }}#eventhub" class="nav-item">
+            <i class="fas fa-ticket-alt"></i> <span>Event Hub</span>
+        </a>
+        <a href="/admin/identity/{{ club.id }}" class="nav-item {% if request.path == '/admin/identity/' ~ club.id %}active{% endif %}">
+            <i class="fas fa-id-card"></i> <span>Club Identity</span>
+        </a>
+        <a href="/admin/leaderboard/{{ club.id }}" class="nav-item {% if request.path == '/admin/leaderboard/' ~ club.id %}active{% endif %}">
+            <i class="fas fa-trophy"></i> <span>Top Attendees</span>
+        </a>
+        <a href="/admin/elections/{{ club.id }}" class="nav-item {% if request.path == '/admin/elections/' ~ club.id %}active{% endif %}">
+            <i class="fas fa-vote-yea"></i> <span>Elections Zone</span>
+        </a>
+        <a href="/admin/signature-settings" class="nav-item {% if request.path == '/admin/signature-settings' %}active{% endif %}">
+            <i class="fas fa-file-signature"></i> <span>Digital Signature</span>
+        </a>
+    </div>
+
+    <div class="em-nav-group" style="margin-bottom:1.5rem;">
+        <p class="sidebar-label">📚 Compliance</p>
+        <a href="/admin/reports/{{ club.id }}" class="nav-item {% if request.path == '/admin/reports/' ~ club.id %}active{% endif %}">
+            <i class="fas fa-archive"></i> <span>Academic Reports</span>
+        </a>
+        <a href="/admin/club/{{ club.id }}#email" class="nav-item">
             <i class="fas fa-envelope"></i> <span>Email / SMTP</span>
         </a>
     </div>
 
-    <div style="margin-top: auto;">
-        <a href="/" class="nav-item">
-            <i class="fas fa-home"></i> <span>Back to Site</span>
-        </a>
-    </div>
 </aside>
+
+<style>
+/* Synchronize styles with global admin design system */
+.sidebar-label {
+    font-size: 0.75rem; 
+    text-transform: uppercase; 
+    letter-spacing: 0.15rem; 
+    color: var(--primary); 
+    margin-left: 1rem; 
+    margin-bottom: 1rem; 
+    font-weight: 700;
+}
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1.25rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    margin-bottom: 0.25rem;
+    border: 1px solid transparent;
+}
+.nav-item:hover {
+    background: var(--surface-2);
+    color: var(--primary);
+    transform: translateX(4px);
+}
+.nav-item.active {
+    background: var(--primary-light);
+    color: var(--primary);
+    border-color: var(--primary-border);
+}
+.nav-item i {
+    width: 20px;
+    text-align: center;
+    font-size: 1rem;
+}
+@media (max-width: 900px) {
+    .sidebar { display: none !important; }
+}
+</style>
+{% endif %}

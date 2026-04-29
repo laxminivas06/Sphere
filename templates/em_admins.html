@@ -1,0 +1,100 @@
+{% extends "em_layout.html" %}
+{% block em_content %}
+<div id="tab-admins" class="tab-pane active">
+  <div class="section-header">
+    <h2>Event Admins ({{ em_admins|length }})</h2>
+    <button class="btn-sm btn-sm-primary" onclick="openModal('createAdminModal')" style="padding:.65rem 1.25rem;"><i class="fas fa-plus"></i> Add Admin</button>
+  </div>
+  <div style="padding:.85rem 1.25rem;background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15);border-radius:14px;font-size:.82rem;color:var(--em-indigo);margin-bottom:1.5rem;">
+    <i class="fas fa-info-circle" style="margin-right:.5rem;"></i>
+    Event admins have separate login credentials. They can view registrations, scan QR codes at the entrance, and manage their assigned events. All payments must be made online via the gateway.
+  </div>
+  {% if em_admins %}
+  {% for a in em_admins %}
+  <div class="event-row">
+    <div style="width:44px;height:44px;border-radius:12px;background:rgba(20,184,166,.15);display:flex;align-items:center;justify-content:center;color:var(--em-teal);font-size:1.1rem;flex-shrink:0;"><i class="fas fa-user-shield"></i></div>
+    <div class="event-row-info">
+      <div class="event-row-title">{{ a.name }}</div>
+      <div class="event-row-meta"><span>{{ a.email }}</span> <span>{{ a.assigned_events|length }} events assigned</span></div>
+    </div>
+    <div class="event-actions">
+      {% if a.assigned_events|length == 0 %}
+      <button class="btn-sm btn-sm-primary" onclick="openAssignModal('{{ a.id }}','{{ a.name }}',{{ a.assigned_events|tojson|safe }})"><i class="fas fa-tasks"></i> Assign Event</button>
+      {% else %}
+      <button class="btn-sm btn-sm-primary" onclick="openAssignModal('{{ a.id }}','{{ a.name }}',{{ a.assigned_events|tojson|safe }})"><i class="fas fa-exchange-alt"></i> Reassign</button>
+      {% endif %}
+      <button class="btn-sm btn-sm-danger" onclick="deleteAdmin('{{ a.id }}','{{ a.name }}')"><i class="fas fa-trash"></i></button>
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+  <div style="text-align:center;padding:3rem;color:var(--text-muted);border:2px dashed rgba(255,255,255,.07);border-radius:16px;">No event admins created yet. Click "Add Admin" to create one.</div>
+  {% endif %}
+</div>
+
+<!-- Create Admin Modal -->
+<div id="createAdminModal" class="em-modal">
+  <div class="em-modal-box">
+    <h3>Add Event Admin</h3>
+    <form id="createAdminForm" class="form-em">
+      <div class="form-group-em"><label>Full Name</label><input type="text" name="name" required></div>
+      <div class="form-group-em"><label>Email Address</label><input type="email" name="email" required></div>
+      <div class="form-group-em"><label>Password</label><input type="password" name="password" required></div>
+      <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1rem;">
+        <button type="button" class="btn-sm" onclick="closeModal('createAdminModal')">Cancel</button>
+        <button type="submit" class="btn-sm btn-sm-primary" style="padding:.75rem 2rem;">Add Admin</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Assign Event Modal -->
+<div id="assignModal" class="em-modal">
+  <div class="em-modal-box">
+    <h3>Assign Event to <span id="assignAdminName" style="color:var(--em-indigo);"></span></h3>
+    <form id="assignForm" class="form-em">
+      <input type="hidden" name="admin_id" id="assignAdminId">
+      <div class="form-group-em">
+        <label>Select Event</label>
+        <select name="event_id" required>
+          <option value="">— Select an active event —</option>
+          {% for ev in all_events %}{% if ev.status == 'active' %}<option value="{{ ev.id }}">{{ ev.title }}</option>{% endif %}{% endfor %}
+        </select>
+      </div>
+      <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1rem;">
+        <button type="button" class="btn-sm" onclick="closeModal('assignModal')">Cancel</button>
+        <button type="submit" class="btn-sm btn-sm-primary" style="padding:.75rem 2rem;">Assign Now</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.getElementById('createAdminForm').onsubmit = function(e){
+  e.preventDefault();
+  const fd = new FormData(this);
+  fetch('/em/api/admins/create', {method:'POST', body:fd}).then(r=>r.json()).then(res=>{
+    if(res.success) location.reload(); else alert(res.message);
+  });
+};
+function openAssignModal(id, name, assigned){
+  document.getElementById('assignAdminId').value = id;
+  document.getElementById('assignAdminName').innerText = name;
+  openModal('assignModal');
+}
+document.getElementById('assignForm').onsubmit = function(e){
+  e.preventDefault();
+  const fd = new FormData(this);
+  fetch('/em/api/admins/assign', {method:'POST', body:fd}).then(r=>r.json()).then(res=>{
+    if(res.success) location.reload(); else alert(res.message);
+  });
+};
+function deleteAdmin(id, name){
+  if(confirm(`Are you sure you want to remove admin "${name}"?`)){
+    fetch(`/em/api/admins/delete/${id}`, {method:'POST'}).then(r=>r.json()).then(res=>{
+      if(res.success) location.reload();
+    });
+  }
+}
+</script>
+{% endblock %}

@@ -1,13 +1,6 @@
 {% extends "layout.html" %}
 
 {% block content %}
-
-<div class="dashboard-layout">
-    <!-- Sidebar -->
-    {% include 'sidebar_super.html' %}
-
-    <!-- Main Content -->
-    <main class="main-content">
         <div style="margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
             <div>
                 <h1 style="font-size:2.2rem; font-weight:800; margin-bottom:0.4rem;">
@@ -174,8 +167,6 @@
             {% endif %}
             {% endfor %}
         </div>
-    </main>
-</div>
 
 <script>
     function showSection(id, btn) {

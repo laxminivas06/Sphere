@@ -1,0 +1,204 @@
+{% extends "em_layout.html" %}
+{% block em_content %}
+<div id="tab-events" class="tab-pane active">
+  <div class="section-header">
+    <h2>My Events ({{ events|length }})</h2>
+    {% if user.role == 'event_manager' or user.role == 'chief_coordinator' %}
+    <button class="btn-sm btn-sm-primary" onclick="openModal('createEventModal')" style="padding:.65rem 1.25rem;">
+      <i class="fas fa-plus"></i> Create Event
+    </button>
+    {% endif %}
+  </div>
+
+  {% if events %}
+  {% for ev in events %}
+  <div class="event-row" style="cursor:pointer;" onclick="if(event.target.closest('.event-actions')) return; window.location.href='/em/event/{{ ev.id }}/hub'">
+    <div class="event-row-banner">
+      {% if ev.banner %}<img src="/static/uploads/em/banners/{{ ev.banner }}" style="width:60px;height:60px;border-radius:12px;object-fit:cover;" onerror="this.style.display='none'">{% else %}
+      <div style="width:60px;height:60px;border-radius:12px;background:rgba(99,102,241,.15);display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎭</div>
+      {% endif %}
+    </div>
+    <div class="event-row-info">
+      <div class="event-row-title">{{ ev.title }}
+        <span class="badge badge-{{ ev.event_type }}">{{ ev.event_type|upper }}</span>
+        <span class="badge badge-{{ ev.status }}">{{ ev.status|upper }}</span>
+      </div>
+      <div class="event-row-meta">
+        {% if ev.date %}<span><i class="fas fa-calendar-alt"></i> {{ ev.date }}</span>{% endif %}
+        {% if ev.venue %}<span><i class="fas fa-map-marker-alt"></i> {{ ev.venue }}</span>{% endif %}
+        {% if ev.organized_by %}<span><i class="fas fa-building"></i> {{ ev.organized_by }}</span>{% endif %}
+        {% if ev.event_type == 'paid' %}<span><i class="fas fa-rupee-sign"></i> ₹{{ ev.ticket_price }}</span>{% endif %}
+        <span><i class="fas fa-users"></i> {{ all_tickets|selectattr('event_id','eq',ev.id)|list|length }} registered</span>
+      </div>
+    </div>
+    <div class="event-actions">
+      <a href="/em/events/{{ ev.id }}" class="btn-sm btn-sm-primary" target="_blank" title="View Public Page"><i class="fas fa-eye"></i></a>
+      
+      {% if ev.event_category == 'hackathon' %}
+      <a href="/em/hackathon/{{ ev.id }}/hub" class="btn-sm btn-sm-amber" title="Manage Hackathon"><i class="fas fa-rocket"></i> Manage</a>
+      {% elif ev.event_category == 'tech_fest' %}
+      <a href="/em/techfest/{{ ev.id }}/hub" class="btn-sm btn-sm-teal" title="Manage Tech Fest"><i class="fas fa-microchip"></i> Manage</a>
+      {% else %}
+      <a href="/em/event/{{ ev.id }}/hub" class="btn-sm btn-sm-primary" title="Manage Event"><i class="fas fa-tasks"></i> Manage</a>
+      {% endif %}
+
+      <button class="btn-sm btn-sm-primary" onclick='openEditEventModal({{ ev|tojson|safe }})' title="Edit Details"><i class="fas fa-edit"></i></button>
+      {% if user.role == 'event_manager' or user.role == 'chief_coordinator' %}
+      <button class="btn-sm btn-sm-danger" onclick="cancelEvent('{{ ev.id }}','{{ ev.title }}')" title="Cancel Event"><i class="fas fa-ban"></i></button>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+  <div style="text-align:center;padding:4rem;color:var(--text-muted);border:2px dashed rgba(255,255,255,.07);border-radius:20px;">
+    <i class="fas fa-calendar-times" style="font-size:3rem;opacity:.2;display:block;margin-bottom:1rem;"></i>
+    {% if user.role == 'event_manager' or user.role == 'chief_coordinator' %}No events created yet. Click "Create Event" to get started.{% else %}No events assigned to you yet. Contact the Event Manager.{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Create Event Modal -->
+<div id="createEventModal" class="em-modal">
+  <div class="em-modal-box">
+    <h3>Create New Event</h3>
+    <form id="createEventForm" enctype="multipart/form-data" class="form-em">
+      <div class="form-group-em"><label>Event Title *</label><input type="text" name="title" required></div>
+      <div class="form-grid-2">
+        <div class="form-group-em">
+          <label>Category</label>
+          <select name="event_category" id="eventCategorySelect">
+            <option value="club_event" selected>🎭 Club Event</option>
+            <option value="tech_fest">⚙️ Tech Fest</option>
+            <option value="hackathon">🚀 Hackathon</option>
+            <option value="workshop">🔧 Workshop</option>
+            <option value="seminar">📚 Seminar</option>
+            <option value="freshers_party">🎉 Freshers Party</option>
+            <option value="annual_day">🏆 Annual Day</option>
+            <option value="college_fest">🎊 College Fest</option>
+            <option value="other">✨ Other</option>
+          </select>
+        </div>
+        <div class="form-group-em">
+          <label>Organized By *</label>
+          <select name="organized_by_id" id="organizedBySelect" required>
+            {% for c in clubs %}<option value="{{ c.id }}" data-name="{{ c.name }}">{{ c.name }}</option>{% endfor %}
+            <option value="__other__">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-group-em"><label>Date *</label><input type="date" name="date" required></div>
+        <div class="form-group-em"><label>Time</label><input type="time" name="time"></div>
+      </div>
+      <div class="form-group-em"><label>Venue</label><input type="text" name="venue"></div>
+      <div class="form-grid-2">
+        <div class="form-group-em">
+          <label>Event Type</label>
+          <select name="event_type" id="eventTypeSelect">
+            <option value="free">Free</option>
+            <option value="paid">Paid</option>
+          </select>
+        </div>
+        <div class="form-group-em"><label>Ticket Price (₹)</label><input type="number" name="ticket_price" value="0"></div>
+      </div>
+      <div class="form-group-em"><label>Max Capacity</label><input type="number" name="max_capacity"></div>
+      <div class="form-group-em"><label>Event Banner</label><input type="file" name="banner" accept="image/*"></div>
+      <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1rem;">
+        <button type="button" class="btn-sm" onclick="closeModal('createEventModal')">Cancel</button>
+        <button type="submit" class="btn-sm btn-sm-primary" style="padding:.75rem 2rem;">Create Event</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Event Modal -->
+<div id="editEventModal" class="em-modal">
+  <div class="em-modal-box">
+    <h3>Edit Event</h3>
+    <form id="editEventForm" enctype="multipart/form-data" class="form-em">
+      <input type="hidden" name="event_id" id="editEventId">
+      <div class="form-group-em"><label>Event Title *</label><input type="text" name="title" id="editTitle" required></div>
+      <div class="form-grid-2">
+        <div class="form-group-em">
+          <label>Category</label>
+          <select name="event_category" id="editEventCategory">
+            <option value="club_event">🎭 Club Event</option>
+            <option value="tech_fest">⚙️ Tech Fest</option>
+            <option value="hackathon">🚀 Hackathon</option>
+            <option value="workshop">🔧 Workshop</option>
+            <option value="seminar">📚 Seminar</option>
+            <option value="freshers_party">🎉 Freshers Party</option>
+            <option value="annual_day">🏆 Annual Day</option>
+            <option value="college_fest">🎊 College Fest</option>
+            <option value="other">✨ Other</option>
+          </select>
+        </div>
+        <div class="form-group-em">
+          <label>Organized By *</label>
+          <select name="organized_by_id" id="editOrganizedBySelect" required>
+            {% for c in clubs %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+            <option value="__other__">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-group-em"><label>Date *</label><input type="date" name="date" id="editDate" required></div>
+        <div class="form-group-em"><label>Time</label><input type="time" name="time" id="editTime"></div>
+      </div>
+      <div class="form-group-em"><label>Venue</label><input type="text" name="venue" id="editVenue"></div>
+      <div class="form-grid-2">
+        <div class="form-group-em">
+          <label>Event Type</label>
+          <select name="event_type" id="editEventType">
+            <option value="free">Free</option>
+            <option value="paid">Paid</option>
+          </select>
+        </div>
+        <div class="form-group-em"><label>Ticket Price (₹)</label><input type="number" name="ticket_price" id="editTicketPrice"></div>
+      </div>
+      <div class="form-group-em"><label>Max Capacity</label><input type="number" name="max_capacity" id="editMaxCapacity"></div>
+      <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1rem;">
+        <button type="button" class="btn-sm" onclick="closeModal('editEventModal')">Cancel</button>
+        <button type="submit" class="btn-sm btn-sm-primary" style="padding:.75rem 2rem;">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.getElementById('createEventForm').onsubmit = function(e){
+  e.preventDefault();
+  const fd = new FormData(this);
+  fetch('/em/api/events/create', {method:'POST', body:fd}).then(r=>r.json()).then(res=>{
+    if(res.success) location.reload(); else alert(res.message);
+  });
+};
+function openEditEventModal(ev){
+  document.getElementById('editEventId').value = ev.id;
+  document.getElementById('editTitle').value = ev.title;
+  document.getElementById('editDate').value = ev.date;
+  document.getElementById('editTime').value = ev.time || '';
+  document.getElementById('editVenue').value = ev.venue || '';
+  document.getElementById('editEventCategory').value = ev.event_category;
+  document.getElementById('editEventType').value = ev.event_type;
+  document.getElementById('editTicketPrice').value = ev.ticket_price || 0;
+  document.getElementById('editMaxCapacity').value = ev.max_capacity || '';
+  document.getElementById('editOrganizedBySelect').value = ev.organized_by_id;
+  openModal('editEventModal');
+}
+document.getElementById('editEventForm').onsubmit = function(e){
+  e.preventDefault();
+  const fd = new FormData(this);
+  fetch(`/em/api/events/update/${document.getElementById('editEventId').value}`, {method:'POST', body:fd}).then(r=>r.json()).then(res=>{
+    if(res.success) location.reload(); else alert(res.message);
+  });
+};
+function cancelEvent(id, title){
+  if(confirm(`Are you sure you want to cancel "${title}"? This cannot be undone.`)){
+    fetch(`/em/api/events/cancel/${id}`, {method:'POST'}).then(r=>r.json()).then(res=>{
+      if(res.success) location.reload();
+    });
+  }
+}
+</script>
+{% endblock %}

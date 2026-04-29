@@ -1,0 +1,223 @@
+<aside class="sidebar" id="unifiedSidebar">
+    {% if user %}
+        {% set role = user.role %}
+        {% set is_restricted = role in ['principal', 'secretary', 'ao', 'fm'] %}
+        
+        <div class="sidebar-content">
+            {% if role == 'club_admin' %}
+                <div class="sidebar-group">
+                    <p class="sidebar-label">Main Menu</p>
+                    <a href="/admin/club/{{ club.id if club else '0' }}" class="nav-item">
+                        <i class="fas fa-th-large"></i> <span>Dashboard</span>
+                    </a>
+                    <a href="/scanner" class="nav-item">
+                        <i class="fas fa-qrcode"></i> <span>Launch Scanner</span>
+                    </a>
+                    <a href="/admin/events/{{ club.id if club else '0' }}" class="nav-item">
+                        <i class="fas fa-calendar-alt"></i> <span>Event Registry</span>
+                    </a>
+                    <a href="/admin/bulk-email/{{ club.id if club else '0' }}" class="nav-item">
+                        <i class="fas fa-paper-plane"></i> <span>Bulk Campaigns</span>
+                    </a>
+                    <a href="/admin/finance/{{ club.id if club else '0' }}" class="nav-item">
+                        <i class="fas fa-wallet"></i> <span>Financials</span>
+                    </a>
+                </div>
+
+                <div class="sidebar-group">
+                    <p class="sidebar-label">Governance</p>
+                    <a href="/admin/identity/{{ club.id if club else '0' }}" class="nav-item">
+                        <i class="fas fa-id-card"></i> <span>Club Identity</span>
+                    </a>
+                    <a href="/admin/leaderboard/{{ club.id if club else '0' }}" class="nav-item">
+                        <i class="fas fa-trophy"></i> <span>Leaderboard</span>
+                    </a>
+                    <a href="/admin/elections/{{ club.id if club else '0' }}" class="nav-item">
+                        <i class="fas fa-vote-yea"></i> <span>Elections Zone</span>
+                    </a>
+                    <a href="/admin/signature-settings" class="nav-item">
+                        <i class="fas fa-file-signature"></i> <span>Digital Signature</span>
+                    </a>
+                </div>
+
+                <div class="sidebar-group">
+                    <p class="sidebar-label">Compliance</p>
+                    <a href="/admin/reports/{{ club.id if club else '0' }}" class="nav-item">
+                        <i class="fas fa-archive"></i> <span>Academic Reports</span>
+                    </a>
+                    <a href="/admin/club/{{ club.id if club else '0' }}#email" class="nav-item">
+                        <i class="fas fa-cog"></i> <span>Club Settings</span>
+                    </a>
+                </div>
+
+            {% elif role in ['chief_coordinator', 'super_admin'] or is_restricted %}
+                <div class="sidebar-group">
+                    <p class="sidebar-label">Administration</p>
+                    {% if not is_restricted %}
+                    <a href="/admin" class="nav-item">
+                        <i class="fas fa-tools"></i> <span>Clubs Setup</span>
+                    </a>
+                    <a href="/super/approvals" class="nav-item">
+                        <i class="fas fa-check-circle"></i> <span>Governance Approvals</span>
+                    </a>
+                    {% endif %}
+                    <a href="/admin/event-approvals" class="nav-item">
+                        <i class="fas fa-file-contract"></i> <span>Event Approvals</span>
+                    </a>
+                    {% if not is_restricted or role == 'principal' %}
+                    <a href="/admin/report-approvals" class="nav-item">
+                        <i class="fas fa-file-medical"></i> <span>Report Approvals</span>
+                    </a>
+                    {% endif %}
+                    {% if not is_restricted %}
+                    <a href="/super/master" class="nav-item">
+                        <i class="fas fa-database"></i> <span>Master DB</span>
+                    </a>
+                    {% endif %}
+                </div>
+
+                <div class="sidebar-group">
+                    <p class="sidebar-label">Institutional</p>
+                    <a href="/super/registry" class="nav-item">
+                        <i class="fas fa-folder-open"></i> <span>Institutional Registry</span>
+                    </a>
+                    <a href="/super/leaderboard" class="nav-item">
+                        <i class="fas fa-trophy"></i> <span>Global Leaderboard</span>
+                    </a>
+                    <a href="/admin/signature-settings" class="nav-item">
+                        <i class="fas fa-file-signature"></i> <span>Digital Signature</span>
+                    </a>
+                    {% if not is_restricted %}
+                    <a href="/admin/contacts" class="nav-item">
+                        <i class="fas fa-address-book"></i> <span>Contacts</span>
+                    </a>
+                    <a href="/super/settings" class="nav-item">
+                        <i class="fas fa-cog"></i> <span>Global Settings</span>
+                    </a>
+                    {% endif %}
+                </div>
+
+            {% elif role in ('event_manager', 'event_admin', 'evaluator') %}
+                <div class="sidebar-group">
+                    <p class="sidebar-label">Management</p>
+                    <a href="/em/dashboard" class="nav-item">
+                        <i class="fas fa-th-large"></i> <span>Main Menu Dashboard</span>
+                    </a>
+                </div>
+
+                <div class="sidebar-group">
+                    <p class="sidebar-label">Governance</p>
+                    <a href="/em/my-events" class="nav-item">
+                        <i class="fas fa-calendar-alt"></i> <span>My Events</span>
+                    </a>
+                    
+                    {% if role != 'event_admin' %}
+                    <a href="/em/events" class="nav-item">
+                        <i class="fas fa-globe"></i> <span>Public Events</span>
+                    </a>
+                    {% endif %}
+
+                    {% if role in ('event_manager', 'chief_coordinator', 'super_admin') %}
+                    <a href="/em/admins" class="nav-item">
+                        <i class="fas fa-user-shield"></i> <span>Event Admins</span>
+                    </a>
+                    <a href="/em/settings" class="nav-item">
+                        <i class="fas fa-wallet"></i> <span>Gateway</span>
+                    </a>
+                    <a href="/em/settings" class="nav-item">
+                        <i class="fas fa-envelope-open-text"></i> <span>Email</span>
+                    </a>
+                    {% endif %}
+                    
+                    <a href="/em/scanner" class="nav-item">
+                        <i class="fas fa-qrcode"></i> <span>QR Scanner</span>
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+</aside>
+
+<style>
+    .sidebar {
+        width: 280px;
+        background: var(--navy-deeper);
+        border-right: 1px solid var(--glass-border);
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        position: sticky;
+        top: 80px;
+        height: calc(100vh - 80px);
+        overflow-y: auto;
+        z-index: 100;
+        transition: none; /* Removed transition for more "stickered" feel */
+    }
+
+    .sidebar-content {
+        padding: 1.5rem 1rem;
+        flex: 1;
+    }
+
+    .sidebar-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .sidebar-label {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--primary);
+        margin-bottom: 0.75rem;
+        margin-left: 0.75rem;
+        font-weight: 800;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        margin-bottom: 0.15rem;
+    }
+
+    .nav-item i {
+        width: 18px;
+        text-align: center;
+        font-size: 1rem;
+        opacity: 0.8;
+    }
+
+    .nav-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+        transform: translateX(4px);
+    }
+
+    .nav-item.active {
+        background: var(--primary);
+        color: white;
+    }
+
+    .sidebar-footer {
+        padding: 1rem;
+        border-top: 1px solid var(--glass-border);
+    }
+
+    .logout-link:hover {
+        background: rgba(239, 68, 68, 0.1);
+        color: #f87171;
+    }
+
+    @media (max-width: 900px) {
+        .sidebar {
+            display: none !important;
+        }
+    }
+</style>

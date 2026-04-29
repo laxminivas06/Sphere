@@ -861,8 +861,20 @@
         "class": "C",
         "contributions": [
             {
-                "club_name": "cretor club",
-                "position": "president"
+                "club_id": "roboitic",
+                "club_name": "Roboitic",
+                "position": "President",
+                "status": "Present",
+                "tenure_year": "2026",
+                "events_organized": 1
+            },
+            {
+                "club_id": "creator_club",
+                "club_name": "Creator Club",
+                "position": "President",
+                "status": "Present",
+                "tenure_year": "2026",
+                "events_organized": 0
             }
         ],
         "password": "2006-10-06",

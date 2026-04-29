@@ -1,61 +1,6 @@
 {% extends "layout.html" %}
 
 {% block content %}
-
-
-<div class="dashboard-layout">
-    <aside class="sidebar">
-        <div style="margin-bottom: 2rem;">
-            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏠 Main Menu ⏺️</p>
-            <a href="/admin" class="nav-item">
-                <i class="fas fa-tools"></i>
-                <span>Clubs Setup & Config</span>
-            </a>
-            <a href="/super/approvals" class="nav-item">
-                <i class="fas fa-check-circle"></i>
-                <span>Approvals</span>
-            </a>
-            <a href="/super/master" class="nav-item">
-                <i class="fas fa-database"></i>
-                <span>Master DB</span>
-            </a>
-        </div>
-
-        <div>
-            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: var(--primary); margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🏛️ Governance</p>
-            <a href="/super/registry" class="nav-item">
-                <i class="fas fa-folder-open"></i>
-                <span>Institutional Registry</span>
-            </a>
-            <a href="/super/leaderboard" class="nav-item active">
-                <i class="fas fa-trophy"></i>
-                <span>Global Leaderboard</span>
-            </a>
-            <a href="/admin/contacts" class="nav-item">
-                <i class="fas fa-address-book"></i>
-                <span>Contacts</span>
-            </a>
-            <a href="/super/settings" class="nav-item">
-                <i class="fas fa-cog"></i>
-                <span>Global Settings</span>
-            </a>
-            <div class="nav-item" onclick="location.reload()">
-                <i class="fas fa-sync-alt"></i>
-                <span>Refresh</span>
-            </div>
-        </div>
-
-        <div style="margin-top: 1rem;">
-            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15rem; color: #8b5cf6; margin-left: 1rem; margin-bottom: 1rem; font-weight: 700;">🎭 College Events</p>
-            <a href="/em/dashboard" class="nav-item" style="background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);">
-                <i class="fas fa-ticket-alt" style="color: #8b5cf6;"></i>
-                <span>Event Manager</span>
-            </a>
-
-        </div>
-    </aside>
-
-    <main class="main-content">
         <header style="margin-bottom: 3rem;">
             <h1>Sphoorthy <span style="color: var(--primary)">Top Attendees</span></h1>
             <p style="color: var(--text-muted)">Global leaderboard of the top 20 most active students across all events.</p>
@@ -118,6 +63,4 @@
                 </table>
             </div>
         </div>
-    </main>
-</div>
 {% endblock %}
