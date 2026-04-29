@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, session, render_template, redirect, url_for, make_response, send_file
+from functools import wraps
 from app.models import DB, DATA_DIR
 from app.mailer import Mailer
 import os
@@ -24,6 +25,25 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf', 'doc', 'docx'}
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def role_required(*roles):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            user = session.get('user')
+            if not user or user.get('role') not in roles:
+                if request.is_json or request.path.startswith('/api'):
+                    return jsonify({'success': False, 'message': 'Unauthorized access.'}), 403
+                return redirect(url_for('login_page'))
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+def safe_id(id_str):
+    if not id_str: return ""
+    # Ensure it's a string and remove any path traversal attempts
+    id_str = str(id_str)
+    return "".join([c for c in id_str if c.isalnum() or c in '-_'])
 
 api = Blueprint('api', __name__)
 
@@ -120,23 +140,16 @@ def save_student_achievement():
         event = next((e for e in events if e['id'] == event_id), None)
         
         if event:
-            event_slug = slugify(event['title'])
-            reg_file = os.path.join(DATA_DIR, 'clubs', club_id, event_slug, 'registrations.json')
+            regs = DB.get_registrations(club_id, event_id)
+            regs = DB.get_registrations(club_id, event_id)
+            for r in regs:
+                if r.get('id') == reg_id:
+                    r['achievement_note'] = note
+                    break
             
-            if os.path.exists(reg_file):
-                with open(reg_file, 'r') as f:
-                    regs = json.load(f)
-                
-                for r in regs:
-                    if r.get('id') == reg_id:
-                        r['achievement_note'] = note
-                        break
-                
-                with open(reg_file, 'w') as f:
-                    json.dump(regs, f, indent=4)
-                    
-                return jsonify({'success': True})
-                
+            DB.update_event_registrations(club_id, event_id, regs)
+            return jsonify({'success': True})
+        
     return jsonify({'success': False, 'message': 'Registration not found'}), 404
 
 @api.route('/student/export-portfolio')
@@ -545,29 +558,6 @@ def export_student_portfolio():
             writer.write(final_buffer)
             
         final_buffer.seek(0)
-        
-        return send_file(
-            final_buffer,
-            mimetype='application/pdf',
-            as_attachment=(not preview),
-            download_name=f'Achievement_Portfolio_{roll}.pdf'
-        )
-
-        
-        return send_file(
-            final_buffer,
-            mimetype='application/pdf',
-            as_attachment=(not preview),
-            download_name=f'Achievement_Portfolio_{roll}.pdf'
-        )
-
-        
-        return send_file(
-            final_buffer,
-            mimetype='application/pdf',
-            as_attachment=(not preview),
-            download_name=f'Achievement_Portfolio_{roll}.pdf'
-        )
 
         
         return send_file(
@@ -580,19 +570,57 @@ def export_student_portfolio():
         return f"System Portfolio Error: {str(e)}", 500
 
 @api.route('/get-student-qr/<club_id>/<reg_id>')
+@role_required('student', 'club_admin', 'chief_coordinator', 'super_admin', 'event_admin')
 def get_student_qr(club_id, reg_id):
-    # This route is used by the success page to display the QR code
-    return "" # Implementation details truncated for space
+    club_id = safe_id(club_id)
+    reg_id = safe_id(reg_id)
+    
+    # We look up the registration and generate a QR based on its ID
+    clubs = DB.get_clubs()
+    club = next((c for c in clubs if c['id'] == club_id), None)
+    if not club: return "Club not found", 404
+    
+    events = DB.get_events(club_id)
+    reg = None
+    for event in events:
+        regs = DB.get_registrations(club_id, event['id'])
+        reg = next((r for r in regs if r['id'] == reg_id), None)
+        if reg: break
+        
+    if not reg: return "Registration not found", 404
+
+    # Ownership check for students
+    user = session.get('user')
+    if user.get('role') == 'student' and reg.get('roll_number', '').upper() != user.get('roll_number', '').upper():
+        return "Unauthorized: This registration does not belong to you.", 403
+        
+    if not reg: return "Registration not found", 404
+    
+    # Generate QR containing the user details for attendance
+    import qrcode
+    from io import BytesIO
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    
+    # Construct data string as requested: Name, Roll Number, Department
+    qr_data = f"Name: {reg.get('name', 'N/A')}\nRoll: {reg.get('roll_number', 'N/A')}\nDept: {reg.get('department', 'N/A')}\nRegID: {reg_id}"
+    qr.add_data(qr_data)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    img_io = BytesIO()
+    img.save(img_io, 'PNG')
+    img_io.seek(0)
+    
+    download = request.args.get('download') == 'true'
+    return send_file(img_io, mimetype='image/png', as_attachment=download, download_name=f"QR_{reg_id}.png")
 
 @api.route('/student/upload-document', methods=['POST'])
+@role_required('student')
 def student_upload_document():
     user = session.get('user')
-    if not user or user.get('role') != 'student':
-        return redirect(url_for('login_page'))
-    
     roll = user.get('roll_number')
-    reg_id = request.form.get('reg_id')
-    club_id = request.form.get('club_id')
+    reg_id = safe_id(request.form.get('reg_id'))
+    club_id = safe_id(request.form.get('club_id'))
     file = request.files.get('document')
     
     if not all([reg_id, club_id, file]):
@@ -619,24 +647,17 @@ def student_upload_document():
             
             if event:
                 event_slug = slugify(event['title'])
-                reg_file = os.path.join(DATA_DIR, 'clubs', club_id, event_slug, 'registrations.json')
+                regs = DB.get_registrations(club_id, event_id)
+                for r in regs:
+                    if r.get('id') == reg_id:
+                        if 'supporting_docs' not in r:
+                            r['supporting_docs'] = []
+                        if filename not in r['supporting_docs']:
+                            r['supporting_docs'].append(filename)
+                        break
                 
-                if os.path.exists(reg_file):
-                    with open(reg_file, 'r') as f:
-                        regs = json.load(f)
-                    
-                    for r in regs:
-                        if r.get('id') == reg_id:
-                            if 'supporting_docs' not in r:
-                                r['supporting_docs'] = []
-                            if filename not in r['supporting_docs']:
-                                r['supporting_docs'].append(filename)
-                            break
-                    
-                    with open(reg_file, 'w') as f:
-                        json.dump(regs, f, indent=4)
-                    
-                    return redirect('/student/history')
+                DB.update_event_registrations(club_id, event_id, regs)
+                return redirect('/student/history')
     
     return redirect('/student/history')
 
@@ -664,59 +685,20 @@ def student_remove_document():
         event = next((e for e in events if e['id'] == event_id), None)
         
         if event:
-            event_slug = slugify(event['title'])
-            reg_file = os.path.join(DATA_DIR, 'clubs', club_id, event_slug, 'registrations.json')
+            regs = DB.get_registrations(club_id, event_id)
+            for r in regs:
+                if r.get('id') == reg_id:
+                    if 'supporting_docs' in r and doc_name in r['supporting_docs']:
+                        r['supporting_docs'].remove(doc_name)
+                        # Remove file from disk
+                        doc_path = os.path.join(current_app.static_folder, 'uploads', 'students', roll, 'documents', reg_id, doc_name)
+                        if os.path.exists(doc_path):
+                            os.remove(doc_path)
+                    break
             
-            if os.path.exists(reg_file):
-                with open(reg_file, 'r') as f:
-                    regs = json.load(f)
-                
-                for r in regs:
-                    if r.get('id') == reg_id:
-                        if 'supporting_docs' in r and doc_name in r['supporting_docs']:
-                            r['supporting_docs'].remove(doc_name)
-                            # Remove file from disk
-                            doc_path = os.path.join(current_app.static_folder, 'uploads', 'students', roll, 'documents', reg_id, doc_name)
-                            if os.path.exists(doc_path):
-                                os.remove(doc_path)
-                        break
-                
-                with open(reg_file, 'w') as f:
-                    json.dump(regs, f, indent=4)
+            DB.update_event_registrations(club_id, event_id, regs)
                     
     return redirect('/student/history')
-    # We look up the registration and generate a QR based on its ID
-    clubs = DB.get_clubs()
-    club = next((c for c in clubs if c['id'] == club_id), None)
-    if not club: return "Club not found", 404
-    
-    events = DB.get_events(club_id)
-    reg = None
-    for event in events:
-        regs = DB.get_registrations(club_id, event['id'])
-        reg = next((r for r in regs if r['id'] == reg_id), None)
-        if reg: break
-        
-    if not reg: return "Registration not found", 404
-    
-    # Generate QR containing the user details for attendance
-    import qrcode
-    from io import BytesIO
-    qr = qrcode.QRCode(version=1, box_size=10, border=5)
-    
-    # Construct data string as requested: Name, Roll Number, Department
-    qr_data = f"Name: {reg.get('name', 'N/A')}\nRoll: {reg.get('roll_number', 'N/A')}\nDept: {reg.get('department', 'N/A')}\nRegID: {reg_id}"
-    qr.add_data(qr_data)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white")
-    
-    img_io = BytesIO()
-    img.save(img_io, 'PNG')
-    img_io.seek(0)
-    
-    download = request.args.get('download') == 'true'
-    return send_file(img_io, mimetype='image/png', as_attachment=download, download_name=f"QR_{reg_id}.png")
-
 def is_trusted_club(club_id):
     # A club is trusted if they have at least one event with an approved report
     events = DB.get_events(club_id)
@@ -801,11 +783,16 @@ def api_login():
         admin_inst_id = admin.get('institution_id')
 
         # Match by email or roll_number
-        if (admin_email == roll.lower() or admin_roll == roll.lower()) and admin.get('password') == dob:
+        if (admin_email == roll.lower() or admin_roll == roll.lower()) and DB.verify_password(admin.get('password'), dob):
             # Enforce institutional boundary for non-global admins
             if admin_inst_id and current_inst_id and admin_inst_id != current_inst_id:
-                continue # Belongs to a different institution
+                continue 
                 
+            # Migration: If password was plain text, hash it now
+            if admin.get('password') == dob:
+                admin['password'] = DB.hash_password(dob)
+                DB.save_admin(admin)
+
             safe_admin = sanitize(admin)
             # Store in session without the large signature field to avoid cookie size limits
             session_admin = safe_admin.copy()
@@ -819,7 +806,13 @@ def api_login():
     for admin in em_admins:
         admin_email = admin.get('email', '').strip().lower()
         admin_roll = admin.get('roll_number', '').strip().lower()
-        if (admin_email == roll.lower() or admin_roll == roll.lower()) and admin.get('password') == dob:
+        if (admin_email == roll.lower() or admin_roll == roll.lower()) and DB.verify_password(admin.get('password'), dob):
+            # Migration: If password was plain text, hash it now
+            if admin.get('password') == dob:
+                admin['password'] = DB.hash_password(dob)
+                from app.event_mgmt_routes import save_em_admins
+                save_em_admins(em_admins)
+
             admin['role'] = 'event_admin'  # Explicitly set role for EM admins
             safe_admin = sanitize(admin)
             session['user'] = safe_admin
@@ -828,11 +821,26 @@ def api_login():
     # 3. Check Students
     student = DB.get_student_by_roll(roll)
     if student:
-        formatted_dob = dob
-        if len(dob) == 8 and dob.isdigit():
-            formatted_dob = f"{dob[4:8]}-{dob[2:4]}-{dob[0:2]}"
+        # Check against hashed password first, then fallback to DOB
+        stored_pw = student.get('password')
+        stored_dob = student.get('dob')
+        
+        authenticated = False
+        if stored_pw and DB.verify_password(stored_pw, dob):
+            authenticated = True
+        elif not stored_pw:
+            # Fallback to DOB check for initial migration
+            formatted_dob = dob
+            if len(dob) == 8 and dob.isdigit():
+                formatted_dob = f"{dob[4:8]}-{dob[2:4]}-{dob[0:2]}"
             
-        if student.get('dob') == dob or student.get('dob') == formatted_dob:
+            if stored_dob == dob or stored_dob == formatted_dob:
+                authenticated = True
+                # Migrate: Hash the DOB and store as password
+                student['password'] = DB.hash_password(dob)
+                DB.save_student(student)
+
+        if authenticated:
             student['role'] = 'student'
             safe_student = sanitize(student)
             session['user'] = safe_student
@@ -859,6 +867,11 @@ def update_event_details():
     identifier = user.get('email') or user.get('roll_number')
     if user.get('role') != 'chief_coordinator' and club.get('admin_roll') != identifier:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    # Lock-down check: If event is in approval or approved, it cannot be edited by club admins
+    if event.get('approved') or (event.get('approval_status') and event['approval_status'] != 'pending_principal'):
+        if user.get('role') != 'chief_coordinator':
+            return jsonify({'success': False, 'message': 'Event is locked in the approval pipeline and cannot be edited.'}), 403
     
     # Update fields
     for field in ['title', 'venue', 'date', 'time', 'payment_type', 'fee', 'description']:
@@ -1368,6 +1381,35 @@ def list_students():
     user = session.get('user')
     if not user or user.get('role') != 'chief_coordinator':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+        
+    page = int(request.args.get('page', 1))
+    search = request.args.get('search', '').lower()
+    year_filter = request.args.get('year', '').lower()
+    
+    students = DB.get_students()
+    
+    if search:
+        students = [s for s in students if search in s.get('roll_number', '').lower() or search in s.get('name', '').lower()]
+        
+    if year_filter:
+        students = [s for s in students if s.get('year', '').lower() == year_filter]
+        
+    # Sort students by roll_number or name
+    students.sort(key=lambda x: x.get('roll_number', ''))
+    
+    per_page = 20
+    total = len(students)
+    pages = (total + per_page - 1) // per_page
+    start = (page - 1) * per_page
+    end = start + per_page
+    
+    return jsonify({
+        'success': True,
+        'students': students[start:end],
+        'pages': pages,
+        'current_page': page,
+        'total': total
+    })
 
 @api.route('/report/approve_stage', methods=['POST'])
 def approve_report_stage():
@@ -1419,35 +1461,6 @@ def approve_report_stage():
         'message': msg,
         'status': event['report_workflow_status'],
         'sig_entry': sig_entry
-    })
-        
-    page = int(request.args.get('page', 1))
-    search = request.args.get('search', '').lower()
-    year_filter = request.args.get('year', '').lower()
-    
-    students = DB.get_students()
-    
-    if search:
-        students = [s for s in students if search in s.get('roll_number', '').lower() or search in s.get('name', '').lower()]
-        
-    if year_filter:
-        students = [s for s in students if s.get('year', '').lower() == year_filter]
-        
-    # Sort students by roll_number or name
-    students.sort(key=lambda x: x.get('roll_number', ''))
-    
-    per_page = 20
-    total = len(students)
-    pages = (total + per_page - 1) // per_page
-    start = (page - 1) * per_page
-    end = start + per_page
-    
-    return jsonify({
-        'success': True,
-        'students': students[start:end],
-        'pages': pages,
-        'current_page': page,
-        'total': total
     })
 
 @api.route('/students/export', methods=['GET'])
@@ -1552,8 +1565,10 @@ def upload_students_csv():
         added_count = 0
         updated_count = 0
         
+        rows = list(reader)
+        
         # Validation Pass
-        for i, row in enumerate(reader, start=1):
+        for i, row in enumerate(rows, start=1):
             roll = row.get('roll_number') or row.get('Roll Number') or row.get('reg') or row.get('Reg')
             name = row.get('name') or row.get('Name') or row.get('student name') or row.get('Student Name')
             dept = row.get('department') or row.get('Department')
@@ -1566,7 +1581,7 @@ def upload_students_csv():
             if not year or not str(year).strip(): return jsonify({'success': False, 'message': f'Row {i} (Roll {roll}): Missing mandatory field "Year"'})
             if not dob or not str(dob).strip(): return jsonify({'success': False, 'message': f'Row {i} (Roll {roll}): Missing mandatory field "DOB"'})
         
-        for row in reader:
+        for row in rows:
             roll = str(row.get('roll_number') or row.get('Roll Number') or row.get('reg') or row.get('Reg')).strip().upper()
             name = str(row.get('name') or row.get('Name') or row.get('student name') or row.get('Student Name')).strip()
             dept = str(row.get('department') or row.get('Department')).strip()

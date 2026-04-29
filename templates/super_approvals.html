@@ -12,6 +12,76 @@
                 Review institutional requests, office bearer appointments, and event financial compliance.
             </p>
         </header>
+        
+        <!-- ── INSTITUTIONAL ANALYTICS ────────────────────────────── -->
+        <section class="reveal" style="margin-bottom: 4rem;">
+            <div style="margin-bottom: 2rem;">
+                <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem;">Institutional <span class="gradient-text">Insights</span></h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Real-time engagement and operational metrics across all campus societies.</p>
+            </div>
+
+            <div class="dense-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                <div class="card" style="padding: 1.5rem; border-bottom: 4px solid #6366f1;">
+                    <div style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Total Participation</div>
+                    <div style="font-size: 2rem; font-weight: 900; color: var(--navy);">{{ global_stats.total_registrations }}</div>
+                    <div style="font-size: 0.75rem; color: #10b981; font-weight: 600; margin-top: 0.5rem;"><i class="fas fa-arrow-up"></i> Active Registrations</div>
+                </div>
+                <div class="card" style="padding: 1.5rem; border-bottom: 4px solid #10b981;">
+                    <div style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Events Conducted</div>
+                    <div style="font-size: 2rem; font-weight: 900; color: var(--navy);">{{ global_stats.total_events }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Across {{ global_stats.total_clubs }} Active Clubs</div>
+                </div>
+                <div class="card" style="padding: 1.5rem; border-bottom: 4px solid #f59e0b;">
+                    <div style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Student Engagement</div>
+                    <div style="font-size: 2rem; font-weight: 900; color: var(--navy);">{{ (global_stats.total_registrations / global_stats.total_events if global_stats.total_events > 0 else 0) | round(1) }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Avg. Students per Event</div>
+                </div>
+                <div class="card" style="padding: 1.5rem; border-bottom: 4px solid #ef4444;">
+                    <div style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Verification Queue</div>
+                    <div style="font-size: 2rem; font-weight: 900; color: var(--navy);">{{ events|selectattr('event_status', 'equalto', 'pending')|list|length + ob_requests|selectattr('status', 'equalto', 'pending')|list|length }}</div>
+                    <div style="font-size: 0.75rem; color: #ef4444; font-weight: 600; margin-top: 0.5rem;">Action Required</div>
+                </div>
+            </div>
+
+            <!-- Club Performance Snapshot -->
+            <div class="card" style="margin-top: 2rem; padding: 0; overflow: hidden;">
+                <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-light); background: var(--surface-2); display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="font-size: 1rem; font-weight: 800; margin: 0;">Club <span class="gradient-text">Heatmap</span></h3>
+                    <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">By Engagement Volume</span>
+                </div>
+                <div class="table-responsive">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: var(--surface);">
+                                <th style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; padding: 1rem 1.5rem;">Society Name</th>
+                                <th style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; text-align: center;">Events</th>
+                                <th style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; text-align: center;">Participation</th>
+                                <th style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; text-align: center;">Conversion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for club in club_breakdown|sort(attribute='total_registrations', reverse=True) %}
+                            {% if loop.index <= 5 %}
+                            <tr style="border-bottom: 1px solid var(--border-light);">
+                                <td style="padding: 1rem 1.5rem;">
+                                    <div style="font-weight: 700; color: var(--navy);">{{ club.name }}</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted);">{{ club.id|upper }}</div>
+                                </td>
+                                <td style="text-align: center; font-weight: 700;">{{ club.total_events }}</td>
+                                <td style="text-align: center;">
+                                    <div style="font-weight: 800; color: var(--primary);">{{ club.total_registrations }}</div>
+                                </td>
+                                <td style="text-align: center;">
+                                    <span class="badge badge-success" style="font-size: 0.6rem; padding: 0.3rem 0.6rem;">{{ (club.total_registrations / club.total_events if club.total_events > 0 else 0) | round(0) }} per evt</span>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
 
         <!-- ── OFFICE BEARER REQUESTS ──────────────────────────────── -->
         <section class="reveal" style="margin-bottom: 4rem;">

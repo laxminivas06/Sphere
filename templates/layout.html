@@ -5,7 +5,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Sphoorthy EventSphere - Sphoorthy Engineering College</title>
+    <title>{% block title %}Sphoorthy EventSphere - Premier Campus Event Management{% endblock %}</title>
+    <meta name="description" content="Centralized campus event management portal for Sphoorthy Engineering College. Explore hackathons, workshops, and cultural fests.">
+    <meta name="keywords" content="EventSphere, Sphoorthy Engineering College, Campus Events, Hackathons, College Portal">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:title" content="Sphoorthy EventSphere - Campus Management Portal">
+    <meta property="og:description" content="Manage and explore premier campus events at Sphoorthy Engineering College.">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="Sphoorthy EventSphere">
+    <meta property="twitter:description" content="Premier Campus Event Management Portal.">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,19 +28,22 @@
     <style>
         /* ─── DESIGN TOKENS ─────────────────────────────────────── */
         :root {
-            --navy: #2d3dba;
-            --navy-dark: #171f5e;
-            --navy-deeper: #0f1440;
-            --surface: #0f1440;
-            --surface-2: #171f5e;
+            --navy: #4052d7;
+            --navy-dark: #2d3dba;
+            --navy-deeper: #1e293b;
+            --surface: #f8fafc;
+            --surface-2: #ffffff;
             --primary: #4052d7;
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --border-light: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(0, 0, 0, 0.05);
+            --border-light: rgba(0, 0, 0, 0.05);
             --radius-md: 12px;
             --radius-lg: 20px;
             --radius-xl: 32px;
             --font: 'Inter', system-ui, -apple-system, sans-serif;
             --white: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
         }
 
         /* ─── RESET & BASE ──────────────────────────────────────── */
@@ -46,7 +62,7 @@
         body {
             font-family: var(--font);
             background: var(--surface);
-            color: #ffffff;
+            color: var(--text-primary);
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
             padding-top: 80px !important;
@@ -63,14 +79,15 @@
             right: 0;
             z-index: 2000;
             height: 80px;
-            background: var(--navy-deeper);
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(15px);
             border-bottom: 1px solid var(--glass-border);
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 2.5rem;
             gap: 1.5rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
         }
 
         /* Branding */
@@ -114,7 +131,7 @@
         .brand-title {
             font-size: 1.15rem;
             font-weight: 800;
-            color: var(--white);
+            color: var(--text-primary);
             letter-spacing: -0.02em;
             line-height: 1.2;
         }
@@ -135,7 +152,7 @@
         }
 
         .nav-links a {
-            color: rgba(255, 255, 255, 0.85);
+            color: var(--text-secondary);
             text-decoration: none;
             font-size: 0.875rem;
             font-weight: 600;
@@ -871,8 +888,8 @@
         /* ─── FOOTER BEHAVIOR ─────────────────────────────────── */
         footer.site-footer {
             width: 100%;
-            background: #0a0a14 !important;
-            border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+            background: #ffffff !important;
+            border-top: 1px solid var(--border-light) !important;
             padding: 4rem 5% 2rem !important;
             z-index: 10;
             position: relative;
@@ -913,7 +930,7 @@
 
         .footer-about p {
             font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.6);
+            color: var(--text-secondary);
             line-height: 1.6;
             max-width: 320px;
         }
@@ -926,7 +943,7 @@
         }
 
         .footer-links-list a {
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--text-secondary);
             text-decoration: none;
             font-size: 0.9rem;
             transition: color 0.2s;
@@ -946,7 +963,7 @@
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--text-secondary);
             font-size: 0.9rem;
             text-decoration: none;
             transition: color 0.2s;

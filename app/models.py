@@ -1,30 +1,71 @@
 import json
 import os
 import re
+import fcntl
+from werkzeug.security import generate_password_hash, check_password_hash
+import tempfile
+import shutil
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
+EM_DIR = os.path.join(DATA_DIR, 'em')
 
 def slugify(text):
     return re.sub(r'[\W_]+', '_', text.lower()).strip('_')
 
 class DB:
     @staticmethod
+    def hash_password(password):
+        return generate_password_hash(password)
+
+    @staticmethod
+    def verify_password(stored_val, provided_val):
+        if not stored_val or not provided_val:
+            return False
+        # If it looks like a hash, use check_password_hash
+        if stored_val.startswith(('pbkdf2:sha256:', 'scrypt:', 'argon2:')):
+            return check_password_hash(stored_val, provided_val)
+        # Otherwise, fallback to plain text comparison (for legacy support)
+        return stored_val == provided_val
+    @staticmethod
     def load_json(filename):
         filepath = os.path.join(DATA_DIR, filename)
         if not os.path.exists(filepath):
-            return []
+            return [] if not filename.endswith('settings.json') else {}
+        
         with open(filepath, 'r') as f:
             try:
-                return json.load(f)
-            except json.JSONDecodeError:
-                return []
+                # Apply shared lock for reading
+                fcntl.flock(f, fcntl.LOCK_SH)
+                data = json.load(f)
+                fcntl.flock(f, fcntl.LOCK_UN)
+                return data
+            except (json.JSONDecodeError, Exception):
+                return [] if not filename.endswith('settings.json') else {}
 
     @staticmethod
     def save_json(filename, data):
         filepath = os.path.join(DATA_DIR, filename)
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        with open(filepath, 'w') as f:
-            json.dump(data, f, indent=4)
+        
+        # Write to a temporary file then rename it (atomic write)
+        # We still use a lock on the target file to prevent race conditions during the read-modify-write cycle
+        lock_path = filepath + '.lock'
+        with open(lock_path, 'w') as lock_file:
+            try:
+                fcntl.flock(lock_file, fcntl.LOCK_EX) # Exclusive lock
+                
+                fd, temp_path = tempfile.mkstemp(dir=os.path.dirname(filepath), text=True)
+                with os.fdopen(fd, 'w') as f:
+                    json.dump(data, f, indent=4)
+                
+                # Atomic rename
+                os.replace(temp_path, filepath)
+                
+                fcntl.flock(lock_file, fcntl.LOCK_UN)
+            except Exception as e:
+                print(f"Error saving {filename}: {e}")
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
 
     @staticmethod
     def get_students():
@@ -130,33 +171,32 @@ class DB:
             for item in os.listdir(club_path):
                 event_dir = os.path.join(club_path, item)
                 if os.path.isdir(event_dir):
-                    info_path = os.path.join(event_dir, 'info.json')
-                    if os.path.exists(info_path):
-                        with open(info_path, 'r') as f:
+                    ev = DB.load_json(os.path.join('clubs', cid, item, 'info.json'))
+                    if ev:
+                        if 'club_id' not in ev:
+                            ev['club_id'] = cid
+                        
+                        # Dynamic Academic Year Enforcement
+                        if not ev.get('year'):
+                            import datetime
+                            ts = ev.get('timestamp')
                             try:
-                                ev = json.load(f)
-                                if 'club_id' not in ev:
-                                    ev['club_id'] = cid
-                                
-                                # Dynamic Academic Year Enforcement
-                                if not ev.get('year'):
-                                    import datetime
-                                    ts = ev.get('timestamp')
-                                    dt = datetime.datetime.fromisoformat(ts) if ts else datetime.datetime.now()
-                                    if dt.month >= 6:
-                                        ev['year'] = f"{dt.year % 100}-{(dt.year + 1) % 100}"
-                                    else:
-                                        ev['year'] = f"{(dt.year - 1) % 100}-{dt.year % 100}"
-
-                                if club_id:
-                                    collabs = ev.get('collaborating_clubs', [])
-                                    if isinstance(collabs, str): collabs = [collabs]
-                                    if cid == club_id or club_id in collabs:
-                                        all_events.append(ev)
-                                else:
-                                    all_events.append(ev)
+                                dt = datetime.datetime.fromisoformat(ts) if ts else datetime.datetime.now()
                             except:
-                                continue
+                                dt = datetime.datetime.now()
+                                
+                            if dt.month >= 6:
+                                ev['year'] = f"{dt.year % 100}-{(dt.year + 1) % 100}"
+                            else:
+                                ev['year'] = f"{(dt.year - 1) % 100}-{dt.year % 100}"
+                        
+                        if club_id:
+                            collabs = ev.get('collaborating_clubs', [])
+                            if isinstance(collabs, str): collabs = [collabs]
+                            if cid == club_id or club_id in collabs:
+                                all_events.append(ev)
+                        else:
+                            all_events.append(ev)
         return all_events
 
     @staticmethod
@@ -202,9 +242,8 @@ class DB:
 
         os.makedirs(target_dir, exist_ok=True)
         
-        # Save info.json
-        with open(os.path.join(target_dir, 'info.json'), 'w') as f:
-            json.dump(event, f, indent=4)
+        # Save info.json using atomic save
+        DB.save_json(os.path.join('clubs', club_id, new_slug, 'info.json'), event)
             
         # Ensure registrations.json exists
         reg_file = os.path.join(target_dir, 'registrations.json')
@@ -282,6 +321,14 @@ class DB:
             json.dump(regs, f, indent=4)
 
     @staticmethod
+    def update_event_registrations(club_id, event_id, regs):
+        event = DB.get_event_by_id(club_id, event_id)
+        if not event: return
+        event_slug = slugify(event['title'])
+        filename = os.path.join('clubs', club_id, event_slug, 'registrations.json')
+        DB.save_json(filename, regs)
+
+    @staticmethod
     def update_registrations(club_id, regs):
         if not regs: return
         grouped = {}
@@ -290,16 +337,8 @@ class DB:
             if eid not in grouped: grouped[eid] = []
             grouped[eid].append(r)
             
-        events = DB.get_events(club_id)
         for eid, event_regs in grouped.items():
-            event = next((e for e in events if e['id'] == eid), None)
-            if event:
-                actual_club = event.get('club_id', club_id)
-                event_slug = slugify(event['title'])
-                reg_file = os.path.join(DATA_DIR, 'clubs', actual_club, event_slug, 'registrations.json')
-                os.makedirs(os.path.dirname(reg_file), exist_ok=True)
-                with open(reg_file, 'w') as f:
-                    json.dump(event_regs, f, indent=4)
+            DB.update_event_registrations(club_id, eid, event_regs)
 
     # Stats for dashboards
     @staticmethod
@@ -441,18 +480,28 @@ class DB:
 
     @staticmethod
     def _em_load(fname):
-        path = os.path.join(DB.EM_DIR, fname)
-        if not os.path.exists(path):
-            return []
-        with open(path) as f:
-            try: return json.load(f)
-            except: return []
+        return DB.load_json(os.path.join('em', fname))
 
     @staticmethod
     def _em_save(fname, data):
-        os.makedirs(DB.EM_DIR, exist_ok=True)
-        with open(os.path.join(DB.EM_DIR, fname), 'w') as f:
-            json.dump(data, f, indent=4)
+        DB.save_json(os.path.join('em', fname), data)
+
+    @staticmethod
+    def get_em_events(): return DB._em_load('events.json')
+    @staticmethod
+    def save_em_events(d): DB._em_save('events.json', d)
+    @staticmethod
+    def get_em_tickets(): return DB._em_load('tickets.json')
+    @staticmethod
+    def save_em_tickets(d): DB._em_save('tickets.json', d)
+    @staticmethod
+    def get_em_admins(): return DB._em_load('admins.json')
+    @staticmethod
+    def save_em_admins(d): DB._em_save('admins.json', d)
+    @staticmethod
+    def get_em_settings(): return DB._em_load('settings.json')
+    @staticmethod
+    def put_em_settings(d): DB._em_save('settings.json', d)
 
     @staticmethod
     def get_hackathon_teams(event_id=None):

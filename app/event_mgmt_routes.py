@@ -14,27 +14,14 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
 EM_DIR   = os.path.join(DATA_DIR, 'em')
 BANNERS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads', 'em', 'banners')
 
-def _load(fname):
-    p = os.path.join(EM_DIR, fname)
-    if not os.path.exists(p):
-        return [] if fname != 'settings.json' else {}
-    with open(p) as f:
-        try: return json.load(f)
-        except: return [] if fname != 'settings.json' else {}
-
-def _save(fname, data):
-    os.makedirs(EM_DIR, exist_ok=True)
-    with open(os.path.join(EM_DIR, fname), 'w') as f:
-        json.dump(data, f, indent=4)
-
-def get_events():  return _load('events.json')
-def save_events(d): _save('events.json', d)
-def get_tickets():  return _load('tickets.json')
-def save_tickets(d): _save('tickets.json', d)
-def get_em_admins():    return _load('admins.json')
-def save_em_admins(d):  _save('admins.json', d)
-def get_settings(): return _load('settings.json')
-def put_settings(d): _save('settings.json', d)
+def get_events():  return DB.get_em_events()
+def save_events(d): DB.save_em_events(d)
+def get_tickets():  return DB.get_em_tickets()
+def save_tickets(d): DB.save_em_tickets(d)
+def get_em_admins():    return DB.get_em_admins()
+def save_em_admins(d):  DB.save_em_admins(d)
+def get_settings(): return DB.get_em_settings()
+def put_settings(d): DB.put_em_settings(d)
 
 # ─── Auth Helpers ─────────────────────────────────────────────────────────────
 def is_manager(user):

@@ -2,6 +2,7 @@ import smtplib
 import os
 import uuid
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -17,6 +18,9 @@ DEFAULT_SMTP_PASS   = ""
 BRAND_COLOR   = "#6366f1"
 BRAND_NAME    = "Sphoorthy EventSphere"
 COLLEGE_NAME  = "Sphoorthy Engineering College"
+
+# Global executor for async mailing to prevent resource exhaustion
+_email_executor = ThreadPoolExecutor(max_workers=10)
 
 # ── HTML base template ─────────────────────────────────────────────────────────
 def _html_wrap(title: str, body_html: str, cta_url: str = None, cta_label: str = None) -> str:
@@ -203,18 +207,17 @@ class Mailer:
     @staticmethod
     def send_async(to_email, subject, body, html_body=None, image_path=None,
                    club_id=None, attachment_path=None, extra_attachments=None):
-        """Fire-and-forget (non-blocking)."""
-        t = threading.Thread(
-            target=Mailer.send_email,
-            args=(to_email, subject, body, html_body, image_path, club_id,
-                  attachment_path, extra_attachments),
-            daemon=True,
+        """Fire-and-forget (non-blocking) using managed thread pool."""
+        _email_executor.submit(
+            Mailer.send_email,
+            to_email, subject, body, html_body, image_path, club_id,
+            attachment_path, extra_attachments
         )
-        t.start()
 
     # ── Bulk ──────────────────────────────────────────────────────────────────
     @staticmethod
     def send_bulk_email(recipient_list, subject, content, html_content=None, club_id=None):
+        """Send emails in bulk using the managed thread pool."""
         for email in recipient_list:
             Mailer.send_async(email, subject, content, html_content, club_id=club_id)
 
@@ -457,11 +460,6 @@ class Mailer:
                 extra_attachments=extra,
             )
 
-    # ── 6. Bulk club email (existing) ─────────────────────────────────────────
-    @staticmethod
-    def send_club_bulk(recipient_list, subject, content, html_content=None, club_id=None):
-        for email in recipient_list:
-            Mailer.send_async(email, subject, content, html_content, club_id=club_id)
 
     # ── 7. SMTP test ──────────────────────────────────────────────────────────
     @staticmethod

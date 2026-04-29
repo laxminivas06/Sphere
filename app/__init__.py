@@ -810,7 +810,23 @@ def create_app():
             return redirect(url_for('login_page'))
         events = DB.get_events()
         ob_requests = DB.get_office_bearer_requests()
-        return render_template('super_approvals.html', user=user, events=events, ob_requests=ob_requests)
+        # Fetch Global Stats for Analytics
+        from app.models import DB
+        global_stats = DB.get_global_stats()
+        clubs = DB.get_clubs()
+        club_breakdown = []
+        for c in clubs:
+            s = DB.get_club_stats(c['id'])
+            if s:
+                s['name'] = c.get('name', 'Unknown')
+                club_breakdown.append(s)
+
+        return render_template('super_approvals.html', 
+                               user=user, 
+                               events=events, 
+                               ob_requests=ob_requests,
+                               global_stats=global_stats,
+                               club_breakdown=club_breakdown)
 
     # ── SUPER ADMIN: Master Database ─────────────────────────────────────────────
     @app.route('/super/master')

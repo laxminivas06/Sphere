@@ -7,8 +7,8 @@
         <!-- ── HEADER ─────────────────────────────────────────────── -->
         <header class="reveal active" style="margin-bottom: 3rem;">
             <div class="section-tag">Administrator Portal</div>
-            <h1 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -0.02em; color: #fff;">
-                Chief Coordinator <span class="gradient-text" style="background: linear-gradient(135deg, var(--primary), #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Command Center</span>
+            <h1 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text-primary);">
+                Chief Coordinator <span class="gradient-text" style="background: linear-gradient(135deg, var(--primary), var(--navy-dark)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Command Center</span>
             </h1>
             <p style="color: var(--text-muted); font-size: 1.1rem; max-width: 600px;">
                 Manage global institutional settings, club governance, and system-wide financial monitoring.
@@ -61,7 +61,7 @@
         <section class="reveal" style="margin-bottom: 4rem;">
             <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; gap: 1.5rem;">
                 <div>
-                    <h2 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 0.5rem; color: #fff;">Institutional <span class="gradient-text" style="background: linear-gradient(135deg, var(--primary), #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Clubs</span></h2>
+                    <h2 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--text-primary);">Institutional <span class="gradient-text" style="background: linear-gradient(135deg, var(--primary), var(--navy-dark)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Clubs</span></h2>
                     <p style="color: var(--text-muted); font-size: 0.95rem;">Configure club permissions, features, and administrative access.</p>
                 </div>
                 <button class="btn btn-primary" onclick="toggleModal('clubModal', true)">
@@ -90,7 +90,7 @@
                     </div>
 
                     <div style="padding: 1.5rem 1rem 1rem;">
-                        <h3 style="font-size: 0.95rem; font-weight: 800; margin-bottom: 0.15rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.name }}</h3>
+                        <h3 style="font-size: 0.95rem; font-weight: 800; margin-bottom: 0.15rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.name }}</h3>
                         <p style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             <i class="fas fa-shield-alt"></i> {{ c.admin_roll }}
                         </p>
