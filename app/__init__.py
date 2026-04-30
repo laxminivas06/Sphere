@@ -7,6 +7,8 @@ import os, json
 import datetime as _dt
 
 def create_app():
+    from app.database import init_db
+    init_db()
     app = Flask(__name__, template_folder='../templates', static_folder='../static')
     csrf = CSRFProtect(app)
     # Use environment variable for secret key in production; fallback for development only
