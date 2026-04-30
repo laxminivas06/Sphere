@@ -203,6 +203,10 @@
             height: 30px;
         }
 
+        tbody {
+            page-break-inside: avoid !important;
+        }
+
         /* BOTTOM */
         tr {
             page-break-inside: auto !important;
@@ -341,6 +345,9 @@
                 padding: 0;
             }
 
+            tbody {
+                page-break-inside: avoid !important;
+            }
             tr {
                 page-break-inside: auto !important;
             }
@@ -497,6 +504,7 @@
                 <col class="col4">
             </colgroup>
 
+            <tbody>
             <tr class="logo-row">
                 <td colspan="4" style="padding:0; border: 1px solid black;">
                     <img src="/static/uploads/logos/college_logo.png" class="logo">
@@ -524,25 +532,33 @@
                 <th style="text-align:center; border: 1px solid black;">PARTICULARS</th>
                 <th colspan="2" style="text-align:center; border: 1px solid black;">DETAILS</th>
             </tr>
+            </tbody>
 
+            <tbody>
             <tr>
                 <td style="text-align:center; border: 1px solid black;">1</td>
                 <td style="border: 1px solid black;">Club Name</td>
                 <td colspan="2" style="border: 1px solid black;"><b>{{ club_name }}</b></td>
             </tr>
+            </tbody>
+            <tbody>
             <tr>
                 <td style="text-align:center; border: 1px solid black;">2</td>
                 <td style="border: 1px solid black;">Title of the PROGRAM</td>
                 <td id="title" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not is_locked and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ program_title }}
                 </td>
             </tr>
+            </tbody>
+            <tbody>
             <tr>
                 <td style="text-align:center; border: 1px solid black;">3</td>
                 <td style="border: 1px solid black;">Program Date & Place</td>
                 <td id="program_date_place" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not is_locked and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{
                     program_date_place }}</td>
             </tr>
+            </tbody>
 
+            <tbody>
             <tr>
                 <td rowspan="7" style="text-align:center; border: 1px solid black;">4</td>
                 <td style="border: 1px solid black;">A. Resource Person Name</td>
@@ -577,14 +593,18 @@
                 <td style="border: 1px solid black;">&nbsp;&nbsp;&nbsp;ii. Cash</td>
                 <td id="cash" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not is_locked and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ cash }}</td>
             </tr>
+            </tbody>
 
+            <tbody>
             <tr>
                 <td style="text-align:center; border: 1px solid black;">5</td>
                 <td style="border: 1px solid black;">Refreshment: Tiffen/ Lunch for students, parents and Staff</td>
                 <td id="refreshment" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not is_locked and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ refreshment
                     }}</td>
             </tr>
+            </tbody>
 
+            <tbody>
             <tr>
                 <td rowspan="5" style="text-align:center; border: 1px solid black;">6</td>
                 <td style="border: 1px solid black;">Invitation & Flex Designing</td>
@@ -609,7 +629,9 @@
                 <td id="digital_media" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not is_locked and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ news }}
                 </td>
             </tr>
+            </tbody>
 
+            <tbody>
             <tr>
                 <td rowspan="4" style="text-align:center; border: 1px solid black;">7</td>
                 <td style="border: 1px solid black;"><b>Reception things requirement</b></td>
@@ -627,7 +649,9 @@
                 <td style="border: 1px solid black;">C. Sweet boxes, Paneer bottle/spray</td>
                 <td id="sweets" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not is_locked and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ sweets }}</td>
             </tr>
+            </tbody>
 
+            <tbody>
             <tr>
                 <td rowspan="6" style="text-align:center; border: 1px solid black;">8</td>
                 <td style="border: 1px solid black;"><b>Hall & Seating arrangements</b></td>
@@ -655,7 +679,9 @@
                 <td style="border: 1px solid black;">E. Others (Name plate, Flower, water etc.,)</td>
                 <td id="others" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not is_locked and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ others }}</td>
             </tr>
+            </tbody>
 
+            <tbody>
             <tr>
                 <td rowspan="5" style="text-align:center; border: 1px solid black;">9</td>
                 <td style="border: 1px solid black;"><b>Advertisement</b></td>
@@ -677,7 +703,9 @@
                 <td style="border: 1px solid black;">D. After the PROGRAM</td>
                 <td id="after" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not is_locked and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{ after }}</td>
             </tr>
+            </tbody>
 
+            <tbody>
             <tr>
                 <td rowspan="4" style="text-align:center; border: 1px solid black;">10</td>
                 <td style="border: 1px solid black;"><b>Feedback Details</b></td>
@@ -698,12 +726,17 @@
                 <td id="organizer_feedback" colspan="2" contenteditable="{{ 'true' if user.role == 'club_admin' and not is_locked and not event.event_finished else 'false' }}" style="border: 1px solid black;">{{
                     organizer_feedback }}</td>
             </tr>
+            </tbody>
+
+            <tbody>
             <tr>
                 <td colspan="4" class="notice-text">
                     *** Current event permission will be given only after report submission
                 </td>
             </tr>
+            </tbody>
 
+            <tbody>
             <tr>
                 <td colspan="2" style="padding: 12px; vertical-align: top; border: 1px solid black; height: 120px;">
                     <b style="font-size: 13px;">Is the previous Event Report Document Submitted?</b>
@@ -746,7 +779,9 @@
                     </table>
                 </td>
             </tr>
+            </tbody>
 
+            <tbody>
             <tr>
                 <td colspan="2" style="padding: 15px; vertical-align: top; border: 1px solid black;">
                     <b>Description:</b><br>
@@ -770,6 +805,7 @@
                     <b>Chief Coordinator</b>
                 </td>
             </tr>
+            </tbody>
         </table>
 
         <table class="bottom" style="border: none !important; margin-top: 20px;">
